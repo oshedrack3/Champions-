@@ -293,6 +293,7 @@ body.admin-mode .data-admin {
   position: fixed;
   width: auto;
   height: auto;
+  
   z-index: 20;
 }
 
@@ -342,8 +343,8 @@ body.admin-mode .data-admin {
   top: 40px;
   
   width: auto;
-  height: auto;
-  
+ 
+  max-height:90%;
   overflow-y: auto;
   
   background: white;
@@ -763,4 +764,29 @@ body.admin-mode .data-admin {
 
 .action-modal.warning {
   border-left-color: #f59e0b;
+}
+
+.invitation-actions {
+  display: flex;
+  width: 100%;
+  gap: 10px;
+}
+
+.invitation-actions button {
+  flex: 1;
+  width: 0;
+  padding: 10px;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+}
+
+.accept-btn {
+  background: #22c55e;
+  color: white;
+}
+
+.decline-btn {
+  background: #ef4444;
+  color: white;
 }
