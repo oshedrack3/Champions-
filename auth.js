@@ -7,15 +7,15 @@ async function handleLogin() {
     return;
   }
   
- 
+  
   
   const user = await login(loginValue, password);
   
- 
+  
   
   if (!user) return;
-  
-  goToListOfTournamentPage();
+  startTournamentEvents();
+  await goToCompetitionPage();
 }
 
 async function handleLogout() {
@@ -29,7 +29,9 @@ async function handleLogout() {
   try {
     await logout();
   } finally {
+    goToLoginPage();
     hideLoader();
+    
   }
 }
 async function login(login, password) {
@@ -61,7 +63,6 @@ async function login(login, password) {
     );
     startNotificationEvents();
     loadNotifications();
-  
     switchAppMode();
     
     myTournaments = await getMyTournaments();
@@ -73,21 +74,21 @@ async function login(login, password) {
     if (list) {
       list.innerHTML = "";
     }
+    await loadMyCompetitions();
+    await renderCompetitionList();
     
-    await renderTournamentList();
-    
-    goToListOfTournamentPage();
     
     return result.user;
     
   } catch (err) {
+  showAlert(
+    err.title || "Error",
+    err.message || "Something went wrong."
+  );
+  return null;
+}    
     
-    console.error("Login error:", err);
-    showAlert(err.message);
-    
-    return null;
-    
-  } finally {
+   finally {
     
     hideLoader();
     
@@ -120,16 +121,17 @@ async function logout() {
 function getCurrentUser() {
   return getSession()?.user || null;
 }
+
 function switchAppMode() {
   const user = getCurrentUser();
   
- 
+  
   if (!user) {
     setAppMode("view");
     return;
   }
   
-   if (user.role === "admin") {
+  if (user.role === "admin") {
     setAppMode("admin");
   }
   else if (user.role === "player") {
@@ -139,4 +141,3 @@ function switchAppMode() {
     setAppMode("view");
   }
 }
-

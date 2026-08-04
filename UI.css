@@ -193,7 +193,7 @@ body.admin-mode .data-admin {
   position: sticky;
   bottom: 0;
   z-index: 20;
-
+  
   padding-top: 18px;
   display: flex !important;
   flex-direction: row !important;
@@ -245,8 +245,9 @@ body.admin-mode .data-admin {
     width: 100%;
   }
   
-
+  
 }
+
 #reviewModalActions .btn-save {
   background: #38bdf8 !important;
   color: #fff !important;
@@ -271,7 +272,7 @@ body.admin-mode .data-admin {
   padding: 4px;
   border-radius: 2px;
   border: none;
- 
+  
 }
 
 .submission-badge.pending {
@@ -300,7 +301,8 @@ body.admin-mode .data-admin {
 
 .notification-btn {
   position: fixed;
-  top: 5px;
+  top: 3px;
+  left: 40px;
   width: 44px;
   height: 44px;
   border: none;
@@ -343,8 +345,8 @@ body.admin-mode .data-admin {
   top: 40px;
   
   width: auto;
- 
-  max-height:90%;
+  
+  max-height: 90%;
   overflow-y: auto;
   
   background: white;
@@ -678,6 +680,7 @@ body.admin-mode .data-admin {
   justify-content: center;
   margin-top: 18px;
 }
+
 .confirmNoBtn,
 #confirmModal .button {
   display: flex;
@@ -691,15 +694,23 @@ body.admin-mode .data-admin {
   height: auto;
 }
 
+#confirmYesBtn,
 #confirmNoBtn {
   background: #ffffff;
-  color: #111827;
+  color: #2563eb;
   border: 1px solid #d1d5db;
 }
 
 #alertTitle {
-  color: #2d333b;
+  color: #1f2937;
 }
+
+#alertText {
+  color: #1f2937;
+  opacity: 0.7;
+}
+
+
 
 .btn-ok {
   width: 100%;
@@ -707,7 +718,8 @@ body.admin-mode .data-admin {
   border: 1px solid #e5e7eb;
   border-radius: 12px;
   background: #f9fafb;
-  color: #111827;
+  color: #2563eb !important;
+  
   font-size: 15px;
   font-weight: 600;
   cursor: pointer;
@@ -768,13 +780,15 @@ body.admin-mode .data-admin {
 
 .invitation-actions {
   display: flex;
+  flex-direction: column;
   width: 100%;
   gap: 10px;
 }
 
 .invitation-actions button {
+  
   flex: 1;
-  width: 0;
+  width: auto;
   padding: 10px;
   border: none;
   border-radius: 8px;
@@ -789,4 +803,659 @@ body.admin-mode .data-admin {
 .decline-btn {
   background: #ef4444;
   color: white;
+}
+
+#createCompetitionModal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-header {
+  text-align: center;
+}
+
+.modal-header h3,
+.modal-header p,
+.modal-body label {
+  text-align: center;
+  display: block;
+}
+
+.modal-header p {
+  margin: 0.5rem 0 1rem;
+}
+
+#createCompetitionModal .modal-content {
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 90%;
+  max-width: 450px;
+  background-color: #ffffff;
+  padding: 24px;
+  border-radius: 16px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+  box-sizing: border-box;
+}
+
+#createCompetitionModal .modal-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+#createCompetitionModal label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+#createCompetitionModal input[type="text"],
+#createCompetitionModal input[type="file"] {
+  width: 100%;
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid #d1d5db;
+  box-sizing: border-box;
+  font-size: 14px;
+}
+
+.competition-logo-preview {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 10px;
+}
+
+#competitionLogoPreview {
+  width: 120px;
+  height: 120px;
+  object-fit: contain;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  background-color: #f9fafb;
+}
+
+#competitionLogoPreview:not([src]),
+#competitionLogoPreview[src=""] {
+  display: none;
+}
+
+#createCompetitionModal .modal-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+#createCompetitionModal .modal-actions button {
+  flex: 1;
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid #d1d5db;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  background-color: #ffffff;
+  color: #2563eb;
+  transition: all 0.2s ease;
+}
+
+#createCompetitionModal .secondary-btn:hover,
+#createCompetitionModal .primary-btn:hover {
+  background-color: #f3f4f6;
+}
+
+.competition-card {
+  position: relative;
+  background-color: #ffffff;
+  border-radius: 16px;
+  padding: 16px 20px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  border: 1px solid #e5e7eb;
+  cursor: pointer;
+  box-sizing: border-box;
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 16px;
+}
+
+.competition-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.active-season {
+  font-size: 14px;
+  color: #374151;
+  font-weight: 500;
+}
+
+.tournament-count {
+  font-size: 14px;
+  color: #2563eb;
+  font-weight: 600;
+}
+
+.competition-menu-btn {
+  font-size: 18px;
+  color: #374151;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 6px;
+  user-select: none;
+}
+
+.competition-menu-btn:hover {
+  background-color: #f3f4f6;
+}
+
+.competition-body {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.competition-info h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #111827;
+}
+
+.competition-image {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+}
+
+.competition-image-placeholder {
+  font-size: 24px;
+}
+
+.competition-image-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  border-radius: 8px;
+}
+
+/* Dropdown Menu Styles */
+.menu-dropdown {
+  position: absolute;
+  top: 40px;
+  right: 16px;
+  background-color: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  z-index: 10;
+  min-width: 100px;
+}
+
+.menu-dropdown.hidden {
+  display: none;
+}
+
+.menu-itemList {
+  padding: 8px 16px;
+  font-size: 14px;
+  color: #374151;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.menu-itemList:hover {
+  background-color: #f3f4f6;
+}
+
+.menu-itemList.delete {
+  color: #dc2626;
+}
+
+.menu-itemList.delete:hover {
+  background-color: #fef2f2;
+}
+
+.tournament-card {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  height: 120px;
+  padding: 16px 48px 16px 16px;
+  /* Right padding leaves room for checkbox/menu */
+  background-color: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  color: #1f2937;
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  cursor: pointer;
+  box-sizing: border-box;
+  transition: all 0.2s ease;
+}
+
+.tournament-card:hover {
+  border-color: #cbd5e1;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+
+.tournament-menu-btn {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  font-size: 18px;
+  color: #6b7280;
+  cursor: pointer;
+  padding: 4px;
+  line-height: 1;
+  user-select: none;
+  z-index: 2;
+}
+
+.tournament-menu-btn:hover {
+  color: #111827;
+}
+
+.tournament-image {
+  flex-shrink: 0;
+  width: 56px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #f3f4f6;
+  border-radius: 10px;
+  font-size: 28px;
+  overflow: hidden;
+}
+
+.tournament-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+
+.tournament-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+  text-align: left;
+}
+
+.tournament-info h3 {
+  margin: 0;
+  color: #111827;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+
+
+.check {
+  position: absolute;
+  right: 14px;
+  bottom: 16px;
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  border: 1.5px solid #d1d5db;
+  color: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: bold;
+  background-color: transparent;
+  transition: all 0.2s ease;
+}
+
+
+.tournament-card.selected {
+  border-color: #2563eb;
+  background-color: #f8fafc;
+}
+
+.tournament-card.selected .check,
+.check.checked {
+  background-color: #2563eb;
+  border-color: #2563eb;
+  color: #ffffff;
+}
+
+.export-mode .tournament-card {
+  border-color: rgba(37, 99, 235, 0.3);
+  background-color: #1e293b;
+  color: #f8fafc;
+}
+
+.export-mode .tournament-info h3 {
+  color: #f8fafc;
+}
+
+.export-mode .tournament-season {
+  color: #94a3b8;
+}
+
+.export-mode .tournament-card:not(.selected) {
+  opacity: 0.5;
+}
+
+.export-mode .tournament-card.selected {
+  border-color: #3b82f6;
+  background-color: #1e3a8a;
+  opacity: 1;
+}
+
+
+.tournament-format,
+.tournament-season,
+.tournament-status {
+  font-size: 12px;
+  padding: 4px 8px;
+  border-radius: 12px;
+  background: #f1f1f1;
+  color: #333;
+  white-space: nowrap;
+}
+
+.tournament-status {
+  text-transform: capitalize;
+}
+
+.tournament-scroll-row {
+  display: flex;
+  overflow-x: auto;
+  gap: 16px;
+  scroll-snap-type: x mandatory;
+  /* Force snapping */
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 8px;
+}
+
+.tournament-scroll-row .tournament-card {
+  flex: 0 0 100%;
+  /* Force card to occupy 100% width of the row */
+  max-width: 100%;
+  scroll-snap-align: center;
+  /* Center snap each card */
+  box-sizing: border-box;
+}
+
+
+.tournament-scroll-row::-webkit-scrollbar {
+  display: none;
+}
+
+.tournament-scroll-row {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+#welcomeText {
+  justify-content: center;
+  text-align: center;
+  display: flex;
+  padding: 6px;
+  align-items: center;
+  gap: 6px;
+}
+
+.welcome-message {
+  font-size: 0.85rem;
+  font-weight: 400;
+}
+
+#usernameText {
+  font-size: 1.3rem;
+  font-weight: 700;
+}
+
+.myComp {
+  text-align: center;
+  padding: 20px 15px;
+ 
+}
+
+.myComp h3 {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #2563eb;
+}
+
+.myComp p {
+  margin-top: 8px;
+  font-size: 0.85rem;
+  opacity: 0.6;
+  line-height: 1.4;
+  color: #1e293b;
+}
+
+#competitionPage {
+  padding-top: 40px;
+  padding-bottom: 30px;
+}
+
+#listOfTournamentPage {
+  padding-right: 10px;
+  padding-left: 10px;
+  background: white;
+  padding-top: 20px;
+}
+
+.management-delete-section {
+  display: none;
+}
+
+#deleteAccountModal .modal-content {
+  width: 90%;
+  max-width: 420px;
+  background: #fff;
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+}
+
+
+#deleteAccountModal .modal-header {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+
+#deleteAccountModal .modal-header h3 {
+  margin: 0 0 10px;
+  font-size: 20px;
+}
+
+
+#deleteAccountModal .modal-header p {
+  font-size: 14px;
+  color: #666;
+  line-height: 1.4;
+}
+
+
+#deleteAccountModal .modal-body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+
+#deleteAccountModal label {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+
+#deleteAccountModal input {
+  width: 100%;
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid #ddd;
+  outline: none;
+  font-size: 14px;
+  box-sizing: border-box;
+}
+
+
+#deleteAccountModal input:focus {
+  border-color: #e53935;
+}
+
+
+.management-delete-section {
+  display: none;
+  margin-top: 15px;
+  padding: 15px;
+  border-radius: 10px;
+  background: #f8f8f8;
+}
+
+
+#deleteAccountModal .modal-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+
+#deleteAccountModal .modal-actions button {
+  flex: 1;
+  height: 40px;
+  border-radius: 20px;
+}
+
+
+#deleteAccountModal .primary-btn {
+  background: #e53935;
+  color: white;
+}
+
+
+#deleteAccountModal .secondary-btn {
+  background: #ddd;
+  color: #333;
+}
+.record-card.top5-card {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  box-sizing: border-box;
+}
+
+.record-card .record-title {
+  font-size: 1rem;
+  font-weight: 700;
+  margin-bottom: 12px;
+  color: #1a1a1a;
+  text-align: center;
+}
+
+.top5-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.top5-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: nowrap;
+  padding: 6px 8px;
+  border-radius: 6px;
+  background-color: #f8f9fa;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.top5-row .team-side {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  flex: 1;
+}
+
+.top5-row .rank-number {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: #666;
+  min-width: 18px;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.top5-row .team-logo,
+.top5-row .team-logo-placeholder {
+  width: 24px;
+  height: 24px;
+  min-width: 24px;
+  min-height: 24px;
+  border-radius: 50%;
+  object-fit: contain;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+.top5-row .team-logo-placeholder {
+  background-color: #e2e8f0;
+  color: #475569;
+  font-size: 0.75rem;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.top5-row .team-side > span:last-child {
+  font-weight: 500;
+  font-size: 0.95rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: #1f2937;
+}
+
+.top5-row .record-value {
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: #111827;
+  white-space: nowrap;
+  margin-left: 12px;
+  text-align: right;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.top5-row .record-suffix {
+  font-weight: 400;
+  font-size: 0.85rem;
+  color: #6b7280;
 }

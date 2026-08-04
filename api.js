@@ -282,7 +282,7 @@ async function updateTournamentDetails(id, data) {
 
 
 
-async function uploadTeamLogo(tournamentId, teamName, logo) {
+async function uploadTeamLogo(tournamentId, teamId, teamName, logo) {
   const token = getToken();
   
   const res = await fetch(`${API}/tournaments/${tournamentId}/team-logo`, {
@@ -292,9 +292,10 @@ async function uploadTeamLogo(tournamentId, teamName, logo) {
       Authorization: token
     },
     body: JSON.stringify({
-      teamName,
-      logo
-    })
+  teamId,
+  teamName,
+  logo
+})
   });
   
   const result = await res.json();
@@ -303,7 +304,7 @@ async function uploadTeamLogo(tournamentId, teamName, logo) {
     throw new Error(result.message || "Failed to upload logo.");
   }
   
-  return result.imageUrl;
+  return result.image;
 }
 async function deleteTournamentFromFirebase(id) {
   const token = getToken();
@@ -323,6 +324,36 @@ async function deleteTournamentFromFirebase(id) {
   
   return result;
 }
+
+async function deleteTournamentFixtures(id) {
+  
+  const token = getToken();
+  
+  const res = await fetch(
+    `${API}/tournaments/${id}/fixtures`,
+    {
+      method: "DELETE",
+      headers: {
+        Authorization: token
+      }
+    }
+  );
+  
+  
+  const result = await res.json();
+  
+  
+  if (!res.ok || !result.success) {
+    throw new Error(
+      result.message || "Failed to delete fixtures."
+    );
+  }
+  
+  
+  return result;
+  
+}
+
 
 async function respondToInvitation(tournamentId, action) {
   showLoader();
@@ -566,35 +597,40 @@ function startTournamentEvents(tournamentId) {
     `${API}/tournaments/${tournamentId}/events?token=${encodeURIComponent(getToken())}`
   );
   
+  tournamentEvents.onopen = () => {
+    console.log("Tournament SSE connected");
+  };
+  
   tournamentEvents.addEventListener(
     "tournament-update",
     async (event) => {
-      
       try {
-        
         const data = JSON.parse(event.data);
         
         if (data.type !== "TOURNAMENT_UPDATED") {
           return;
         }
         
-        currentTournament = await getTournament(tournamentId);
+        await refreshCurrentTournament();
         
         renderFixtures();
+        renderRecords();
+        renderFormView();
         
         if (currentTournament.format === "league") {
           renderTable(currentTournament.table);
+        } else {
+          renderFullBracket();
         }
         
       } catch (err) {
         console.error(err);
       }
-      
     }
   );
   
   tournamentEvents.onerror = () => {
-    console.log("Tournament event disconnected");
+    console.log("Tournament SSE connection failed");
   };
 }
 
@@ -708,6 +744,171 @@ async function openNotification(id) {
   renderNotifications();
   
 }
+async function createCompetition(data) {
+  const token = getToken();
+  
+  const res = await fetch(`${API}/competitions/create`, {
+    method: "POST",
+    headers: {
+      Authorization: token,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(data)
+  });
+  
+  const result = await res.json();
+  
+  if (!res.ok || !result.success) {
+    throw new Error(result.message);
+  }
+  
+  return result;
+}
+
+async function getMyCompetitions() {
+  const token = getToken();
+  
+  const res = await fetch(
+    `${API}/competitions/my`,
+    {
+      headers: {
+        Authorization: token
+      }
+    }
+  );
+  
+  const result = await res.json();
+  
+  if (!res.ok || !result.success) {
+    throw new Error(result.message || "Failed to load competitions.");
+  }
+  
+  return result.competitions;
+}
+
+async function getPublicCompetitions() {
+  const token = getToken();
+  
+  const res = await fetch(
+    `${API}/competitions/public`,
+    {
+      headers: {
+        Authorization: token
+      }
+    }
+  );
+  
+  const result = await res.json();
+  
+  if (!res.ok || !result.success) {
+    throw new Error(result.message || "Failed to load public competitions.");
+  }
+  
+  return result.competitions;
+}
+
+
+async function updateTeam(tournamentId, teamId, data) {
+  const token = getToken();
+  
+  const res = await fetch(
+    `${API}/tournaments/${tournamentId}/team/${teamId}`,
+    {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: token
+      },
+      body: JSON.stringify(data)
+    }
+  );
+  
+  const result = await res.json();
+  
+  if (!res.ok || !result.success) {
+    throw new Error(
+      result.message || "Failed to update team"
+    );
+  }
+  
+  return result;
+}
+async function deleteMyAccount(password) {
+  const token = getToken();
+  
+  const res = await fetch(`${API}/users/delete-my-account`, {
+    method: "DELETE",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: token
+    },
+    body: JSON.stringify({
+      password
+    })
+  });
+  
+  const result = await res.json();
+  
+  if (!res.ok || !result.success) {
+    throw new Error(
+      result.message || "Failed to delete account."
+    );
+  }
+  
+  return result;
+}
+
+
+async function managerDeleteUser(uid, accessCode) {
+  const res = await fetch(
+    `${API}/users/manager-delete-user/${uid}`,
+    {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        accessCode
+      })
+    }
+  );
+  
+  const result = await res.json();
+  
+  if (!res.ok || !result.success) {
+    throw new Error(
+      result.message || "Failed to delete user."
+    );
+  }
+  
+  return result;
+}
+
+async function removeCompetition(id) {
+  const token = getToken();
+  
+  const res = await apiRequest(
+    `${API}/competitions/${id}`,
+    {
+      method: "DELETE",
+      headers: {
+        Authorization: token
+      }
+    },
+    () => removeCompetition(id)
+  );
+  
+  if (!res) return null;
+  
+  const result = await res.json();
+  
+  if (!res.ok || !result.success) {
+    throw new Error(result.message || "Failed to delete competition.");
+  }
+  
+  return result;
+}
+
 window.addEventListener("load", async () => {
   showLoader();
   
@@ -715,10 +916,11 @@ window.addEventListener("load", async () => {
   
   if (loggedIn) {
     hideAllPages();
-    await renderTournamentList();
-    goToListOfTournamentPage();
-    startNotificationEvents();
-    loadNotifications();
+   await goToCompetitionPage();
+loadMyCompetitions();
+   startNotificationEvents();
+  await  loadNotifications();
+ 
     
   } else {
     goToLoginPage();
@@ -726,3 +928,4 @@ window.addEventListener("load", async () => {
   
   hideLoader();
 });
+

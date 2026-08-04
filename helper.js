@@ -12,7 +12,13 @@ const PAGES = [
   "customDropdown",
   "cupTab",
   "teamView",
-  "authPage"
+  "authPage",
+  "listOfTournamentPage",
+  "tourListPageHead",
+  "compPageHead",
+  "competitionPage",
+  "notificationPanel"
+  
   
   
   
@@ -444,6 +450,9 @@ function handleMenuAction(action) {
     shareGroupTable: shareCupTable,
     createFixture: handleGenerateFixtures,
     inviteplayer: openInvitePlayerModal,
+    createComp:openCreateCompetitionModal,
+    deleteAcc: openDeleteAccountModal,
+    deleteUser: openDeleteAccountModal,
     dateEdit: openDateResetModal,
     deleteCupTeam: deleteCupTeamInfo
     
@@ -455,7 +464,61 @@ function handleMenuAction(action) {
 
 
 const menuConfig = {
+  competition: [
   
+  {
+    label: "Create New Competition",
+    action: "createComp",
+    roles: ["admin"]
+  },
+  {
+  label: "Delete My Account",
+  action: "deleteAcc",
+  roles: ["admin", "player"]
+},
+{
+  label: "Delete User Account",
+  action: "managerDeleteUser",
+  roles: ["admin","management"]
+},
+  /*
+  {
+    label: "Create New Tournament",
+    action: "createTournament",
+    roles: ["admin"]
+  },
+  
+  {
+    label: "Import Tournament",
+    action: "importTournament",
+    roles: ["admin"]
+  },
+  
+  {
+    label: "Export Tournament",
+    action: "enableExportMode",
+    roles: ["admin"]
+  },
+  
+  {
+    label: "Delete Tournament",
+    action: "deleteTournament",
+    roles: ["admin"]
+  },
+  
+  {
+    label: "Setup POTS Tournaments",
+    action: "openPOTS",
+    roles: ["admin"]
+  },
+  
+  {
+    label: "Share POTS Ranking",
+    action: "sharePOTS",
+    roles: ["admin", "player"]
+  }
+  */
+],
   tournaments: [
     
     {
@@ -624,15 +687,15 @@ function renderMenu() {
   
   if (logoutBtn) {
     logoutBtn.style.display =
-      currentPage === "tournaments" ?
+      currentPage === "competition" ?
       "block" :
       "none";
   }
 }
 
 function openAddTeam() {
-
   closeMenu();
+  toggleView('team');
   document.getElementById("addNewTeam").style.display = "block";
   
 }
@@ -671,7 +734,7 @@ function sharePOTS() {
 
 function closeAddTeam() {
   document.getElementById("addNewTeam").style.display = "none";
-  toggleView('table');
+  toggleView('team');
 }
 
 
@@ -850,7 +913,14 @@ function fallbackDownload(file) {
   
   showAlert("File downloaded");
 }
-
+function goToListOfTournamentPage() {
+  hideAllPages();
+  closeTournamentEvents();
+  document.getElementById("listOfTournamentPage").style.display = "flex";
+  document.getElementById("tourListPageHead").style.display = "flex";
+  currentSwapView = 0;
+  updateSwapView();
+}
 function openListModal(title, html) {
   document.getElementById("listModalTitle").textContent = title;
   document.getElementById("listModalContent").innerHTML = html;
@@ -898,180 +968,23 @@ function closeListModal() {
   if (modal) modal.style.display = "none";
 }
 
-
-async function importTournamentsData(jsonString) {
-  try {
-    const importedData = JSON.parse(jsonString);
-    if (!importedData) {
-      showAlert("Invalid backup file structure");
-      return;
-    }
-    
-    const tournamentsList = Array.isArray(importedData) ? importedData : [importedData];
-    const existingTournaments = getTournaments();
-    
-    let successCount = 0;
-    
-    for (const tournament of tournamentsList) {
-      if (!tournament.id || !tournament.name) continue;
-      
-      const duplicateIndex = existingTournaments.findIndex(t => String(t.id) === String(tournament.id));
-      if (duplicateIndex !== -1) continue;
-      
-      if (tournament.teamLogos) {
-        const teams = Object.keys(tournament.teamLogos);
-        
-        for (const team of teams) {
-          const logoData = tournament.teamLogos[team];
-          
-          if (logoData && (logoData.startsWith("data:image") || logoData.length > 100)) {
-            const logoKey = `logo_${tournament.id}_${team.replace(/\s+/g, '_')}`;
-            
-            try {
-              await saveLogoToIndexedDB(logoKey, logoData);
-              tournament.teamLogos[team] = logoKey;
-            } catch (dbErr) {
-              tournament.teamLogos[team] = null;
-            }
-          } else {
-            tournament.teamLogos[team] = null;
-          }
-        }
-      }
-      
-      existingTournaments.push(tournament);
-      successCount++;
-    }
-    
-    if (successCount > 0) {
-      localStorage.setItem("tournaments", JSON.stringify(existingTournaments));
-      showAlert(`Successfully imported ${successCount} tournament(s)!`);
-      
-      if (typeof renderTournamentList === "function") renderTournamentList();
-      if (typeof renderTeams === "function") renderTeams();
-    } else {
-      showAlert("No new or unique tournaments were imported.");
-    }
-    
-  } catch (err) {
-    showAlert("Failed to interpret data file structure.");
-  }
+async function goToCompetitionPage() {
+  
+  hideAllPages();
+  
+  closeTournamentEvents();
+  
+  document.getElementById("competitionPage").style.display = "block";
+  document.getElementById("tourListPageHead").style.display = "none";
+  document.getElementById("compPageHead").style.display = "block";
+  const currentUser= getCurrentUser();
+  document.getElementById("usernameText").textContent = currentUser.username;
+  await renderCompetitionList();
+  
+  currentSwapView = 0;
+  
+  updateSwapView();
 }
-
-function handleTournamentFileImport(event) {
-  const file = event.target.files[0];
-  if (!file) return;
-  
-  const reader = new FileReader();
-  reader.onload = async function(e) {
-    await importTournamentsData(e.target.result);
-    event.target.value = "";
-  };
-  reader.readAsText(file);
-}
-
-
-function importTeams() {
-  const currentId = localStorage.getItem("currentTournamentId");
-  
-  const tournaments = getTournaments().filter(
-    t => String(t.id) !== String(currentId)
-  );
-  
-  if (!tournaments.length) {
-    showAlert("No tournaments available");
-    return;
-  }
-  
-  const html = tournaments
-    .map(
-      t => `
-        <button
-          type="button"
-          class="list-item-btn"
-          data-id="${t.id}"
-        >
-          ${t.name}
-        </button>
-      `
-    )
-    .join("");
-  
-  openListModal("Import Teams From", html);
-}
-
-document.addEventListener("click", function(e) {
-  const btn = e.target.closest(".list-item-btn");
-  if (!btn) return;
-  
-  const sourceId = btn.dataset.id;
-  
-  console.log("Import clicked:", sourceId);
-  
-  importAllTeamsFromTournament(sourceId);
-});
-
-async function importAllTeamsFromTournament(sourceId) {
-  const current = getCurrentTournament();
-  const source = getTournaments().find(
-    t => String(t.id) === String(sourceId)
-  );
-  
-  if (!current || !source) {
-    console.warn("Missing tournament:", { current, source });
-    return;
-  }
-  
-  current.teams = current.teams || [];
-  current.teamLogos = current.teamLogos || {};
-  
-  let importedCount = 0;
-  const importPromises = [];
-  
-  source.teams.forEach(team => {
-    if (!current.teams.includes(team)) {
-      current.teams.push(team);
-      
-      const sourceLogoKey = source.teamLogos?.[team];
-      
-      if (sourceLogoKey) {
-        // Create a distinct, isolated key for the current tournament destination
-        const currentLogoKey = `logo_${current.id}_${team.replace(/\s+/g, '_')}`;
-        current.teamLogos[team] = currentLogoKey;
-        
-        
-        const promise = getLogoFromIndexedDB(sourceLogoKey)
-          .then(base64Data => {
-            if (base64Data) {
-              return saveLogoToIndexedDB(currentLogoKey, base64Data);
-            }
-          })
-          .catch(err => console.error(`Failed to migrate logo for ${team}:`, err));
-        
-        importPromises.push(promise);
-      }
-      
-      importedCount++;
-    }
-  });
-  
-  try {
-    
-    await Promise.all(importPromises);
-    
-    updateTournament(current);
-    closeListModal();
-    showAlert(`${importedCount} team(s) imported securely`);
-    
-    if (typeof renderTeams === "function") {
-      renderTeams();
-    }
-  } catch (err) {
-    console.error("Error finalizing team import:", err);
-    showAlert("Failed to safely import team logos");
-  }
-}
-
 
 function removeBackground(file, callback) {
   const img = new Image();
@@ -1391,16 +1304,13 @@ function showLoader() {
 }
 
 function showNotification() {
+  const panel = document.getElementById("notificationPanel");
   
-  const panel = document.getElementById(
-    "notificationPanel"
-  );
-  
-  panel.classList.toggle("show");
-  
+  panel.style.display =
+    panel.style.display === "block" ?
+    "none" :
+    "block";
 }
-
-
 function hideLoader() {
   document.getElementById("loader").style.display = "none";
 }
@@ -1597,11 +1507,51 @@ function fileToBase64(file) {
   
   return new Promise((resolve, reject) => {
     
+    const img = new Image();
     const reader = new FileReader();
     
-    reader.onload = () => resolve(reader.result);
+    reader.onload = e => {
+      img.src = e.target.result;
+    };
     
     reader.onerror = reject;
+    
+    img.onload = () => {
+      
+      const canvas = document.createElement("canvas");
+      
+      let width = img.width;
+      let height = img.height;
+      
+      const maxWidth = 1200;
+      
+      if (width > maxWidth) {
+        const ratio = maxWidth / width;
+        width = maxWidth;
+        height *= ratio;
+      }
+      
+      canvas.width = width;
+      canvas.height = height;
+      
+      const ctx = canvas.getContext("2d");
+      ctx.drawImage(img, 0, 0, width, height);
+      
+      let quality = 0.8;
+      let base64 = canvas.toDataURL("image/jpeg", quality);
+      
+      while (
+        base64.length > 500 * 1024 &&
+        quality > 0.3
+      ) {
+        quality -= 0.1;
+        base64 = canvas.toDataURL("image/jpeg", quality);
+      }
+      
+      resolve(base64);
+    };
+    
+    img.onerror = reject;
     
     reader.readAsDataURL(file);
     
@@ -1791,4 +1741,94 @@ function closeTournamentEvents() {
   }
   
 }
+
+function openCreateCompetitionModal() {
+  document.getElementById("competitionLogoInput").style.display = "block";
+  document
+    .getElementById("createCompetitionModal")
+    .style.display="block";
+}
+function closeCreateCompetitionModal() {
+  document
+    .getElementById("createCompetitionModal")
+    .style.display="none";
+  
+}
+
+document
+  .getElementById("competitionLogoInput")
+  ?.addEventListener("change", function() {
+    
+    const file = this.files[0];
+    
+    if (!file) return;
+    
+    
+    const reader = new FileReader();
+    
+    
+    reader.onload = function(e) {
+      
+      document
+        .getElementById("competitionLogoPreview")
+        .src = e.target.result;
+      
+    };
+    
+    
+    reader.readAsDataURL(file);
+    
+  });
+  
+  function openDeleteAccountModal(isManagement = false) {
+  
+  const modal = document.getElementById(
+    "deleteAccountModal"
+  );
+  
+  if (!modal) return;
+  
+  
+  const managementSection =
+    modal.querySelector(
+      ".management-delete-section"
+    );
+  
+  
+  if (managementSection) {
+    
+    managementSection.style.display =
+      isManagement ? "block" : "none";
+    
+  }
+  
+  
+  modal.style.display = "flex";
+  
+}
+
+
+function closeDeleteAccountModal() {
+  
+  const modal = document.getElementById(
+    "deleteAccountModal"
+  );
+  
+  if (!modal) return;
+  
+  
+  modal.style.display = "none";
+  
+  
+  document.getElementById(
+    "deletePasswordInput"
+  ).value = "";
+  
+  
+  document.getElementById(
+    "managementCodeInput"
+  ).value = "";
+  
+}
+
 

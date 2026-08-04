@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, interactive-widget=overlay-content , viewport-fit=cover">
   <title> Tournament Manager</title>
   <link rel="stylesheet" href="styles.css" />
- <link rel="stylesheet" href="UI.css" /> 
+  <link rel="stylesheet" href="UI.css" />
   
   
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
@@ -18,7 +18,19 @@
   
   <!-- Page Heads and Nav btn -->
   
-  <!-- TourList header -->
+<div id="compPageHead" class="header">
+  <h2 id="welcomeText">
+    <span class="welcome-message">Welcome back 👋,</span>
+    <span id="usernameText">Username</span>
+  </h2>
+  
+  <button class="menu-btn" onclick="setPageAndToggleMenu('competition')">
+    ☰
+  </button>
+</div>
+
+
+<!-- TourList header -->
   <div class="header" id="tourListPageHead">
     <div class="page-toggle">
       
@@ -32,6 +44,9 @@
     <button class="menu-btn" onclick="setPageAndToggleMenu('tournaments')">
       ☰
     </button>
+       <button class="btn-back" onclick="goToCompetitionPage()">
+     ❮
+   </button>
   </div>
   
   
@@ -181,7 +196,25 @@
   
   <main>
     
-    <section id="listOfTournamentPage" class="page">
+    <section id="competitionPage" class="comPage">
+      
+      <div class="myComp">
+        
+     <h3> My Competitions</h3>
+     <p> Competitions are organise collection of Tournaments You are Part of or Created. Only admin can create and manage Competion</p>
+         
+        
+        
+      </div>
+   
+      
+      <div id="competitionList">
+        
+      </div>
+      
+    </section>
+    
+    <section id="listOfTournamentPage" class="page" style="display:none">
       
       
       
@@ -190,7 +223,8 @@
         <div class="view-slider" id="viewSlider">
           
           <div class="view-page" id="tournamentView">
-            <div class="tourListWrap">
+            <div>
+              <div class="myComp"> <p> Scroll left on the Tournament to see previous seasons</p></div>
               <div id="tournamentList"></div>
             </div>
           </div>
@@ -767,9 +801,18 @@
           <option value="cup">Cup</option>
         </select>
         <div class="start-endDate">
+         <label>Season</label>
+          <input type="text" id="seasonInput" placeholder="e.g. 2026/2027 Season" />
+          
+          <label>Season Status</label>
+          <select id="seasonStatusInput">
+            <option value="upcoming" selected>Upcoming</option>
+            <option value="active">Active</option>
+            <option value="completed">Completed</option>
+          </select>
           <label>Select Start Date (First Match Date)</label>
           <input type="date" id="tournamentStartDate">
-          
+      
           <label> Select End Date (Last Match Date)</label>
           <input type="date" id="tournamentEndDate">
         </div>
@@ -893,8 +936,8 @@
         📷 Share Table
       </div>
       
-      <div data-admin onclick="handleMenuClick('team')">
-        👥 Registered Teams
+      <div  onclick="handleMenuClick('team')">
+        👥 Teams
       </div>
       <div onclick="handleMenuClick('form')">📈 Form</div>
       <div onclick="handleMenuClick('records')">🏆 Records</div>
@@ -902,23 +945,21 @@
   </div>
   
   
-<div id="alertModal" class="modal-overlay">
-  <div class="modal-box">
-
-    <h3 id="alertTitle" class="modal-title">
-      Alert
-    </h3>
-
-    <p id="alertText" class="modal-text"></p>
-
-    <button 
-      class="btn-ok"
-      onclick="closeAlert()">
-      OK
-    </button>
-
+  <div id="alertModal" class="modal-overlay">
+    <div class="modal-box">
+      
+      <h3 id="alertTitle" class="modal-title">
+        Alert
+      </h3>
+      
+      <p id="alertText" class="modal-text"></p>
+      
+      <button class="btn-ok" onclick="closeAlert()">
+        OK
+      </button>
+      
+    </div>
   </div>
-</div>
   
   <div id="inputModal" class="modal-overlay" style="display:none;">
     <div class="modal-box">
@@ -934,16 +975,16 @@
   </div>
   
   
-<div id="confirmModal" class="modal-overlay" style="display:none;">
-  <div class="modal-box">
-    <p id="confirmText">Are you sure?</p>
-    
-    <div style="margin-top:15px;">
-      <button id="confirmYesBtn" onclick="confirmYes()">Yes</button>
-      <button id="confirmNoBtn" onclick="confirmNo()">No</button>
+  <div id="confirmModal" class="modal-overlay" style="display:none;">
+    <div class="modal-box">
+      <p id="confirmText">Are you sure?</p>
+      
+      <div style="margin-top:15px;">
+        <button id="confirmYesBtn" onclick="confirmYes()">Yes</button>
+        <button id="confirmNoBtn" onclick="confirmNo()">No</button>
+      </div>
     </div>
   </div>
-</div>  
   <div id="actionModal" class="action-modal"></div>
   
   
@@ -1104,10 +1145,128 @@
   
   
   
-  
-  
-  
+  <div id="deleteAccountModal" class="modal-overlay">
 
+  <div class="modal-content">
+
+    <div class="modal-header">
+
+      <h3>Delete Account</h3>
+
+      <p>
+        This action cannot be undone. All your data will be removed.
+      </p>
+
+    </div>
+
+
+    <div class="modal-body">
+
+      <label>
+        Password
+      </label>
+
+      <input 
+        id="deletePasswordInput" 
+        type="password" 
+        placeholder="Enter your password"
+      >
+
+
+      <div class="management-delete-section">
+
+        <label>
+          Management Access Code
+        </label>
+
+        <input 
+          id="managementCodeInput" 
+          type="password" 
+          placeholder="Enter management secret key"
+        >
+
+      </div>
+
+    </div>
+
+
+    <div class="modal-actions">
+
+      <button 
+        class="secondary-btn" 
+        onclick="closeDeleteAccountModal()">
+        Cancel
+      </button>
+
+
+      <button 
+        class="primary-btn" 
+        onclick="handleDeleteAccount()">
+        Delete
+      </button>
+
+    </div>
+
+
+  </div>
+
+</div>
+  
+  
+  <div id="createCompetitionModal" class="modal-overlay">
+    
+    <div class="modal-content">
+      
+      <div class="modal-header">
+        
+        <h3>Create Competition</h3>
+       <p> Competition is a collection of tournament <br>  belonging to the same User or Group of Users</p>
+        
+      </div>
+      
+      
+      <div class="modal-body">
+        
+        <label>
+          Competition Name
+        </label>
+        
+        <input id="competitionNameInput" type="text" placeholder="Enter competition name">
+        
+        
+        <label>
+          Competition Logo
+        </label>
+        
+        <input id="competitionLogoInput" type="file" accept="image/*">
+        
+        
+        <div class="competition-logo-preview">
+          
+          <img id="competitionLogoPreview" src="images/default-tournament.png" alt="Competition logo">
+          
+        </div>
+        
+      </div>
+      
+      
+      <div class="modal-actions">
+        
+        <button class="secondary-btn" onclick="closeCreateCompetitionModal()">
+          Cancel
+        </button>
+        
+        
+        <button class="primary-btn" onclick="handleCreateCompetition()">
+          Create
+        </button>
+        
+      </div>
+      
+      
+    </div>
+    
+  </div>
   
   
   
@@ -1141,9 +1300,7 @@
     </div>
   </div>
   
-  <button class="btn-logout" onclick="handleLogout()" style="display:none">
-    🚪 Logout
-  </button>
+
   
   
   <div id="loader" class="loader-overlay" style="display:none;">
@@ -1159,15 +1316,15 @@
   
   
   
-    <div class="notification-wrapper">
-     <button id="notificationBtn" onclick="showNotification();" class="notification-btn">
+  <div class="notification-wrapper">
+    <button id="notificationBtn" onclick="showNotification();" class="notification-btn">
       🔔
       <span id="notificationBadge" class="notification-badge">
         0
       </span>
     </button>
-      
- 
+    
+    
     
     <div id="notificationPanel" class="notification-panel">
       
