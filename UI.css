@@ -795,6 +795,7 @@ body.admin-mode .data-admin {
   font-weight: 600;
 }
 
+
 .accept-btn {
   background: #22c55e;
   color: white;
@@ -805,6 +806,15 @@ body.admin-mode .data-admin {
   color: white;
 }
 
+.join-tournament-btn
+{
+  height: 40px;
+  width: 70px;
+  padding: 6px;
+  background: #22c55e;
+  color: white;
+  border-radius: 15px;
+}
 #createCompetitionModal {
   position: fixed;
   top: 0;
@@ -1758,4 +1768,30 @@ tbody tr:nth-child(1) td {
   white-space: nowrap;
   text-align: left !important; 
   display: inline-block;
+}
+.compToggle {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+  background: #f2f2f2;
+  padding: 6px;
+  border-radius: 12px;
+}
+
+
+.compToggle button {
+  flex: 1;
+  padding: 12px 18px;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  cursor: pointer;
+  font-weight: 600;
+  transition: 0.3s;
+}
+
+
+.compToggle button.active {
+  background: #2196f3;
+  color: white;
 }

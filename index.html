@@ -62,7 +62,7 @@
     
     
     
-    <button class="btn-back" onclick="goToListOfTournamentPage()">
+    <button class="btn-back" onclick="goBackFromTournament()">
       ❮
     </button>
     
@@ -99,7 +99,7 @@
       <button class="menu-btn" onclick="setPageAndToggleMenu('cup')">
         ☰
       </button>
-      <button class="btn-back" onclick="goToListOfTournamentPage()">
+      <button class="btn-back" onclick="goBackFromTournament()">
         ❮
       </button>
       
@@ -196,24 +196,38 @@
   
   <main>
     
-    <section id="competitionPage" class="comPage">
-      
-      <div class="myComp">
-        
-     <h3> My Competitions</h3>
-     <p> Competitions are organise collection of Tournaments You are Part of or Created. Only admin can create and manage Competion</p>
-         
-        
-        
-      </div>
-   
-      
-      <div id="competitionList">
-        
-      </div>
-      
-    </section>
+<section id="competitionPage" class="comPage">
+  
+  <div class="compToggle">
+    <button id="btnMy" class="active">
+      My Competitions
+    </button>
     
+    <button id="btnPublic">
+      Public Tournaments
+    </button>
+  </div>
+  
+  
+  <div id="mySection">
+    
+    
+    <div id="competitionList"></div>
+    
+  </div>
+  
+  
+  
+  <div id="publicSection" style="display:none;">
+    
+
+    <div id="publicTournaments"></div>
+    
+  </div>
+  
+  
+</section>
+
     <section id="listOfTournamentPage" class="page" style="display:none">
       
       

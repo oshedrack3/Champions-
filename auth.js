@@ -7,15 +7,19 @@ async function handleLogin() {
     return;
   }
   
-  
-  
-  const user = await login(loginValue, password);
+   const user = await login(loginValue, password);
   
   
   
   if (!user) return;
-  startTournamentEvents();
   await goToCompetitionPage();
+  loadMyCompetitions();
+  startNotificationEvents();
+  loadNotifications();
+  await renderCompetitionList();
+
+  
+
 }
 
 async function handleLogout() {
@@ -61,9 +65,8 @@ async function login(login, password) {
       result.token,
       result.user
     );
-    startNotificationEvents();
-    loadNotifications();
-    switchAppMode();
+  
+   switchAppMode();
     
     myTournaments = await getMyTournaments();
     
@@ -74,9 +77,6 @@ async function login(login, password) {
     if (list) {
       list.innerHTML = "";
     }
-    await loadMyCompetitions();
-    await renderCompetitionList();
-    
     
     return result.user;
     

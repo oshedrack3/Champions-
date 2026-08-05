@@ -13,12 +13,32 @@ let notificationEvents = null;
 let notifications = [];
 let selectedCompetitionId = null;
 let myTournaments = null;
+let publicTournaments = [];
+let editingTeamId = null;
+const FetchGuard = {};
+
+const RUN_KEYS = {
+  LOAD_PUBLIC_TOURNAMENTS: "loadPublicTournaments",
+};
+const CallerGuard = {};
 
 const notificationSound = new Audio(
   "/sounds/notifications.wav"
 );
 
-
+function runOnce(key, caller, fn) {
+  if (!CallerGuard[key]) {
+    CallerGuard[key] = {};
+  }
+  
+  if (CallerGuard[key][caller]) {
+    return;
+  }
+  
+  CallerGuard[key][caller] = true;
+  
+  fn();
+}
 async function removeTournament(id) {
   const idStr = String(id).trim();
   
@@ -37,7 +57,7 @@ async function removeTournament(id) {
     ) {
       currentTournament = null;
     }
-    
+    loadPublicTournaments();
     await renderTournamentList();
     
     console.log("Tournament deleted:", idStr);
@@ -237,8 +257,6 @@ function getTournamentFromMemory(id) {
 }
 
 
-
-
 async function openTournament(id) {
   showLoader();
   
@@ -270,6 +288,8 @@ async function openTournament(id) {
     hideLoader();
   }
 }
+
+
 async function handleSave(tournament, newName, oldName) {
   tournament.matches = tournament.matches || [];
   tournament.groupMatches = tournament.groupMatches || [];
@@ -674,28 +694,6 @@ async function loadMyCompetitions() {
   }
 }
 
-async function openCompetition(id) {
-  showLoader();
-  
-  try {
-    setSelectedCompetition(id);
-    currentCompetition = myCompetitions.find(
-      c => String(c.id) === String(id)
-    );
-    
-    myTournaments = (await getMyTournaments()).filter(
-      t => String(t.competitionId) === String(id)
-    );
-    goToListOfTournamentPage()
-    renderTournamentList(myTournaments);
-    
-  } catch (err) {
-    console.error(err);
-    showAlert(err.message);
-  } finally {
-    hideLoader();
-  }
-}
 
 async function handleCreateCompetition() {
   
@@ -808,34 +806,12 @@ async function addTeam(name, logo) {
         t => String(t.id) === String(current.id)
       ) || current;
     
-    tournament = JSON.parse(JSON.stringify(tournament));
+    const teamsObj = tournament.teams || {};
     
-    if (Array.isArray(tournament.teams)) {
-      const converted = {};
-      
-      tournament.teams.forEach(oldName => {
-        const id = crypto.randomUUID();
-        
-        converted[id] = {
-          id,
-          name: oldName,
-          ownerUid: null,
-          createdAt: Date.now(),
-          logo: tournament.teamLogos?.[oldName] || null
-        };
-      });
-      
-      tournament.teams = converted;
-    }
-    
-    tournament.teams = tournament.teams || {};
-    tournament.teamLogos = tournament.teamLogos || {};
-    
-    const exists = Object.values(tournament.teams).some(
+    const exists = Object.values(teamsObj).some(
       team =>
       team.name &&
-      team.name.trim().toLowerCase() ===
-      name.trim().toLowerCase()
+      team.name.trim().toLowerCase() === name.trim().toLowerCase()
     );
     
     if (exists) {
@@ -844,6 +820,7 @@ async function addTeam(name, logo) {
     }
     
     const teamId = crypto.randomUUID();
+    const currentUser = getCurrentUser();
     
     const image = await uploadTeamLogo(
       tournament.id,
@@ -855,23 +832,23 @@ async function addTeam(name, logo) {
     const newTeam = {
       id: teamId,
       name,
-      ownerUid: null,
+      ownerUid: currentUser?.uid || null,
       createdAt: Date.now(),
       logo: image.url
     };
     
+    const updates = {
+      [`teams/${teamId}`]: newTeam,
+      [`teamLogos/${name}`]: image
+    };
+    
+    await updateTournament(tournament.id, { updates });
+    
+    if (!tournament.teams) tournament.teams = {};
+    if (!tournament.teamLogos) tournament.teamLogos = {};
+    
     tournament.teams[teamId] = newTeam;
-    
-    tournament.teamLogos[teamId] = image;
-    
-    console.log("Saving teams:", tournament.teams);
-    
-    await updateTournament(tournament.id, {
-      updates: {
-        teams: tournament.teams,
-        teamLogos: tournament.teamLogos
-      }
-    });
+    tournament.teamLogos[name] = image;
     
     const index = myTournaments.findIndex(
       t => String(t.id) === String(tournament.id)
@@ -885,21 +862,23 @@ async function addTeam(name, logo) {
     
     showActionModal("✅ Team Registered", "success");
     
-    if (typeof buildTable === "function") {
-      buildTable();
-    }
-    
-    if (typeof renderTeams === "function") {
-      renderTeams();
+    if (typeof loadTournament === "function") {
+      await loadTournament(tournament.id);
+    } else {
+      if (typeof renderTeams === "function") renderTeams();
+      if (typeof renderTable === "function") renderTable();
     }
     
   } catch (err) {
     console.error("[addTeam]", err);
     showAlert(err.message || "Failed to add team");
+    
   } finally {
     hideLoader();
+   closeAddTeam();
   }
 }
+
 
 async function handleAddTeam() {
   const nameInput = document.getElementById("teamNameInput");
@@ -1335,3 +1314,75 @@ async function removeCompetition(id) {
   
   return result;
 }
+
+async function loadPublicTournaments() {
+  try {
+    const tournaments = await getPublicTournaments();
+    
+    publicTournaments = tournaments || [];
+    
+    renderTournamentList(
+      "publicTournaments",
+      publicTournaments
+    );
+    
+  } catch (err) {
+    showAlert(err.message || "Failed to load public tournaments");
+  }
+}
+
+
+
+async function openCompetition(id) {
+  showLoader();
+  
+  try {
+    pageOrigin = "MyComp";
+    
+    setSelectedCompetition(id);
+    
+    currentCompetition = myCompetitions.find(
+      c => String(c.id) === String(id)
+    );
+    
+    goToListOfTournamentPage();
+    
+    const key = `${RUN_KEYS.LOAD_PUBLIC_TOURNAMENTS}_${id}`;
+    
+    if (!FetchGuard[key]) {
+      const rawTournaments = await getMyTournaments();
+      
+      myTournaments = rawTournaments.filter(
+        t => String(t.competitionId) === String(id)
+      );
+      
+      FetchGuard[key] = true;
+    }
+    
+    setTimeout(() => {
+      renderTournamentList("tournamentList", myTournaments);
+    }, 50);
+    
+  } catch (err) {
+    console.error(err);
+    showAlert(err.message);
+  } finally {
+    hideLoader();
+  }
+}
+
+async function loadMyTournaments() {
+  try {
+    const tournaments = await getMyTournaments();
+    myTournaments = tournaments || [];
+    
+    return myTournaments;
+  } catch (err) {
+    console.error("[loadMyTournaments]", err);
+    if (typeof showAlert === "function") {
+      showAlert(err.message || "Failed to load tournaments");
+    }
+    return [];
+  }
+}
+

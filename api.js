@@ -909,6 +909,83 @@ async function removeCompetition(id) {
   return result;
 }
 
+async function joinTournament(tournamentId) {
+  const token = getToken();
+  
+  if (!token) {
+    showAlert("You must be logged in to join.");
+    return;
+  }
+  
+  showLoader();
+  
+  try {
+    const res = await apiRequest(
+      `${API}/tournaments/${tournamentId}/join`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: token
+        }
+      },
+      () => joinTournament(tournamentId)
+    );
+    
+    if (!res) return;
+    
+    const result = await res.json();
+    
+    if (!res.ok || !result.success) {
+      throw new Error(result.message || "Failed to join tournament.");
+    }
+    
+    showActionModal("Successfully joined tournament", "success");
+    
+    await loadPublicTournaments();
+   
+    
+  } catch (err) {
+    showAlert(err.message || "Join failed");
+  } finally {
+    hideLoader();
+  }
+}
+async function getPublicTournaments() {
+  showLoader();
+  
+  try {
+    const token = getToken();
+    
+    const res = await apiRequest(
+      `${API}/tournaments/public`,
+      {
+        method: "GET",
+        headers: {
+          Authorization: token
+        }
+      },
+      getPublicTournaments
+    );
+    
+    if (!res) return [];
+    
+    const result = await res.json();
+    
+    if (!res.ok || !result.success) {
+      throw new Error(result.message || "Failed to load public tournaments.");
+    }
+    
+    return result.tournaments || [];
+    
+  } catch (err) {
+    showAlert(err.message || "Error loading tournaments");
+    return [];
+    
+  } finally {
+    hideLoader();
+  }
+}
+
 window.addEventListener("load", async () => {
   showLoader();
   
@@ -917,7 +994,8 @@ window.addEventListener("load", async () => {
   if (loggedIn) {
     hideAllPages();
    await goToCompetitionPage();
-loadMyCompetitions();
+    loadMyCompetitions();
+  await renderCompetitionList();
    startNotificationEvents();
   await  loadNotifications();
  

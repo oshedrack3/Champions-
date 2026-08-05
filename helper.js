@@ -695,7 +695,7 @@ function renderMenu() {
 
 function openAddTeam() {
   closeMenu();
-  toggleView('team');
+
   document.getElementById("addNewTeam").style.display = "block";
   
 }
@@ -730,6 +730,17 @@ function sharePOTS() {
   
 }
 
+
+
+function goBackFromTournament() {
+  if (pageOrigin === "MyComp") {
+  goToCompetitionPage();
+  } else if (pageOrigin === "MyTour") {
+    
+      goToListOfTournamentPage();
+    
+  }
+}
 
 
 function closeAddTeam() {
@@ -920,6 +931,7 @@ function goToListOfTournamentPage() {
   document.getElementById("tourListPageHead").style.display = "flex";
   currentSwapView = 0;
   updateSwapView();
+  pageOrigin = "MyTour";
 }
 function openListModal(title, html) {
   document.getElementById("listModalTitle").textContent = title;
@@ -972,6 +984,7 @@ async function goToCompetitionPage() {
   
   hideAllPages();
   
+  setupCompetitionToggle();
   closeTournamentEvents();
   
   document.getElementById("competitionPage").style.display = "block";
@@ -979,8 +992,7 @@ async function goToCompetitionPage() {
   document.getElementById("compPageHead").style.display = "block";
   const currentUser= getCurrentUser();
   document.getElementById("usernameText").textContent = currentUser.username;
-  await renderCompetitionList();
-  
+  pageOrigin = "MyComp";
   currentSwapView = 0;
   
   updateSwapView();
@@ -1007,21 +1019,8 @@ function removeBackground(file, callback) {
 
 
 
-let editingIndex = null;
 
-function openEditTeam(index) {
-  const tournament = getCurrentTournament();
-  if (!tournament) return;
-  
-  editingIndex = index;
-  const currentName = tournament.teams[index];
-  
-  document.getElementById("editTitle").textContent = "Edit Team";
-  document.getElementById("editNameInput").value = currentName;
-  document.getElementById("editLogoInput").value = "";
-  
-  document.getElementById("editModal").classList.add("show");
-}
+
 
 function closeEditModal() {
   editingIndex = null;
@@ -1831,4 +1830,40 @@ function closeDeleteAccountModal() {
   
 }
 
-
+function setupCompetitionToggle() {
+  const btnMy = document.getElementById("btnMy");
+  const btnPublic = document.getElementById("btnPublic");
+  
+  const mySection = document.getElementById("mySection");
+  const publicSection = document.getElementById("publicSection");
+  
+  if (!btnMy || !btnPublic || !mySection || !publicSection) return;
+  
+  
+  btnMy.onclick = () => {
+    
+    mySection.style.display = "block";
+    publicSection.style.display = "none";
+    
+    btnMy.classList.add("active");
+    btnPublic.classList.remove("active");
+    
+  };
+  
+  
+  btnPublic.onclick = () => {
+    
+    mySection.style.display = "none";
+    publicSection.style.display = "block";
+    
+    btnPublic.classList.add("active");
+    btnMy.classList.remove("active");
+    
+ runOnce(RUN_KEYS.LOAD_PUBLIC_TOURNAMENTS, "public", () => {
+  loadPublicTournaments();
+ loadMyTournaments();
+});
+    
+  };
+  
+}

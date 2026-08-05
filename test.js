@@ -3115,22 +3115,24 @@ function getGroupedAndSortedTournaments(tournaments) {
 }
 
 
-function renderTournamentList() {
-  const container = document.getElementById("tournamentList");
+function renderTournamentList(containerId = "tournamentList", tournaments = myTournaments) {
+  const container = document.getElementById(containerId);
   if (!container) return;
-  
-  const tournaments = myTournaments || [];
   
   container.innerHTML = "";
   
-  if (tournaments.length === 0) {
+  if (!tournaments || tournaments.length === 0) {
     renderEmptyTournamentState(container);
     return;
   }
   
   const currentUser = getCurrentUser();
   
-  renderTournamentsByGroup(tournaments, currentUser, container);
+  renderTournamentsByGroup(
+    tournaments,
+    currentUser,
+    container
+  );
   
   setupTournamentMenuListener();
 }
@@ -3177,172 +3179,201 @@ function renderTournamentsByGroup(tournaments, currentUser, container) {
   });
 }
 
+function setupTournamentMenu(div, tournament) {
+  const menuBtn = div.querySelector(".tournament-menu-btn");
+  const dropdown = div.querySelector(`#menu-${tournament.id}`);
+  const editBtn = div.querySelector(".menu-itemList.edit");
+  const deleteBtn = div.querySelector(".menu-itemList.delete");
+
+  menuBtn?.addEventListener("click", (e) => {
+    e.stopPropagation();
+
+    document.querySelectorAll(".menu-dropdown").forEach(el => {
+      if (el !== dropdown) {
+        el.classList.add("hidden");
+      }
+    });
+
+    dropdown?.classList.toggle("hidden");
+  });
+
+  editBtn?.addEventListener("click", (e) => {
+    e.stopPropagation();
+
+    if (typeof editTournament === "function") {
+      editTournament(tournament.id);
+    }
+
+    dropdown?.classList.add("hidden");
+  });
+
+  deleteBtn?.addEventListener("click", (e) => {
+    e.stopPropagation();
+
+    if (typeof deleteTournament === "function") {
+      deleteTournament(tournament.id);
+    }
+
+    dropdown?.classList.add("hidden");
+  });
+}
+
+function setupPublicJoinAction(div, tournament) {
+  const joinBtn = div.querySelector(".join-tournament-btn");
+
+  joinBtn?.addEventListener("click", async (e) => {
+    e.stopPropagation();
+    await joinTournament(tournament.id);
+  });
+}
+
+function setupTournamentClick(div, tournament, disableCardClick = false) {
+  div.addEventListener("click", (e) => {
+    if (disableCardClick) return;
+
+    if (e.target.closest(".menu-dropdown")) {
+      return;
+    }
+
+    if (typeof exportMode !== "undefined" && exportMode) {
+      if (typeof toggleSelect === "function") {
+        toggleSelect(tournament.id);
+      }
+      return;
+    }
+
+    openTournament(tournament.id);
+  });
+}
+
+function setupTournamentMenuListener() {
+  if (window._tournamentMenuListener) {
+    return;
+  }
+
+  document.addEventListener("click", () => {
+    document.querySelectorAll(".menu-dropdown").forEach(el => {
+      el.classList.add("hidden");
+    });
+  });
+
+  window._tournamentMenuListener = true;
+}
 
 function renderEmptyTournamentState(container) {
   
-  const user = getCurrentUser();
+  const isPublicPage = window.currentPage === "public";
   
   container.innerHTML = `
     <p class="emptyText">
       No tournaments available
       <br><br>
       ${
-        user?.role === "player"
-          ? "Tournaments will appear here as soon as you are invited to join."
-          : "Tournaments will appear here as soon as you create one. Click the side menu to create one."
+        isPublicPage
+          ? "No public tournaments available right now."
+          : "Tournaments will appear here when you are invited or create one."
       }
     </p>
   `;
-  
 }
+
+function canJoinTournament(tournament, currentUser) {
+  if (!currentUser) return false;
+if(currentUser.role==="admin") return
+  const playerInfo = tournament.players?.[currentUser.uid];
+
+  const isJoined = Boolean(
+    playerInfo && (playerInfo.joined || playerInfo.status === "joined" || playerInfo.status === "accepted")
+  );
+
+  const hasPendingInvite = playerInfo?.hasNewInvitation === true;
+
+  const isPrivate = tournament.isPrivate === true || tournament.type === "private" || tournament.visibility === "private";
+
+  return !isPrivate && !isJoined && !hasPendingInvite;
+}
+
 function createTournamentCard(tournament, currentUser) {
-  
   const div = document.createElement("div");
-  
   div.className = "tournament-card";
   div.dataset.id = tournament.id;
-  
+
   const imgId = `tournament-img-${tournament.id}`;
-  
   const playerInfo = tournament.players?.[currentUser?.uid];
-  
+
   const pendingInvitation =
     currentUser?.role === "player" &&
     playerInfo?.hasNewInvitation === true;
-  
+
+  const showPublicJoin = canJoinTournament(tournament, currentUser);
+
   div.innerHTML = `
     <div class="card-header">
       <div class="tournament-meta">
-        <div class="tournament-format">
-          ${tournament.format || "League"}
-        </div>
-     <div class="tournament-season">
-  ${tournament.season || "Season 1"}
-</div>
-
-<div class="tournament-status">
-  ${tournament.status || ""}
-</div>
-</div>
+        <div class="tournament-format">${tournament.format || "League"}</div>
+        <div class="tournament-season">${tournament.season || "Season 1"}</div>
+        <div class="tournament-status">${tournament.status || ""}</div>
+      </div>
 
       ${
-        pendingInvitation
-        ? ""
-        : `<div class="tournament-menu-btn data-admin">☰</div>`
+        pendingInvitation || showPublicJoin
+          ? ""
+          : `<div class="tournament-menu-btn data-admin">☰</div>`
       }
     </div>
 
     <div class="tournament-image">
-      <span id="${imgId}" class="tournament-image-placeholder">
-        🏆
-      </span>
+      <span id="${imgId}" class="tournament-image-placeholder">🏆</span>
     </div>
 
     <h3>${tournament.name}</h3>
 
     ${
       pendingInvitation
-      ? `
-      <div class="invitation-actions">
-        <button class="accept-btn">Join</button>
-        <button class="decline-btn">Decline</button>
-      </div>
-      `
-      : `
-      <div class="menu-dropdown hidden" id="menu-${tournament.id}">
-        <div class="menu-itemList edit data-admin">
-          Edit
+        ? `
+        <div class="invitation-actions">
+          <button class="accept-btn">Join</button>
+          <button class="decline-btn">Decline</button>
         </div>
-        <div class="menu-itemList delete data-admin">
-          Delete
+        `
+        : showPublicJoin
+        ? `
+        <div class="public-actions">
+          <button class="join-tournament-btn">Join </button>
         </div>
-      </div>
-      `
+        `
+        : `
+        <div class="menu-dropdown hidden" id="menu-${tournament.id}">
+          <div class="menu-itemList edit data-admin">Edit</div>
+          <div class="menu-itemList delete data-admin">Delete</div>
+        </div>
+        `
     }
   `;
-  
+
   if (pendingInvitation) {
     setupInvitationActions(div, tournament);
+  } else if (showPublicJoin) {
+    setupPublicJoinAction(div, tournament);
   } else {
     setupTournamentMenu(div, tournament);
   }
-  
-  setupTournamentClick(div, tournament, pendingInvitation);
+
+  setupTournamentClick(div, tournament, pendingInvitation || showPublicJoin);
   loadTournamentImage(tournament, imgId, div);
-  
+
   return div;
 }
 
-function setupTournamentMenu(div, tournament) {
-  
-  const menuBtn =
-    div.querySelector(".tournament-menu-btn");
-  
-  const dropdown =
-    div.querySelector(`#menu-${tournament.id}`);
-  
-  const editBtn =
-    div.querySelector(".menu-itemList.edit");
-  
-  const deleteBtn =
-    div.querySelector(".menu-itemList.delete");
-  
-  
-  menuBtn?.addEventListener("click", (e) => {
-    
+function setupPublicJoinAction(div, tournament) {
+  const joinBtn = div.querySelector(".join-tournament-btn");
+
+  joinBtn?.addEventListener("click", async (e) => {
     e.stopPropagation();
-    
-    
-    document
-      .querySelectorAll(".menu-dropdown")
-      .forEach(el => {
-        
-        if (el !== dropdown) {
-          el.classList.add("hidden");
-        }
-        
-      });
-    
-    
-    dropdown.classList.toggle("hidden");
-    
+    await joinTournament(tournament.id);
   });
-  
-  
-  editBtn?.addEventListener("click", (e) => {
-    
-    e.stopPropagation();
-    
-    
-    if (typeof editTournament === "function") {
-      
-      editTournament(tournament.id);
-      
-    }
-    
-    
-    dropdown.classList.add("hidden");
-    
-  });
-  
-  
-  deleteBtn?.addEventListener("click", (e) => {
-    
-    e.stopPropagation();
-    
-    
-    if (typeof deleteTournament === "function") {
-      
-      deleteTournament(tournament.id);
-      
-    }
-    
-    
-    dropdown.classList.add("hidden");
-    
-  });
-  
 }
+
 function setupInvitationActions(div, tournament) {
 
   const acceptBtn =
@@ -3999,6 +4030,452 @@ async function deleteCompetition(competitionId) {
   confirmNo = () => {
     closeConfirmModal();
   };
+}
+
+
+
+function openEditTeam(teamId) {
+  const tournament = getCurrentTournament();
+  if (!tournament) return;
+  
+  editingTeamId = teamId;
+  let teamName = "";
+
+  if (tournament.teams && tournament.teams[teamId]) {
+    const team = tournament.teams[teamId];
+    teamName = typeof team === "object" ? team.name : team;
+  } else if (Array.isArray(tournament.teams)) {
+    const foundTeam = tournament.teams.find((t, i) => 
+      (typeof t === "object" && t.id === teamId) || `old_${i}` === teamId
+    );
+    teamName = typeof foundTeam === "object" ? foundTeam.name : (foundTeam || "");
+  }
+
+  if (!teamName) {
+    showAlert("Team not found");
+    return;
+  }
+
+  document.getElementById("editTitle").textContent = "Edit Team";
+  document.getElementById("editNameInput").value = teamName;
+  
+  const fileInput = document.getElementById("editLogoInput");
+  if (fileInput) fileInput.value = "";
+  
+  document.getElementById("editModal").classList.add("show");
+}
+
+async function saveEdit() {
+  const tournament = getCurrentTournament();
+  
+  if (!tournament || !editingTeamId) {
+    showAlert("Something went wrong. Please try again");
+    return;
+  }
+  
+  const newName = document
+    .getElementById("editNameInput")
+    .value.trim();
+  
+  const fileInput = document.getElementById("editLogoInput");
+  
+  let team = null;
+  if (tournament.teams) {
+    team = tournament.teams[editingTeamId];
+  }
+  
+  if (!team && Array.isArray(tournament.teams)) {
+    team = tournament.teams.find((t, i) => 
+      (typeof t === "object" && t.id === editingTeamId) || `old_${i}` === editingTeamId
+    );
+  }
+
+  if (!team) {
+    showAlert("Team not found");
+    return;
+  }
+  
+  if (!newName) {
+    showAlert("Team name cannot be empty");
+    return;
+  }
+  
+  const teams = Object.values(tournament.teams || {});
+  const duplicate = teams.some(
+    t => {
+      const currentId = typeof t === "object" ? t.id : null;
+      const currentName = typeof t === "object" ? t.name : t;
+      return currentId !== editingTeamId && currentName.trim().toLowerCase() === newName.toLowerCase();
+    }
+  );
+  
+  if (duplicate) {
+    showAlert("A team with this name already exists");
+    return;
+  }
+  
+  let logo = null;
+  
+  if (fileInput?.files?.length) {
+    const file = fileInput.files[0];
+    
+    if (!file.type.startsWith("image/")) {
+      showAlert("Please select an image file");
+      return;
+    }
+    
+    if (file.size > 500 * 1024) {
+      showAlert("Logo size must not exceed 500KB");
+      return;
+    }
+    
+    logo = await fileToBase64(file);
+  }
+  
+  try {
+    showLoader();
+    
+    await updateTeam(
+      tournament.id,
+      editingTeamId,
+      {
+        name: newName,
+        logo
+      }
+    );
+    
+    await refreshCurrentTournament();
+    
+    closeEditModal();
+    
+    renderTeams();
+    
+    showActionModal(
+      "✅ Team updated",
+      "success"
+    );
+    
+  } catch (err) {
+    console.error("[saveEdit]", err);
+    showAlert(err.message || "Failed to update team");
+  } finally {
+    hideLoader();
+  }
+}
+
+async function renderTeams(containerId = "teamList") {
+  showLoader(); 
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  
+  const current = getCurrentTournament();
+  if (!current) return;
+  
+  const latestTournaments = await getMyTournaments();
+  const tournament = latestTournaments.find(t => String(t.id) === String(current.id));
+  
+  if (!tournament) {
+    hideLoader();
+    return showAlert("Tournament not found");
+  }
+  
+  currentTournament = tournament;
+  const index = myTournaments.findIndex(t => String(t.id) === String(tournament.id));
+  if (index !== -1) myTournaments[index] = tournament;
+  
+  container.className = "CupTeamsContainer";
+  container.innerHTML = "";
+  
+  const counterLabel = document.getElementById("teamCount");
+  const teamadded = document.getElementById("teamsadded");
+  
+  let teamsObj = tournament.teams || {};
+  if (Array.isArray(teamsObj)) {
+    const converted = {};
+    teamsObj.forEach((oldName, i) => {
+      const id = `old_${i}`;
+      converted[id] = typeof oldName === "object" ? oldName : { id, name: oldName, logo: tournament.teamLogos?.[oldName] || null };
+    });
+    teamsObj = converted;
+  }
+  
+  const teams = Object.values(teamsObj);
+  
+  if (counterLabel) counterLabel.textContent = `Total Teams Register : ${teams.length}`;
+  if (teamadded) teamadded.textContent = teams.length;
+  
+  if (teams.length === 0) {
+    container.innerHTML = "<p>No teams added yet</p>";
+  }
+  
+  teams.forEach((team) => {
+    const div = document.createElement("div");
+    div.className = "team-card";
+    
+    div.innerHTML = `
+      <div class="team-swipe-wrapper">
+        <div class="team-actions">
+          <button class="btn-edit data-admin" onclick="openEditTeam('${team.id}')">Edit</button>
+          <button class="btn-delete data-admin" onclick="deleteTeam('${team.id}')">Delete</button>
+        </div>
+
+        <div class="team-content">
+          ${team.logo ? `<img class="team-logo" src="${team.logo}" alt="${team.name}" />` : `<div class="team-logo-placeholder">?</div>`}
+          <span>${team.name}</span>
+        </div>
+      </div>
+    `;
+    
+    let startX = 0,
+      currentX = 0,
+      isSwiping = false;
+    const content = div.querySelector(".team-content");
+    const start = (x) => {
+      startX = x;
+      currentX = x;
+      isSwiping = true;
+    };
+    const move = (x) => {
+      if (!isSwiping) return;
+      currentX = x;
+      const diff = currentX - startX;
+      if (diff < 0) content.style.transform = `translateX(${diff}px)`;
+    };
+    const end = () => {
+      if (!isSwiping) return;
+      isSwiping = false;
+      const diff = currentX - startX;
+      content.style.transform = diff < -80 ? "translateX(-120px)" : "translateX(0)";
+    };
+    div.addEventListener("touchstart", e => start(e.touches[0].clientX));
+    div.addEventListener("mousedown", e => start(e.clientX));
+    div.addEventListener("touchmove", e => move(e.touches[0].clientX));
+    div.addEventListener("mousemove", e => move(e.clientX));
+    div.addEventListener("touchend", end);
+    div.addEventListener("mouseup", end);
+    div.addEventListener("mouseleave", end);
+    
+    container.appendChild(div);
+  });
+  
+  hideLoader();
+}
+
+
+
+
+function openEditTeam(teamId) {
+  const tournament = getCurrentTournament();
+  if (!tournament) return;
+  
+  editingTeamId = teamId;
+  let teamName = "";
+
+  if (tournament.teams && tournament.teams[teamId]) {
+    const team = tournament.teams[teamId];
+    teamName = typeof team === "object" ? team.name : team;
+  } else if (Array.isArray(tournament.teams)) {
+    const foundTeam = tournament.teams.find((t, i) => 
+      (typeof t === "object" && t.id === teamId) || `old_${i}` === teamId
+    );
+    teamName = typeof foundTeam === "object" ? foundTeam.name : (foundTeam || "");
+  }
+
+  if (!teamName) {
+    showAlert("Team not found");
+    return;
+  }
+
+  document.getElementById("editTitle").textContent = "Edit Team";
+  document.getElementById("editNameInput").value = teamName;
+  
+  const fileInput = document.getElementById("editLogoInput");
+  if (fileInput) fileInput.value = "";
+  
+  document.getElementById("editModal").classList.add("show");
+}
+
+async function saveEdit() {
+  const tournament = getCurrentTournament();
+  
+  if (!tournament || !editingTeamId) {
+    showAlert("Something went wrong. Please try again");
+    return;
+  }
+  
+  const newName = document
+    .getElementById("editNameInput")
+    .value.trim();
+  
+  const fileInput = document.getElementById("editLogoInput");
+  
+  let team = null;
+  if (tournament.teams) {
+    team = tournament.teams[editingTeamId];
+  }
+  
+  if (!team && Array.isArray(tournament.teams)) {
+    team = tournament.teams.find((t, i) => 
+      (typeof t === "object" && t.id === editingTeamId) || `old_${i}` === editingTeamId
+    );
+  }
+
+  if (!team) {
+    showAlert("Team not found");
+    return;
+  }
+  
+  if (!newName) {
+    showAlert("Team name cannot be empty");
+    return;
+  }
+  
+  const teams = Object.values(tournament.teams || {});
+  const duplicate = teams.some(
+    t => {
+      const currentId = typeof t === "object" ? t.id : null;
+      const currentName = typeof t === "object" ? t.name : t;
+      return currentId !== editingTeamId && currentName.trim().toLowerCase() === newName.toLowerCase();
+    }
+  );
+  
+  if (duplicate) {
+    showAlert("A team with this name already exists");
+    return;
+  }
+  
+  let logo = null;
+  
+  if (fileInput?.files?.length) {
+    const file = fileInput.files[0];
+    
+    if (!file.type.startsWith("image/")) {
+      showAlert("Please select an image file");
+      return;
+    }
+    
+    if (file.size > 500 * 1024) {
+      showAlert("Logo size must not exceed 500KB");
+      return;
+    }
+    
+    logo = await fileToBase64(file);
+  }
+  
+  try {
+    showLoader();
+    
+    await updateTeam(
+      tournament.id,
+      editingTeamId,
+      {
+        name: newName,
+        logo
+      }
+    );
+    
+    await refreshCurrentTournament();
+    
+    closeEditModal();
+    
+    renderTeams();
+    
+    showActionModal(
+      "✅ Team updated",
+      "success"
+    );
+    
+  } catch (err) {
+    console.error("[saveEdit]", err);
+    showAlert(err.message || "Failed to update team");
+  } finally {
+    hideLoader();
+  }
+}
+
+function renderTeams(containerId = "teamList") {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  
+  const tournament = getCurrentTournament();
+  if (!tournament) return;
+  
+  container.className = "CupTeamsContainer";
+  container.innerHTML = "";
+  
+  const counterLabel = document.getElementById("teamCount");
+  const teamadded = document.getElementById("teamsadded");
+  
+  let teamsObj = tournament.teams || {};
+  if (Array.isArray(teamsObj)) {
+    const converted = {};
+    teamsObj.forEach((oldName, i) => {
+      const id = `old_${i}`;
+      converted[id] = typeof oldName === "object" ? oldName : { id, name: oldName, logo: tournament.teamLogos?.[oldName] || null };
+    });
+    teamsObj = converted;
+  }
+  
+  const teams = Object.values(teamsObj);
+  
+  if (counterLabel) counterLabel.textContent = `Total Teams Register : ${teams.length}`;
+  if (teamadded) teamadded.textContent = teams.length;
+  
+  if (teams.length === 0) {
+    container.innerHTML = "<p>No teams added yet</p>";
+    return;
+  }
+  
+  teams.forEach((team) => {
+    const div = document.createElement("div");
+    div.className = "team-card";
+    
+    div.innerHTML = `
+      <div class="team-swipe-wrapper">
+        <div class="team-actions">
+          <button class="btn-edit data-admin" onclick="openEditTeam('${team.id}')">Edit</button>
+          <button class="btn-delete data-admin" onclick="deleteTeam('${team.id}')">Delete</button>
+        </div>
+
+        <div class="team-content">
+          ${team.logo ? `<img class="team-logo" src="${team.logo}" alt="${team.name}" />` : `<div class="team-logo-placeholder">?</div>`}
+          <span>${team.name}</span>
+        </div>
+      </div>
+    `;
+    
+    let startX = 0,
+      currentX = 0,
+      isSwiping = false;
+    const content = div.querySelector(".team-content");
+    const start = (x) => {
+      startX = x;
+      currentX = x;
+      isSwiping = true;
+    };
+    const move = (x) => {
+      if (!isSwiping) return;
+      currentX = x;
+      const diff = currentX - startX;
+      if (diff < 0) content.style.transform = `translateX(${diff}px)`;
+    };
+    const end = () => {
+      if (!isSwiping) return;
+      isSwiping = false;
+      const diff = currentX - startX;
+      content.style.transform = diff < -80 ? "translateX(-120px)" : "translateX(0)";
+    };
+    
+    div.addEventListener("touchstart", e => start(e.touches[0].clientX));
+    div.addEventListener("mousedown", e => start(e.clientX));
+    div.addEventListener("touchmove", e => move(e.touches[0].clientX));
+    div.addEventListener("mousemove", e => move(e.clientX));
+    div.addEventListener("touchend", end);
+    div.addEventListener("mouseup", end);
+    div.addEventListener("mouseleave", end);
+    
+    container.appendChild(div);
+  });
 }
 
 
