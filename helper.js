@@ -1979,14 +1979,10 @@ function setupCompetitionToggle() {
     btnMy.classList.remove("active");
     btnHallOfFame.classList.remove("active");
     
-    runOnce(
-      RUN_KEYS.LOAD_PUBLIC_TOURNAMENTS,
-      "public",
-      () => {
+   
         loadPublicTournaments();
         loadMyTournaments();
-      }
-    );
+     
     
   };
   

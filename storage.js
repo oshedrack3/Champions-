@@ -1369,8 +1369,6 @@ async function loadPublicTournaments() {
   }
 }
 
-
-
 async function openCompetition(id) {
   showLoader();
   
@@ -1385,21 +1383,13 @@ async function openCompetition(id) {
     
     goToListOfTournamentPage();
     
-    const key = `${RUN_KEYS.LOAD_PUBLIC_TOURNAMENTS}_${id}`;
+    const rawTournaments = await getMyTournaments();
     
-    if (!FetchGuard[key]) {
-      const rawTournaments = await getMyTournaments();
-      
-      myTournaments = rawTournaments.filter(
-        t => String(t.competitionId) === String(id)
-      );
-      
-      FetchGuard[key] = true;
-    }
+    myTournaments = rawTournaments.filter(
+      t => String(t.competitionId) === String(id)
+    );
     
-    setTimeout(() => {
-      renderTournamentList("tournamentList", myTournaments);
-    }, 50);
+    renderTournamentList("tournamentList", myTournaments);
     
   } catch (err) {
     console.error(err);
