@@ -3011,3 +3011,140 @@ function deleteHallOfFameCategory(
   
   renderHallOfFameAdminEditor();
 }
+
+async function importTournamentsData(jsonString) {
+  try {
+    const token = getToken();
+
+    if (!token) {
+      showAlert("Invalid session. Please log in again.");
+      return;
+    }
+
+    const competitionId = selectedCompetitionId;
+
+    if (!competitionId) {
+      showAlert("Please select a competition before importing.");
+      return;
+    }
+
+    const importedData = JSON.parse(jsonString);
+
+    if (!importedData) {
+      showAlert("Invalid backup file structure.");
+      return;
+    }
+
+    const tournament = Array.isArray(importedData)
+      ? importedData[0]
+      : importedData;
+
+    if (!tournament || typeof tournament !== "object") {
+      showAlert("Invalid tournament data.");
+      return;
+    }
+
+    const name = tournament.name || tournament.title;
+
+    if (!name) {
+      showAlert("Imported file is missing a tournament name.");
+      return;
+    }
+
+    showLoader();
+
+    const payload = {
+      name,
+      format: tournament.format || "league",
+      competitionId,
+      season: tournament.season || "Season 1",
+      seasonStatus: tournament.seasonStatus || "upcoming",
+      startDate:
+        tournament.startDate ||
+        new Date().toISOString().split("T")[0],
+      endDate:
+        tournament.endDate ||
+        new Date().toISOString().split("T")[0],
+      matchDays:
+        Array.isArray(tournament.matchDays) &&
+        tournament.matchDays.length
+          ? tournament.matchDays
+          : [1],
+      tournamentImage:
+        typeof tournament.tournamentImage === "string"
+          ? tournament.tournamentImage
+          : null
+    };
+
+    const result = await createTournament(payload);
+
+    if (!result?.success) {
+      throw new Error(
+        result?.message ||
+        "Failed to create imported tournament."
+      );
+    }
+
+    const newTournament = result.tournament;
+
+    if (!newTournament?.id) {
+      throw new Error(
+        "Tournament was created but no tournament ID was returned."
+      );
+    }
+
+    const patchUpdates = {};
+
+    const fields = [
+      "teams",
+      "teamLogos",
+      "matches",
+      "table",
+      "groups",
+      "groupMatches",
+      "groupTables",
+      "qualifiedTeams",
+      "knockoutMatches",
+      "settings"
+    ];
+
+    fields.forEach(field => {
+      if (tournament[field] !== undefined) {
+        patchUpdates[field] = tournament[field];
+      }
+    });
+
+    if (Object.keys(patchUpdates).length > 0) {
+      try {
+        await updateTournament(
+          newTournament.id,
+          { updates: patchUpdates }
+        );
+      } catch (err) {
+        console.warn(
+          "Tournament created, but internal data restore failed:",
+          err
+        );
+      }
+    }
+
+    if (Array.isArray(window.myTournaments)) {
+      window.myTournaments.unshift(newTournament);
+    }
+
+    showAlert(
+      `Tournament "${name}" imported successfully!`
+    );
+
+    await openCompetition();
+
+  } catch (err) {
+    console.error("Import error:", err);
+    showAlert(
+      err?.message ||
+      "Failed to import tournament data."
+    );
+  } finally {
+    hideLoader();
+  }
+}
