@@ -19,7 +19,8 @@ const PAGES = [
   "compPageHead",
   "competitionPage",
   "notificationPanel",
-  "noficationSection"
+  "noficationSection",
+  "bracketControl"
   
   
   
@@ -1982,7 +1983,6 @@ function setupCompetitionToggle() {
    
         loadPublicTournaments();
         loadMyTournaments();
-     
     
   };
   
