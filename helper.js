@@ -3,6 +3,7 @@ const PAGES = [
   "tablePage",
   "formViewPage",
   "fixturePage",
+  "btnbackBracket",
   "cupPage",
   "recordsView",
   "tablePageHead",
@@ -17,7 +18,8 @@ const PAGES = [
   "tourListPageHead",
   "compPageHead",
   "competitionPage",
-  "notificationPanel"
+  "notificationPanel",
+  "noficationSection"
   
   
   
@@ -230,27 +232,6 @@ function clearNum() {
   activeInput.value = '';
 }
 
-function goToCupPage() {
-  document.getElementById("listOfTournamentPage").style.display = "none";
-  hideAllPages();
-  document.getElementById("tournamentPage").style.display = "block";
-  document.getElementById("cupSchedule").style.display = "block";
-  document.getElementById("tourListPageHead").style.display = "none";
-  document.getElementById("cupPage").style.display = "block";
-  renderCupFixtures();
-  document.getElementById("cupPageHead").style.display = "block";
-  document.getElementById("cupHome").style.display = "flex";
-  
-  const tournament = getCurrentTournament();
-  if (tournament) {
-    renderCupTables();
-    renderCupFixtures()
-    toggleCupView("tables");
-  }
-  
-}
-
-
 function openTournamentPage() {
   const format = localStorage.getItem("currentTournamentFormat");
   
@@ -292,40 +273,77 @@ function openLeagueRecorder(match) {
   
   currentMatch = match;
   
-  document.getElementById("homeTeam").textContent = match.home;
-  document.getElementById("awayTeam").textContent = match.away;
+  const tournament =
+    getCurrentTournament();
   
-  document.getElementById("homeGoals").value =
-    match.played ? match.homeGoals : "";
-  
-  document.getElementById("awayGoals").value =
-    match.played ? match.awayGoals : "";
-  
-  if (APP_MODE === "admin") {
-    
-    setupAdminResultModal();
-    
+  if (
+    tournament?.knockoutMatches?.some(
+      m => m === match || m.id === match.id
+    )
+  ) {
+    currentMatch.context = "knockout";
+  } else if (match.type === "group") {
+    currentMatch.context = "group";
   } else {
-    
-    setupPlayerResultModal();
-    
-    document.getElementById("matchScreenshot").value = "";
-    
+    currentMatch.context = "league";
   }
   
-  document.getElementById("resultRecord").style.display = "block";
+  const getTeamName = team => {
+    if (!team) return "Awaiting Winner";
+    if (typeof team === "string") return team;
+    return team.name || "Awaiting Winner";
+  };
+  
+  document.getElementById("homeTeam").textContent =
+    getTeamName(match.home);
+  
+  document.getElementById("awayTeam").textContent =
+    getTeamName(match.away);
+  
+  document.getElementById("homeGoals").value =
+    match.played ?
+    match.homeGoals :
+    "";
+  
+  document.getElementById("awayGoals").value =
+    match.played ?
+    match.awayGoals :
+    "";
+  
+  if (APP_MODE === "admin") {
+    setupAdminResultModal();
+  } else {
+    setupPlayerResultModal();
+    
+    document.getElementById(
+      "matchScreenshot"
+    ).value = "";
+  }
+  
+  document.getElementById(
+    "resultRecord"
+  ).style.display = "block";
   
   activeInput = "homeGoals";
   
-  const homeInput = document.getElementById("homeGoals");
-  const awayInput = document.getElementById("awayGoals");
+  const homeInput =
+    document.getElementById(
+      "homeGoals"
+    );
+  
+  const awayInput =
+    document.getElementById(
+      "awayGoals"
+    );
   
   homeInput.classList.add("active");
   awayInput.classList.remove("active");
   
   homeInput.focus();
   
-  document.getElementById("numpad").classList.remove("hidden");
+  document.getElementById(
+    "numpad"
+  ).classList.remove("hidden");
 }
 
 const logoInput = document.getElementById("teamLogoInput");
@@ -400,9 +418,9 @@ function toggleView(view) {
   activeView.style.display = "block";
 }
 
-
-
-let currentPage = null;
+function closeDateResetModal() {
+  document.getElementById('dateResetModal').style.display = 'none';
+}
 
 function setPageAndToggleMenu(page) {
   currentPage = page;
@@ -436,7 +454,9 @@ function handleMenuAction(action) {
   closeMenu();
   
   const actions = {
+    editHallofFame:showHallOfFameEditor,
     addTeam: openAddTeam,
+    shareCup: shareCupFixture,
     importTeams: importTeams,
     deleteTeam: deleteTeamInfo,
     createTournament: openCreateTournament,
@@ -450,13 +470,15 @@ function handleMenuAction(action) {
     shareGroupTable: shareCupTable,
     createFixture: handleGenerateFixtures,
     inviteplayer: openInvitePlayerModal,
-    createComp:openCreateCompetitionModal,
+    createComp: openCreateCompetitionModal,
     deleteAcc: openDeleteAccountModal,
     deleteUser: openDeleteAccountModal,
     dateEdit: openDateResetModal,
-    deleteCupTeam: deleteCupTeamInfo
-    
-    
+    deleteCupTeam: deleteCupTeamInfo,
+    shareBracket: shareBracket,
+    shareKnockout: shareCupFixture,
+    toggleBracketFixture: toggleBracketFixture,
+    toggleBracketBracket: toggleBracketBracket
   };
   
   actions[action]?.();
@@ -465,60 +487,61 @@ function handleMenuAction(action) {
 
 const menuConfig = {
   competition: [
+    
+    {
+      label: "Create New Competition",
+      action: "createComp",
+      roles: ["admin"]
+    },
+    {
+      label: "Delete My Account",
+      action: "deleteAcc",
+      roles: ["admin", "player"]
+    },
+    {
+      label: "Delete User Account",
+      action: "managerDeleteUser",
+      roles: ["admin", "management"]
+    },
+    
+    {
+      label: "Edit Hall of Fame",
+      action: "editHallofFame",
+      roles: ["admin"]
+    },
+    /*
+    {
+      label: "Import Tournament",
+      action: "importTournament",
+      roles: ["admin"]
+    },
+    
+    {
+      label: "Export Tournament",
+      action: "enableExportMode",
+      roles: ["admin"]
+    },
+    
+    {
+      label: "Delete Tournament",
+      action: "deleteTournament",
+      roles: ["admin"]
+    },
+    
+    {
+      label: "Setup POTS Tournaments",
+      action: "openPOTS",
+      roles: ["admin"]
+    },
+    
+    {
+      label: "Share POTS Ranking",
+      action: "sharePOTS",
+      roles: ["admin", "player"]
+    }
+    */
+  ],
   
-  {
-    label: "Create New Competition",
-    action: "createComp",
-    roles: ["admin"]
-  },
-  {
-  label: "Delete My Account",
-  action: "deleteAcc",
-  roles: ["admin", "player"]
-},
-{
-  label: "Delete User Account",
-  action: "managerDeleteUser",
-  roles: ["admin","management"]
-},
-  /*
-  {
-    label: "Create New Tournament",
-    action: "createTournament",
-    roles: ["admin"]
-  },
-  
-  {
-    label: "Import Tournament",
-    action: "importTournament",
-    roles: ["admin"]
-  },
-  
-  {
-    label: "Export Tournament",
-    action: "enableExportMode",
-    roles: ["admin"]
-  },
-  
-  {
-    label: "Delete Tournament",
-    action: "deleteTournament",
-    roles: ["admin"]
-  },
-  
-  {
-    label: "Setup POTS Tournaments",
-    action: "openPOTS",
-    roles: ["admin"]
-  },
-  
-  {
-    label: "Share POTS Ranking",
-    action: "sharePOTS",
-    roles: ["admin", "player"]
-  }
-  */
-],
   tournaments: [
     
     {
@@ -592,7 +615,60 @@ const menuConfig = {
     }
     
   ],
-  
+  group: [
+    
+    {
+      label: "Share Group Matches",
+      action: "shareCup",
+      roles: ["admin"]
+    },
+    /*
+    {
+      label: "Register Your Teams",
+      action: "addTeam",
+      roles: ["admin", "player"]
+    },
+    
+    {
+      label: "Import Teams",
+      action: "importTeams",
+      roles: ["admin"]
+    },
+    
+    {
+      label: "Edit or Delete Team",
+      action: "deleteTeam",
+      roles: ["admin"]
+    }
+    */
+  ],
+  bracket: [
+    
+    {
+      label: "Share Bracket",
+      action: "shareBracket",
+      roles: ["admin"]
+    },
+    
+    {
+      label: "Share Knockout matches",
+      action: "shareKnockout",
+      roles: ["admin"]
+    },
+    
+    {
+      label: "See Cup Fixtures",
+      action: "toggleBracketFixture",
+      roles: ["admin", "player"]
+    },
+    
+    {
+      label: "View Full Bracket",
+      action: "toggleBracketBracket",
+      roles: ["admin"]
+    }
+    
+  ],
   fixture: [
     
     {
@@ -695,7 +771,7 @@ function renderMenu() {
 
 function openAddTeam() {
   closeMenu();
-
+  
   document.getElementById("addNewTeam").style.display = "block";
   
 }
@@ -730,14 +806,22 @@ function sharePOTS() {
   
 }
 
+function toggleBracketFixture() {
+  closeMenu();
+  toggleBracketMode('fixture')
+}
 
+function toggleBracketBracket() {
+  closeMenu();
+  toggleBracketMode('bracket')
+}
 
 function goBackFromTournament() {
   if (pageOrigin === "MyComp") {
-  goToCompetitionPage();
+    goToCompetitionPage();
   } else if (pageOrigin === "MyTour") {
     
-      goToListOfTournamentPage();
+    goToListOfTournamentPage();
     
   }
 }
@@ -861,10 +945,8 @@ async function exportSelectedTournaments() {
     return;
   }
   
-  // Deep clone the selected data so we don't accidentally pollute our current runtime state
   const exportData = JSON.parse(JSON.stringify(selected));
   
-  // Loop through the clone and embed the real base64 images from IndexedDB
   for (const tournament of exportData) {
     if (tournament.teamLogos) {
       const teams = Object.keys(tournament.teamLogos);
@@ -924,20 +1006,18 @@ function fallbackDownload(file) {
   
   showAlert("File downloaded");
 }
+
 function goToListOfTournamentPage() {
+  TournamentListStyle = "column";
   hideAllPages();
   closeTournamentEvents();
   document.getElementById("listOfTournamentPage").style.display = "flex";
   document.getElementById("tourListPageHead").style.display = "flex";
+  document.getElementById("bracketControl").style.display = "none";
+  
   currentSwapView = 0;
   updateSwapView();
   pageOrigin = "MyTour";
-}
-function openListModal(title, html) {
-  document.getElementById("listModalTitle").textContent = title;
-  document.getElementById("listModalContent").innerHTML = html;
-  
-  document.getElementById("listModal").style.display = "flex";
 }
 
 function closeListModal() {
@@ -988,9 +1068,11 @@ async function goToCompetitionPage() {
   closeTournamentEvents();
   
   document.getElementById("competitionPage").style.display = "block";
+  document.getElementById("noficationSection").style.display = "block";
+  
   document.getElementById("tourListPageHead").style.display = "none";
   document.getElementById("compPageHead").style.display = "block";
-  const currentUser= getCurrentUser();
+  const currentUser = getCurrentUser();
   document.getElementById("usernameText").textContent = currentUser.username;
   pageOrigin = "MyComp";
   currentSwapView = 0;
@@ -1016,10 +1098,6 @@ function removeBackground(file, callback) {
   
   img.src = URL.createObjectURL(file);
 }
-
-
-
-
 
 
 function closeEditModal() {
@@ -1103,6 +1181,7 @@ async function shareTable() {
 
 
 async function shareCupTable() {
+  closeMenu();
   const wrapper = document.getElementById('cupTables');
   
   if (!wrapper) {
@@ -1162,6 +1241,7 @@ async function shareCupTable() {
 
 
 async function shareCupFixture() {
+  closeMenu();
   const wrapper = document.getElementById('cupFixtures');
   
   if (!wrapper) {
@@ -1280,6 +1360,7 @@ function setAppMode(mode) {
   
   console.log("App mode:", mode);
 }
+
 function goToLoginPage() {
   document.getElementById("authPage").style.display = "flex";
   
@@ -1310,6 +1391,7 @@ function showNotification() {
     "none" :
     "block";
 }
+
 function hideLoader() {
   document.getElementById("loader").style.display = "none";
 }
@@ -1558,13 +1640,25 @@ function fileToBase64(file) {
   
 }
 
+function getReviewTeamName(team) {
+  if (typeof team === "string") {
+    return team;
+  }
+  
+  if (team && typeof team === "object") {
+    return team.name || team.teamName || "";
+  }
+  
+  return "";
+}
+
 function openSubmissionReview(match, submission) {
   
   currentReviewMatch = match;
   currentReviewSubmission = submission;
   
   document.getElementById("reviewModalFixture").textContent =
-    `${match.home} vs ${match.away}`;
+    `${getReviewTeamName(match.home)} vs ${getReviewTeamName(match.away)}`;
   
   document.getElementById("reviewModalScore").textContent =
     `${submission.homeGoals} - ${submission.awayGoals}`;
@@ -1577,20 +1671,29 @@ function openSubmissionReview(match, submission) {
   
   document.getElementById("reviewModalTime").textContent =
     formatRecordedTime(submission.createdAt);
-  document.getElementById("reviewModalStatus").textContent =
+  
+  const statusEl =
+    document.getElementById("reviewModalStatus");
+  
+  statusEl.textContent =
     submission.status;
-  const statusEl = document.getElementById("reviewModalStatus");
-
-statusEl.textContent = submission.status;
-statusEl.className = submission.status.toLowerCase();
-
-  document.getElementById("reviewModalReasonRow").style.display = "none";
-  document.getElementById("reviewModalRejectInputRow").style.display = "none";
   
-  buildReviewActions(match, submission);
+  statusEl.className =
+    submission.status.toLowerCase();
   
-  document.getElementById("reviewModal").style.display = "flex";
+  document.getElementById("reviewModalReasonRow").style.display =
+    "none";
   
+  document.getElementById("reviewModalRejectInputRow").style.display =
+    "none";
+  
+  buildReviewActions(
+    match,
+    submission
+  );
+  
+  document.getElementById("reviewModal").style.display =
+    "flex";
 }
 
 function closeReviewModal() {
@@ -1745,12 +1848,13 @@ function openCreateCompetitionModal() {
   document.getElementById("competitionLogoInput").style.display = "block";
   document
     .getElementById("createCompetitionModal")
-    .style.display="block";
+    .style.display = "block";
 }
+
 function closeCreateCompetitionModal() {
   document
     .getElementById("createCompetitionModal")
-    .style.display="none";
+    .style.display = "none";
   
 }
 
@@ -1778,8 +1882,8 @@ document
     reader.readAsDataURL(file);
     
   });
-  
-  function openDeleteAccountModal(isManagement = false) {
+
+function openDeleteAccountModal(isManagement = false) {
   
   const modal = document.getElementById(
     "deleteAccountModal"
@@ -1833,37 +1937,180 @@ function closeDeleteAccountModal() {
 function setupCompetitionToggle() {
   const btnMy = document.getElementById("btnMy");
   const btnPublic = document.getElementById("btnPublic");
+  const btnHallOfFame = document.getElementById("btnHallOfFame");
   
   const mySection = document.getElementById("mySection");
   const publicSection = document.getElementById("publicSection");
+  const hallOfFameSection =
+    document.getElementById("hallOfFameSection");
   
-  if (!btnMy || !btnPublic || !mySection || !publicSection) return;
+  if (
+    !btnMy ||
+    !btnPublic ||
+    !btnHallOfFame ||
+    !mySection ||
+    !publicSection ||
+    !hallOfFameSection
+  ) return;
   
   
   btnMy.onclick = () => {
     
     mySection.style.display = "block";
     publicSection.style.display = "none";
+    hallOfFameSection.style.display = "none";
     
     btnMy.classList.add("active");
     btnPublic.classList.remove("active");
+    btnHallOfFame.classList.remove("active");
     
   };
   
   
   btnPublic.onclick = () => {
     
+    TournamentListStyle = "row";
+    
     mySection.style.display = "none";
     publicSection.style.display = "block";
+    hallOfFameSection.style.display = "none";
     
     btnPublic.classList.add("active");
     btnMy.classList.remove("active");
+    btnHallOfFame.classList.remove("active");
     
- runOnce(RUN_KEYS.LOAD_PUBLIC_TOURNAMENTS, "public", () => {
-  loadPublicTournaments();
- loadMyTournaments();
-});
+    runOnce(
+      RUN_KEYS.LOAD_PUBLIC_TOURNAMENTS,
+      "public",
+      () => {
+        loadPublicTournaments();
+        loadMyTournaments();
+      }
+    );
     
   };
   
+  
+  btnHallOfFame.onclick = async () => {
+    
+    mySection.style.display = "none";
+    publicSection.style.display = "none";
+    hallOfFameSection.style.display = "block";
+    
+    btnHallOfFame.classList.add("active");
+    btnMy.classList.remove("active");
+    btnPublic.classList.remove("active");
+    
+    await loadHallOfFame();
+    
+  };
+}
+
+function toggleCupSetUpView() {
+  const teamView =
+    document.getElementById("cupTeamView");
+  
+  const setupCard =
+    document.getElementById("setUpCard");
+  
+  const toggleText =
+    document.getElementById("cupToggleText");
+  
+  if (!teamView || !setupCard || !toggleText) {
+    return;
+  }
+  
+  const showingTeams =
+    teamView.style.display !== "none";
+  
+  if (showingTeams) {
+    teamView.style.display = "none";
+    setupCard.style.display = "block";
+    toggleText.textContent = "See Teams";
+  } else {
+    teamView.style.display = "block";
+    setupCard.style.display = "none";
+    toggleText.textContent = "Hide Teams";
+    
+    renderTeams("cupTeamsContainer");
+  }
+}
+
+
+function shouldOpenKnockoutDirectly() {
+  const tournament = getCurrentTournament();
+  const currentUser = getCurrentUser();
+  
+  if (!tournament || !currentUser) return false;
+  if (currentUser.role !== "player") return false;
+  
+  const hasGroupMatches =
+    tournament.groupMatches &&
+    (
+      Array.isArray(tournament.groupMatches) ?
+      tournament.groupMatches.length > 0 :
+      Object.keys(tournament.groupMatches).length > 0
+    );
+  
+  const hasKnockoutMatches =
+    tournament.knockoutMatches &&
+    (
+      Array.isArray(tournament.knockoutMatches) ?
+      tournament.knockoutMatches.length > 0 :
+      Object.keys(tournament.knockoutMatches).length > 0
+    );
+  
+  return !hasGroupMatches && hasKnockoutMatches;
+}
+
+
+function shouldOpenKnockoutDirectly() {
+  const tournament = getCurrentTournament();
+  const currentUser = getCurrentUser();
+  
+  if (!tournament || !currentUser) return false;
+  
+  const hasGroupMatches =
+    Array.isArray(tournament.groupMatches) ?
+    tournament.groupMatches.length > 0 :
+    tournament.groupMatches &&
+    Object.keys(tournament.groupMatches).length > 0;
+  
+  const hasKnockoutMatches =
+    Array.isArray(tournament.knockoutMatches) ?
+    tournament.knockoutMatches.length > 0 :
+    tournament.knockoutMatches &&
+    Object.keys(tournament.knockoutMatches).length > 0;
+  
+  return currentUser.role === "player" &&
+    !hasGroupMatches &&
+    hasKnockoutMatches;
+}
+
+function goToCupPage() {
+  document.getElementById("listOfTournamentPage").style.display = "none";
+  hideAllPages();
+  
+  document.getElementById("tournamentPage").style.display = "block";
+  document.getElementById("tourListPageHead").style.display = "none";
+  document.getElementById("cupPage").style.display = "block";
+  document.getElementById("cupPageHead").style.display = "block";
+  document.getElementById("cupHome").style.display = "flex";
+  
+  if (shouldOpenKnockoutDirectly()) {
+    toggleCupView("knockOut");
+    document.getElementById("cupTab").style.display = "none";
+    document.getElementById("btnbackBracket").style.display = "block";
+  
+  
+    return;
+  }
+  
+  const tournament = getCurrentTournament();
+  
+  if (tournament) {
+    renderCupTables();
+    renderCupFixtures();
+    toggleCupView("tables");
+  }
 }

@@ -476,16 +476,6 @@ function saveLogoToIndexedDB(key, base64Data) {
 }
 
 
-function getLogoFromIndexedDB(key) {
-  return openLogoDB().then(db => {
-    return new Promise((resolve) => {
-      const tx = db.transaction(LOGO_STORE, "readonly");
-      const req = tx.objectStore(LOGO_STORE).get(key);
-      req.onsuccess = () => resolve(req.result || null);
-      req.onerror = () => resolve(null);
-    });
-  });
-}
 
 function renderFormView() {
   const tournament = getCurrentTournament();
@@ -544,620 +534,255 @@ function renderFormView() {
   });
 }
 
-
-function setMatchResult(home, away, hg, ag) {
-  const tournament = getCurrentTournament();
-  if (!tournament) return;
-  
-  if (!Array.isArray(tournament.matches)) {
-    tournament.matches = [];
-    return;
-  }
-  
-  const match = tournament.matches.find(
-    m => m.home === home && m.away === away
-  );
-  
-  if (!match) return;
-  
-  const wasUnplayed = !match.played;
-  
-  match.homeGoals = Number(hg);
-  match.awayGoals = Number(ag);
-  match.played = true;
-  
-  if (wasUnplayed || !match.playedAt) {
-    match.playedAt = Date.now();
-  }
-  
-  updateStreaks(tournament);
-  showLoader();
-  updateTournament(tournament.id, {
-      updates: {
-        matches: tournament.matches,
-        table: tournament.table,
-        prevRanks: tournament.prevRanks,
-        records: tournament.records
-      }
-    })
-    .then(() => {
-      const cached = myTournaments.find(
-        t => String(t.id) === String(tournament.id)
-      );
-      
-      if (cached) {
-        cached.matches = tournament.matches;
-        cached.table = tournament.table;
-        cached.prevRanks = tournament.prevRanks;
-        cached.records = tournament.records;
-      }
-    
-      renderFixtures();
-      rebuildTableFromMatches();
-      renderTable(tournament.table);
-      renderRecords();
-      showActionModal("Result Saved", "success");
-    })
-    .catch(console.error)
-    .finally(() => {
-      hideLoader();
-    });
-}
-
-
-function getStableMatchOrder(matches) {
-  return [...matches]
-    .filter(m => m.played)
-    .sort((a, b) => (a.playedAt || 0) - (b.playedAt || 0));
-}
-
-function updateStreaks(tournament) {
-  if (!tournament?.matches) return;
-  
-  const ordered = getStableMatchOrder(tournament.matches);
-  const streaks = {};
-  
-  ordered.forEach(m => {
-    [m.home, m.away].forEach(team => {
-      if (!streaks[team]) {
-        streaks[team] = { current: 0, best: 0 };
-      }
-    });
-    
-    const homeUnbeaten = m.homeGoals >= m.awayGoals;
-    const awayUnbeaten = m.awayGoals >= m.homeGoals;
-    
-    streaks[m.home].current = homeUnbeaten ? streaks[m.home].current + 1 : 0;
-    streaks[m.away].current = awayUnbeaten ? streaks[m.away].current + 1 : 0;
-    
-    streaks[m.home].best = Math.max(streaks[m.home].best, streaks[m.home].current);
-    streaks[m.away].best = Math.max(streaks[m.away].best, streaks[m.away].current);
-  });
-  
-  tournament.streaks = Object.entries(streaks).map(([team, data]) => ({
-    team,
-    current: data.current,
-    best: data.best
-  }));
-}
-
-
-async function backfillPlayedAtOnce(tournament) {
-  if (!tournament) return;
-  
-  if (!Array.isArray(tournament.matches)) {
-    tournament.matches = [];
-  }
-  
-  if (tournament.backfillDone) return;
-  
-  const now = Date.now();
-  let time = now - tournament.matches.length * 1000;
-  
-  tournament.matches.forEach(match => {
-    if (match.played && !match.playedAt) {
-      match.playedAt = time;
-      time += 1000;
-    }
-  });
-  
-  tournament.backfillDone = true;
-  
-  await updateTournament(tournament.id, {
-    updates: {
-      matches: tournament.matches,
-      backfillDone: true
-    }
-  });
-  
-  const cached = myTournaments.find(
-    t => String(t.id) === String(tournament.id)
-  );
-  
-  if (cached) {
-    cached.matches = tournament.matches;
-    cached.backfillDone = true;
-  }
-  
-  console.log("Backfill ran once for", tournament.name);
-}
-
-function getPlayedMatches(matches = []) {
-  return matches
-    .filter(m =>
-      m.played === true &&
-      typeof m.playedAt === "number" &&
-      typeof m.homeGoals === "number" &&
-      typeof m.awayGoals === "number"
-    )
-    .sort((a, b) => a.playedAt - b.playedAt);
-}
-
-function getLongestUnbeatenRuns(matches) {
-  const playedMatches = getPlayedMatches(matches);
-  
-  const streaks = {};
-  
-  playedMatches.forEach(m => {
-    
-    [m.home, m.away].forEach(team => {
-      if (!streaks[team]) {
-        streaks[team] = { current: 0, best: 0 };
-      }
-    });
-    
-    if (m.homeGoals >= m.awayGoals) {
-      streaks[m.home].current++;
-    } else {
-      streaks[m.home].current = 0;
-    }
-    
-    if (m.awayGoals >= m.homeGoals) {
-      streaks[m.away].current++;
-    } else {
-      streaks[m.away].current = 0;
-    }
-    
-    
-    streaks[m.home].best = Math.max(streaks[m.home].best, streaks[m.home].current);
-    streaks[m.away].best = Math.max(streaks[m.away].best, streaks[m.away].current);
-  });
-  
-  return Object.entries(streaks)
-    .map(([team, data]) => [team, data.best])
-    .sort((a, b) => b[1] - a[1]);
-}
-
-
-function resetMatchPlayedAt(tournament, homeTeam, awayTeam, newDate) {
-  const match = tournament?.matches?.find(
-    m => m.home === homeTeam && m.away === awayTeam
-  );
-  
-  if (!match) {
-    showAlert('Match not found');
-    return false;
-  }
-  
-  match.playedAt = newDate ? new Date(newDate).getTime() : Date.now();
-  
-  updateTournament(tournament);
-  rebuildTableFromMatches();
-  updateStreaks(tournament);
-  renderFixtures();
-  renderTable?.(tournament.table);
-  
-  showAlert(`Date updated for ${homeTeam} vs ${awayTeam}`);
-  return true;
-}
-
-
-function openDateResetModal(homeTeam = '', awayTeam = '') {
-  const modal = document.getElementById('dateResetModal');
-  if (!modal) {
-    showAlert('Modal not found');
-    return;
-  }
-  
-  
-  document.getElementById('dateResetHome').value = homeTeam || '';
-  document.getElementById('dateResetAway').value = awayTeam || '';
-  document.getElementById('dateResetDate').value = '';
-  
-  modal.style.display = 'block';
-}
-
-function handleDateReset() {
-  const tournament = getCurrentTournament();
-  if (!tournament) {
-    showAlert('No tournament loaded');
-    return;
-  }
-  
-  let homeTeam = document.getElementById('dateResetHome').value.trim();
-  let awayTeam = document.getElementById('dateResetAway').value.trim();
-  const dateInput = document.getElementById('dateResetDate').value;
-  
-  
-  
-  if (!homeTeam || !awayTeam) {
-    if (!tournament.matches) {
-      showAlert('No matches in tournament');
-      return;
-    }
-    
-    homeTeam = prompt('Enter Home Team name:');
-    if (!homeTeam) return;
-    
-    awayTeam = prompt('Enter Away Team name:');
-    if (!awayTeam) return;
-    
-    
-    document.getElementById('dateResetHome').value = homeTeam.trim();
-    document.getElementById('dateResetAway').value = awayTeam.trim();
-  }
-  
-  
-  const matchExists = tournament.matches.some(m =>
-    m.home.toLowerCase() === homeTeam.toLowerCase() &&
-    m.away.toLowerCase() === awayTeam.toLowerCase()
-  );
-  
-  if (!matchExists) {
-    showAlert(`Match not found: ${homeTeam} vs ${awayTeam}`);
-    return;
-  }
-  
-  const newDate = dateInput ? dateInput : null;
-  const success = resetMatchPlayedAt(tournament, homeTeam, awayTeam, newDate);
-  
-  if (success) {
-    closeDateResetModal();
-    if (typeof renderFixtures === 'function') renderFixtures();
-    showAlert('Match date updated');
-  }
-}
-
-function closeDateResetModal() {
-  document.getElementById('dateResetModal').style.display = 'none';
-}
-
-
-
-
-
-
-function getSelectedMatchDays() {
-  const checkboxes = document.querySelectorAll(
-    '#matchDaysSelector input[type="checkbox"]:checked'
-  );
-  
-  return Array.from(checkboxes).map(cb => Number(cb.value));
-}
-
-
-
-function getMatchDates(startDate, endDate, matchDays) {
-  const dates = [];
-  
-  let current = new Date(startDate);
-  const end = new Date(endDate);
-  
-  if (isNaN(current) || isNaN(end)) {
-    return [];
-  }
-  
-  while (current <= end) {
-    if (matchDays.includes(current.getDay())) {
-      dates.push(new Date(current));
-    }
-    current.setDate(current.getDate() + 1);
-  }
-  
-  return dates;
-}
-
-
-function assignRoundDatesSmart(matches, tournament) {
-  let matchDays = tournament.matchDays;
-  const startDate = tournament.startDate;
-  const endDate = tournament.endDate;
-  
-  if (!matchDays || matchDays.length === 0) {
-    showAlert("No valid match days selected");
-    return matches;
-  }
-  
-  const matchDates = getMatchDates(startDate, endDate, matchDays);
-  const totalRounds = Math.max(...matches.map(m => m.round));
-  
-  if (matchDates.length === 0) {
-    showAlert("No valid match days selected");
-    return matches;
-  }
-  
-  let warning = false;
-  
-  const schedule = matchDates.map(date => ({
-    date,
-    rounds: []
-  }));
-  
-  let round = 1;
-  
-  
-  const extraRounds = totalRounds - matchDates.length;
-  
-  
-  const indices = [...Array(schedule.length).keys()];
-  for (let i = indices.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [indices[i], indices[j]] = [indices[j], indices[i]];
-  }
-  
-  const doubleRoundDays = new Set(indices.slice(0, Math.max(0, extraRounds)));
-  
-  for (let i = 0; i < schedule.length && round <= totalRounds; i++) {
-    schedule[i].rounds.push(round);
-    round++;
-    
-    if (doubleRoundDays.has(i) && round <= totalRounds) {
-      schedule[i].rounds.push(round);
-      round++;
-      warning = true;
-    }
-  }
-  
-  const roundToDateMap = {};
-  
-  schedule.forEach(slot => {
-    slot.rounds.forEach(r => {
-      roundToDateMap[r] = slot.date;
-    });
-  });
-  
-  const updatedMatches = matches.map(match => {
-    const date = roundToDateMap[match.round];
-    
-    return {
-      ...match,
-      scheduledAt: date ? date.toISOString() : null,
-      playedAt: null
-    };
-  });
-  
-  if (warning) {
-    showAlert(
-      "⚠ Schedule adjusted: some days have two consecutive rounds due to limited match days."
-    );
-  }
-  
-  return updatedMatches;
-}
-
-
-
-
-
-
-function assignKnockoutDates(matches, tournament) {
-  if (!matches?.length) return matches;
-  
-  const matchDays = tournament.matchDays;
-  const startDate = tournament.startDate;
-  
-  if (!matchDays?.length) {
-    showAlert("No valid match days selected");
-    return matches;
-  }
-  
-  let knockStart = new Date(startDate);
-  const groupsEnabled = tournament.settings?.enableGroups;
-  
-  if (groupsEnabled && tournament.groupMatches?.length) {
-    const lastGroupDate = tournament.groupMatches.reduce((max, m) => {
-      const d = m.scheduledAt ? new Date(m.scheduledAt) : null;
-      return d && d > max ? d : max;
-    }, new Date(0));
-    
-    if (lastGroupDate.getTime() > 0) {
-      knockStart = new Date(lastGroupDate);
-      knockStart.setDate(knockStart.getDate() + 1);
-    }
-  }
-  
-  const farFuture = new Date(knockStart);
-  farFuture.setFullYear(farFuture.getFullYear() + 1);
-  
-  const matchDates = getMatchDates(knockStart, farFuture, matchDays);
-  const totalRounds = Math.max(...matches.map(m => m.roundIndex));
-  
-  if (matchDates.length === 0) {
-    showAlert("No valid match days selected");
-    return matches;
-  }
-  
-  const schedule = matchDates.map(date => ({ date, rounds: [] }));
-  
-  let round = 1;
-  let warning = false;
-  
-  for (let i = 0; i < schedule.length && round <= totalRounds; i++) {
-    schedule[i].rounds.push(round);
-    round++;
-  }
-  
-  if (round <= totalRounds) {
-    let lastDate = schedule[schedule.length - 1].date;
-    while (round <= totalRounds) {
-      const nextSearchStart = new Date(lastDate);
-      nextSearchStart.setDate(nextSearchStart.getDate() + 1);
-      
-      const nextValidDates = getMatchDates(nextSearchStart, farFuture, matchDays);
-      if (!nextValidDates.length) break;
-      
-      const nextValid = nextValidDates[0];
-      schedule.push({ date: nextValid, rounds: [round] });
-      lastDate = nextValid;
-      round++;
-      warning = true;
-    }
-  }
-  
-  const roundToDateMap = {};
-  schedule.forEach(slot => {
-    slot.rounds.forEach(r => {
-      roundToDateMap[r] = slot.date;
-    });
-  });
-  
-  const updatedMatches = matches.map(match => {
-    const date = roundToDateMap[match.roundIndex];
-    return {
-      ...match,
-      scheduledAt: date ? date.toISOString() : null,
-      playedAt: null
-    };
-  });
-  
-  if (warning) {
-    showAlert("⚠ Schedule extended beyond tournament end date on your selected match days.");
-  }
-  
-  return updatedMatches;
-}
-
-
-
 function renderKnockoutFixtures(roundIndex = 1) {
   currentKnockoutRoundIndex = roundIndex;
   
   const tournament = getCurrentTournament();
   if (!tournament || !tournament.knockoutMatches) return;
   
-  const container = document.getElementById("knockOutFixtureList");
+  const container =
+    document.getElementById("knockOutFixtureList");
+  
   if (!container) return;
+  
   container.innerHTML = "";
   
-  const matches = tournament.knockoutMatches.filter(
-    m => (m.roundIndex || 1) === roundIndex
-  );
+  const matches =
+    tournament.knockoutMatches.filter(
+      m =>
+      Number(m.roundIndex || 1) ===
+      Number(roundIndex)
+    );
   
   if (!matches.length) {
-    container.innerHTML = `<p class="emptyText">Group stage in progress.....<br> Knockout Matches will appear here as soon as group stage is completed</p>`;
+    container.innerHTML = `
+      <p class="emptyText">
+        Group stage in progress.....<br>
+        Knockout Matches will appear here as soon as group stage is completed
+      </p>
+    `;
+    
     return;
   }
   
-  const getTeamName = (team) => {
-    if (!team || team === "BYE") return "Awaiting Winner";
-    if (typeof team === "string") return team;
-    return team.name || "Awaiting Winner";
-  };
-  
   const roundSize =
-    tournament.settings.knockoutSize / Math.pow(2, roundIndex - 1);
+    tournament.settings.knockoutSize /
+    Math.pow(2, roundIndex - 1);
   
   const roundName =
-    roundSize === 8 ? "Quarter-Finals" :
-    roundSize === 4 ? "Semi-Finals" :
-    roundSize === 2 ? "Final" :
+    roundSize === 8 ?
+    "Quarter-Finals" :
+    roundSize === 4 ?
+    "Semi-Finals" :
+    roundSize === 2 ?
+    "Final" :
     `Round of ${roundSize}`;
   
-  const roundLabel = document.getElementById("roundLabel");
-  if (roundLabel) roundLabel.innerText = roundName;
+  const roundLabel =
+    document.getElementById("roundLabel");
   
-  const header = document.createElement("div");
-  header.className = "round-header";
-  header.innerText = roundName;
+  if (roundLabel) {
+    roundLabel.innerText = roundName;
+  }
+  
+  const header =
+    document.createElement("div");
+  
+  header.className =
+    "round-header";
+  
+  header.innerText =
+    roundName;
+  
   container.appendChild(header);
   
   matches.forEach(match => {
-    const homeName = getTeamName(match.home);
-    const awayName = getTeamName(match.away);
+    const homeName =
+      getBracketTeamName(match.home);
     
-    const div = document.createElement("div");
-    div.className = `fixture-row ${match.played ? "played" : "not-played"}`;
+    const awayName =
+      getBracketTeamName(match.away);
     
-    const homeLogoKey = tournament.teamLogos?.[homeName];
-    const awayLogoKey = tournament.teamLogos?.[awayName];
+    const div =
+      document.createElement("div");
+    
+    div.className =
+      `fixture-row ${
+        match.played
+          ? "played"
+          : "not-played"
+      }`;
     
     div.innerHTML = `
       <div class="fixture-label">
         ${tournament.name || "Tournament"} • ${roundName}
       </div>
-      
+
       <div class="fixture-row-content">
+
         <div class="fixture-teams-stack">
+
           <div class="team-row-item team-home-container">
-            <div class="fixture-team-logo-placeholder">?</div>
-            <span class="fixture-team-name">${homeName}</span>
+            <div class="fixture-team-logo-placeholder">
+              ?
+            </div>
+
+            <span class="fixture-team-name">
+              ${homeName}
+            </span>
           </div>
-          
+
           <div class="team-row-item team-away-container">
-            <div class="fixture-team-logo-placeholder">?</div>
-            <span class="fixture-team-name">${awayName}</span>
+            <div class="fixture-team-logo-placeholder">
+              ?
+            </div>
+
+            <span class="fixture-team-name">
+              ${awayName}
+            </span>
           </div>
+
         </div>
-        
+
         <div class="fixture-status-pane">
-          ${match.played
-            ? `
-              <div class="score-stack">
-                <span class="score-badge played">${match.homeGoals}</span>
-                <span class="ft-badge">Full Time</span>
-                <span class="score-badge played">${match.awayGoals}</span>
-              </div>
-            `
-            : `
-              <span class="vs-text-alt">
-                ${match.scheduledAt ? formatMatchDay(match.scheduledAt) : "Vs"}
-              </span>
-            `
+
+          ${
+            match.played
+              ? `
+                <div class="score-stack">
+                  <span class="score-badge played">
+                    ${match.homeGoals}
+                  </span>
+
+                  <span class="ft-badge">
+                    Full Time
+                  </span>
+
+                  <span class="score-badge played">
+                    ${match.awayGoals}
+                  </span>
+                </div>
+              `
+              : `
+                <span class="vs-text-alt">
+                  ${
+                    match.scheduledAt
+                      ? formatMatchDay(
+                          match.scheduledAt
+                        )
+                      : "Vs"
+                  }
+                </span>
+              `
           }
+
         </div>
+
       </div>
-      
-      ${match.played ? `<div class="match-playedTime">${formatRecordedTime(match.playedAt)}</div>` : ""}
+
+      ${
+        match.played
+          ? `
+            <div class="match-playedTime">
+              ${formatRecordedTime(
+                match.playedAt
+              )}
+            </div>
+          `
+          : ""
+      }
     `;
     
-    if (homeLogoKey && homeName !== "Awaiting Winner") {
-      getLogoFromIndexedDB(homeLogoKey).then(base64Logo => {
-        const homeRow = div.querySelector(".team-home-container");
-        const placeholder = homeRow?.querySelector(".fixture-team-logo-placeholder");
-        if (base64Logo && homeRow && placeholder) {
-          const img = document.createElement("img");
-          img.className = "fixture-team-logo";
-          img.src = base64Logo;
-          homeRow.replaceChild(img, placeholder);
-        }
-      });
-    }
+    attachKnockoutFixtureLogo(
+      div,
+      tournament,
+      homeName,
+      ".team-home-container"
+    );
     
-    if (awayLogoKey && awayName !== "Awaiting Winner") {
-      getLogoFromIndexedDB(awayLogoKey).then(base64Logo => {
-        const awayRow = div.querySelector(".team-away-container");
-        const placeholder = awayRow?.querySelector(".fixture-team-logo-placeholder");
-        if (base64Logo && awayRow && placeholder) {
-          const img = document.createElement("img");
-          img.className = "fixture-team-logo";
-          img.src = base64Logo;
-          awayRow.replaceChild(img, placeholder);
-        }
-      });
-    }
+    attachKnockoutFixtureLogo(
+      div,
+      tournament,
+      awayName,
+      ".team-away-container"
+    );
     
-    div.style.cursor = "pointer";
-    div.addEventListener("click", () => {
-      openCupResultRecord(match);
-    });
+    div.style.cursor =
+      "pointer";
+    
+    div.addEventListener(
+      "click",
+      () => {
+        openLeagueRecorder(
+          match
+        );
+      }
+    );
     
     container.appendChild(div);
   });
 }
 
+function attachKnockoutFixtureLogo(
+  fixture,
+  tournament,
+  teamName,
+  selector
+) {
+  if (
+    !teamName ||
+    teamName === "Awaiting Winner" ||
+    teamName === "TBD"
+  ) {
+    return;
+  }
+  
+  const logoUrl =
+    getTeamLogo(
+      tournament,
+      teamName
+    );
+  
+  if (!logoUrl) {
+    return;
+  }
+  
+  const teamRow =
+    fixture.querySelector(
+      selector
+    );
+  
+  const placeholder =
+    teamRow?.querySelector(
+      ".fixture-team-logo-placeholder"
+    );
+  
+  if (!teamRow || !placeholder) {
+    return;
+  }
+  
+  const img =
+    document.createElement("img");
+  
+  img.className =
+    "fixture-team-logo";
+  
+  img.src =
+    logoUrl;
+  
+  img.alt =
+    `${teamName} logo`;
+  
+  img.onerror = () => {
+    img.remove();
+  };
+  
+  teamRow.replaceChild(
+    img,
+    placeholder
+  );
+}
 
-
-let currentKnockoutRoundIndex = 1;
 
 function toggleBracketMode(mode) {
   document
@@ -1214,12 +839,12 @@ function enableKnockoutSwipe() {
       ...tournament.knockoutMatches.map(m => m.roundIndex || 1)
     );
     
-    // swipe left → next
+
     if (diff > threshold && currentKnockoutRoundIndex < maxRounds) {
       renderKnockoutFixtures(currentKnockoutRoundIndex + 1);
     }
     
-    // swipe right → previous
+
     if (diff < -threshold && currentKnockoutRoundIndex > 1) {
       renderKnockoutFixtures(currentKnockoutRoundIndex - 1);
     }
@@ -1228,6 +853,7 @@ function enableKnockoutSwipe() {
 
 
 function shareKnockoutFixtures() {
+closeMenu();
   const element = document.getElementById('knockOutFixtureList');
   const titleText = document.getElementById('roundLabel')?.textContent || 'Knockout Fixtures';
   const fileName = titleText.replace(/\s/g, '-');
@@ -2295,9 +1921,8 @@ function shareForm() {
   });
 }
 
-
-
 function shareBracket() {
+  closeMenu();
   const element = document.getElementById('bracket-container');
   const titleText = document.getElementById('roundLabel')?.textContent || 'Bracket';
   const fileName = titleText.replace(/\s/g, '-');
@@ -2369,218 +1994,6 @@ function shareBracket() {
     showAlert('Could not take screenshot');
   });
 }
-
-
-
-async function tournamentCreator() {
-  const input = document.getElementById("tournamentNameInput");
-  const formatInput = document.getElementById("tournamentFormatInput");
-  const startDateInput = document.getElementById("tournamentStartDate");
-  const endDateInput = document.getElementById("tournamentEndDate");
-  const imageInput = document.getElementById("tournamentImageInput");
-  const seasonInput = document.getElementById("seasonInput");
-  const seasonStatusInput = document.getElementById("seasonStatusInput");
-  
-  const name = input.value.trim();
-  const format = formatInput.value;
-  const startDate = startDateInput.value;
-  const endDate = endDateInput.value;
-  const season = seasonInput.value.trim();
-  const seasonStatus = seasonStatusInput.value;
-  const competitionId = selectedCompetitionId;
-  
-  const matchDays = getSelectedMatchDays();
-  
-  
-  if (!name) {
-    showAlert("Enter tournament name");
-    return;
-  }
-  
-  
-  if (!competitionId) {
-    showAlert("Select a competition");
-    return;
-  }
-  
-  
-  if (!season) {
-    showAlert("Enter season");
-    return;
-  }
-  
-  
-  if (!["upcoming", "active", "completed"].includes(seasonStatus)) {
-    showAlert("Invalid season status");
-    return;
-  }
-  
-  
-  if (!startDate || !endDate) {
-    showAlert("Select start and end dates");
-    return;
-  }
-  
-  
-  if (new Date(startDate) > new Date(endDate)) {
-    showAlert("Start date must be before end date");
-    return;
-  }
-  
-  
-  if (!matchDays.length) {
-    showAlert("Select at least one match day");
-    return;
-  }
-  
-  
-  matchDays.sort((a, b) => a - b);
-  
-  
-  showLoader();
-  
-  
-  try {
-    
-    let tournamentImage = null;
-    
-    
-    if (imageInput.files.length > 0) {
-      
-      const file = imageInput.files[0];
-      
-      
-      tournamentImage = await new Promise((resolve, reject) => {
-        
-        const reader = new FileReader();
-        
-        reader.onload = () => resolve(reader.result);
-        
-        reader.onerror = reject;
-        
-        reader.readAsDataURL(file);
-        
-      });
-      
-    }
-    
-    
-    
-    const result = await createTournament({
-      
-      name,
-      
-      format,
-      
-      startDate,
-      
-      endDate,
-      
-      matchDays,
-      
-      tournamentImage,
-      
-      competitionId,
-      
-      season,
-      
-      seasonStatus
-      
-    });
-    
-    
-    
-    if (!result.success) {
-      
-      throw new Error(
-        result.message || "Failed to create tournament."
-      );
-      
-    }
-    
-    
-    
-    myTournaments.unshift(result.tournament);
-    
-    
-    
-    input.value = "";
-    
-    formatInput.selectedIndex = 0;
-    
-    startDateInput.value = "";
-    
-    endDateInput.value = "";
-    
-    seasonInput.value = "";
-    
-    seasonStatusInput.selectedIndex = 0;
-    
-    imageInput.value = "";
-    
-    
-    
-    document.getElementById(
-      "tournamentImagePreview"
-    ).src = "images/default-tournament.png";
-    
-    
-    
-    document
-      .querySelectorAll(
-        '#matchDaysSelector input[type="checkbox"]'
-      )
-      .forEach(cb => cb.checked = false);
-    
-    
-    
-    hideCreateTournament();
-
-showAlert("Tournament season created successfully!");
-
-renderTournamentList(myTournaments);    
-    
-    
-  } catch (err) {
-    
-    showAlert(err.message);
-    
-    
-  } finally {
-    
-    hideLoader();
-    
-  }
-}
-
-
-
-
-
-
-
-document.addEventListener("DOMContentLoaded", enableSwipeForRounds);
-
-
-
-
-document.addEventListener('DOMContentLoaded', async () => {
-  const urlParams = new URLSearchParams(window.location.search);
-  const viewId = urlParams.get('view');
-  
-  if (viewId) {
-    
-    setAppMode("view");
-    await loadTournamentFromCloud(viewId);
-    
-    
-    setInterval(() => loadTournamentFromCloud(viewId), 30000);
-    
-  } else {
-    
-    renderTournamentList();
-  }
-});
 
 
 function previewTournamentImage(event) {
@@ -2930,14 +2343,26 @@ function animateNotificationBell() {
   
 }
 
-
+function getSortedCompetitions(competitions) {
+  return [...competitions].sort((a, b) => {
+    const timeA = new Date(
+      a.createdAt || a.dateCreated || a.timestamp || 0
+    ).getTime();
+    
+    const timeB = new Date(
+      b.createdAt || b.dateCreated || b.timestamp || 0
+    ).getTime();
+    
+    return timeA - timeB;
+  });
+}
 
 async function renderCompetitionList() {
   const container = document.getElementById("competitionList");
   if (!container) return;
   
   const currentUser = getCurrentUser();
-  const competitions = myCompetitions || [];
+  const competitions = getSortedCompetitions(myCompetitions || []);
   
   container.innerHTML = "";
   
@@ -3156,25 +2581,30 @@ function getGroupedAndSortedTournaments(tournaments) {
 
 function renderTournamentsByGroup(tournaments, currentUser, container) {
   const grouped = getGroupedAndSortedTournaments(tournaments);
-
+  
   Object.entries(grouped).forEach(([groupName, groupItems]) => {
     const groupSection = document.createElement("div");
     groupSection.className = "tournament-group-section";
-
+    
     const title = document.createElement("h3");
     title.className = "tournament-group-title";
     title.textContent = groupName;
     groupSection.appendChild(title);
-
-    const scrollRow = document.createElement("div");
-    scrollRow.className = "tournament-scroll-row";
-
+    
+    const tournamentContainer = document.createElement("div");
+    
+    // Global TournamentListStyle controls the layout
+    tournamentContainer.className =
+      TournamentListStyle === "column" ?
+      "tournament-column" :
+      "tournament-scroll-row";
+    
     groupItems.forEach(tournament => {
       const card = createTournamentCard(tournament, currentUser);
-      scrollRow.appendChild(card);
+      tournamentContainer.appendChild(card);
     });
-
-    groupSection.appendChild(scrollRow);
+    
+    groupSection.appendChild(tournamentContainer);
     container.appendChild(groupSection);
   });
 }
@@ -3306,15 +2736,26 @@ function createTournamentCard(tournament, currentUser) {
     playerInfo?.hasNewInvitation === true;
 
   const showPublicJoin = canJoinTournament(tournament, currentUser);
+  const status = (tournament.status || tournament.seasonStatus || "").toLowerCase();
+
+const statusClass =
+  status === "active" ?
+  "active" :
+  status === "upcoming" ?
+  "upcoming" :
+  status === "completed" ?
+  "completed" :
+  "";
 
   div.innerHTML = `
     <div class="card-header">
       <div class="tournament-meta">
         <div class="tournament-format">${tournament.format || "League"}</div>
         <div class="tournament-season">${tournament.season || "Season 1"}</div>
-        <div class="tournament-status">${tournament.status || ""}</div>
-      </div>
-
+    <div class="tournament-status ${statusClass}">
+  ${tournament.status || tournament.seasonStatus || ""}
+</div>
+</div>
       ${
         pendingInvitation || showPublicJoin
           ? ""
@@ -3326,8 +2767,7 @@ function createTournamentCard(tournament, currentUser) {
       <span id="${imgId}" class="tournament-image-placeholder">🏆</span>
     </div>
 
-    <h3>${tournament.name}</h3>
-
+   <h3 class="tournament-name">${tournament.name}</h3>
     ${
       pendingInvitation
         ? `
@@ -4477,5 +3917,80 @@ function renderTeams(containerId = "teamList") {
     container.appendChild(div);
   });
 }
+
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+function renderHallOfFame(hallOfFame) {
+  const container =
+    document.getElementById("hallOfFameList");
+  
+  if (!container) return;
+  
+  const categories =
+    hallOfFame?.categories || [];
+  
+  if (!categories.length) {
+    container.innerHTML = `
+      <div class="empty-state">
+        No Hall of Fame records yet.
+      </div>
+    `;
+    
+    return;
+  }
+  
+  container.innerHTML = categories.map(category => {
+    
+    const winners =
+      Array.isArray(category.winners) ?
+      category.winners :
+      [];
+    
+    return `
+      <div class="hallOfFameCategory">
+        
+        <div class="hallOfFameTitle">
+          ${escapeHtml(category.title)}
+        </div>
+        
+        <div class="hallOfFameWinners">
+          ${winners.map(winner => `
+            <span class="hallOfFameWinner">
+              ${escapeHtml(winner.name)}
+              ×${Number(winner.wins) || 0}
+              ${category.icon || "🏆"}
+            </span>
+          `).join("")}
+        </div>
+        
+      </div>
+    `;
+    
+  }).join("");
+}
+document.addEventListener("DOMContentLoaded", enableSwipeForRounds);
+document.addEventListener('DOMContentLoaded', async () => {
+  const urlParams = new URLSearchParams(window.location.search);
+  const viewId = urlParams.get('view');
+  
+  if (viewId) {
+    
+    setAppMode("view");
+    await loadTournamentFromCloud(viewId);
+    
+    
+    setInterval(() => loadTournamentFromCloud(viewId), 30000);
+    
+  } else {
+    
+    renderTournamentList();
+  }
+});
 
 

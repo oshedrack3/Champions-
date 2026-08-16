@@ -43,14 +43,14 @@ main {
   left: 0;
   right: 0;
   width: 100%;
-  border-bottom: 1px solid #21262d;
-  text-align: center;
-  z-index: 20;
-  height: 40px;
-  background: rgba(204, 204, 204, 0.75);
+  z-index: 800;
+  padding-top: 10px;
+  padding-bottom: 10px;
+  height: auto;
+  background: #f7f7f5;
+  border-bottom: 1px solid #e2e2df;
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
-  box-sizing: border-box;
 }
 
 .page-toggle {
@@ -747,43 +747,48 @@ select:focus {
 
 .cupRoundBar {
   display: flex;
+  align-items: center;
   position: fixed;
   width: 100%;
   z-index: 100;
-  top: 0px;
-  align-items: center;
-  justify-content: space-between;
-  
-  gap: 12px;
-  
+  top: 0;
+  left: 0;
+  right: 0;
   background: rgba(128, 128, 128, 0.3);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
   height: 50px;
-  padding: 15px 20px;
+  padding: 10px 20px;
   margin-bottom: 18px;
+  box-sizing: border-box;
 }
 
-.cupRoundBar button {
-  width: 46px;
-  height: 30px;
-  
+.cupRoundBar .roundbarNav {
+  display: flex;
+  align-items: center;
+  width: 80%;
+  gap: 5px;
+  margin: auto;
+}
+
+.cupRoundBar .roundbarNav button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: auto;
+  flex-shrink: 0;
   border: none;
-  
+  padding: 5px;
   border-radius: 6px;
-  
   background: linear-gradient(145deg,
       #2383e2,
       #0969da);
-  
   color: white;
-  
   font-size: 1rem;
   font-weight: 700;
-  
   box-shadow:
     0 6px 18px rgba(9, 105, 218, .25);
-  
   transition:
     transform .12s ease,
     opacity .12s ease;
@@ -796,26 +801,19 @@ select:focus {
 #cupRoundLabel {
   display: flex;
   flex: 1;
-  
-  text-align: center;
+  align-items: center;
   justify-content: center;
+  text-align: center;
   font-size: 14px;
-  
-  padding: 4px;
+  padding: 5px;
   color: #f0f6fc;
-  
   background: linear-gradient(145deg,
       #2383e2,
       #0969da);
-  
-  
-  
   border-radius: 14px;
   height: 30px;
-  
+  box-sizing: border-box;
 }
-
-
 .groupCard {
   background: white;
   
@@ -988,54 +986,13 @@ select:focus {
   height: 40px;
   align-items: center;
   gap: 10px;
-  padding: 12px 16px;
-  
-  box-sizing: border-box;
-  z-index: 100;
+  padding: 24px 16px;
+  z-index: 1000;
   overflow-x: auto;
   background: rgba(128, 128, 128, 0.3);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border-bottom: 1px solid rgba(148, 163, 184, 0.15);
-}
-
-.bracketControls button {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 2px;
-  
-  background: linear-gradient(145deg,
-      #2383e2,
-      #0969da);
-  
-  color: #e2e8f0;
-  border: 1px solid rgba(148, 163, 184, 0.2);
-  padding: 4px;
-  height: auto;
-  border-radius: 10px;
-  cursor: pointer;
-  font-size: 13px;
-  transition: all 0.15s ease;
-}
-
-.bracketControls button:hover {
-  background-color: #334155;
-  border-color: rgba(148, 163, 184, 0.35);
-  transform: translateY(-1px);
-}
-
-
-.bracketControls .btn-icon {
-  font-size: 12px;
-  line-height: 1;
-}
-
-.bracketControls .btn-text {
-  font-size: 8px;
-  line-height: 1;
-  color: white;
+ 
 }
 
 .bracketTopActions {
@@ -1047,120 +1004,6 @@ select:focus {
   height: 40px;
 }
 
-#bracketViewport {
-  flex: 1;
-  overflow: auto;
-  padding: 30px;
-  height: auto;
-  
-}
-
-
-#bracket-container {
-  background: #f8f7f4;
-  display: flex;
-  flex-direction: row;
-  gap: 60px;
-  align-items: center;
-  justify-content: flex-start;
-  width: max-content;
-  height: max-content;
-  transform-origin: top left;
-  transition: transform 0.1s ease-out;
-  
-  
-}
-
-#bracketFixturesView {
-  padding: 20px;
-  overflow: auto;
-  gap: 3px;
-}
-
-.bracket-column {
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-start;
-  min-width: 240px;
-  height: 100%;
-  flex-shrink: 0;
-  
-}
-
-
-
-.round-title {
-  text-align: center;
-  font-size: 13px;
-  text-transform: uppercase;
-  letter-spacing: 1.5px;
-  color: #1a202c;
-  margin: 0 0 20px 0;
-  font-weight: 700;
-}
-
-
-.champion-box-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-width: 200px;
-  text-align: center;
-  padding-left: 20px;
-  flex-shrink: 0;
-}
-
-.champion-icon {
-  font-size: 36px;
-  margin-bottom: 5px;
-  animation: float 3s ease-in-out infinite;
-}
-
-.champion-title {
-  font-size: 12px;
-  font-weight: 800;
-  color: #fab005;
-  letter-spacing: 2px;
-  margin: 0 0 12px 0;
-}
-
-.champion-display-box {
-  background: linear-gradient(135deg, #ffe066 0%, #fab005 100%);
-  color: #12141c;
-  font-weight: 700;
-  font-size: 15px;
-  padding: 16px 24px;
-  border-radius: 8px;
-  box-shadow: 0 4px 20px rgba(250, 176, 5, 0.4);
-  width: 100%;
-  border: 1px solid #fcc419;
-}
-
-@keyframes float {
-  
-  0%,
-  100% {
-    transform: translateY(0);
-  }
-  
-  50% {
-    transform: translateY(-6px);
-  }
-}
-
-.match-card {
-  padding: 5px;
-  border-radius: 9px;
-}
-
-.knockout-label {
-  font-size: 12px;
-  text-align: center;
-  opacity: 0.4;
-  color: #1a1a1a;
-  
-}
 
 
 .dayBox {
@@ -1178,90 +1021,6 @@ select:focus {
   background: #007bff;
   color: white;
 }
-
-
-
-
-.knockout-result-modal {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, .7);
-  display: none;
-  align-items: center;
-  justify-content: center;
-  z-index: 9999;
-}
-
-.knockout-result-modal.active {
-  display: flex;
-}
-
-.knockout-result-card {
-  width: 92%;
-  max-width: 360px;
-  background: #161b22;
-  border-radius: 18px;
-  padding: 20px;
-  position: relative;
-}
-
-.knockout-close-btn {
-  position: absolute;
-  top: 12px;
-  right: 14px;
-  font-size: 20px;
-}
-
-.knockout-team-block {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin-bottom: 14px;
-}
-
-.knockout-team-block span {
-  font-size: 15px;
-  font-weight: 600;
-}
-
-.knockout-team-block input {
-  height: 52px;
-  border: none;
-  border-radius: 12px;
-  background: #0d1117;
-  color: white;
-  text-align: center;
-  font-size: 22px;
-}
-
-.knockout-vs {
-  text-align: center;
-  margin: 12px 0;
-  font-weight: 700;
-  opacity: .7;
-}
-
-.knockout-pad {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 10px;
-  margin-top: 18px;
-}
-
-.knockout-pad button {
-  height: 54px;
-  border: none;
-  border-radius: 12px;
-  background: #21262d;
-  color: white;
-  font-size: 18px;
-}
-
-.save-score-btn {
-  font-weight: 700;
-}
-
-
 
 
 

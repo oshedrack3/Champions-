@@ -289,25 +289,6 @@ function goToTablePage() {
 
 
 
-function handleSetScore() {
-  const home = document.getElementById("homeTeam").textContent.trim();
-  const away = document.getElementById("awayTeam").textContent.trim();
-  
-  const hg = parseInt(document.getElementById("homeGoals").value);
-  const ag = parseInt(document.getElementById("awayGoals").value);
-  
-  if (!home || !away || home === away || isNaN(hg) || isNaN(ag)) {
-    showAlert("Invalid Team or Score input");
-    return;
-  }
-  
-  setMatchResult(home, away, hg, ag);
-  closeResultRecord();
-}
-
-
-
-
 
 
 
@@ -839,61 +820,3 @@ function getLeagueWinnerFinal() {
 
 
 
-async function sendMatchSubmission() {
-  
-  const tournament = getCurrentTournament();
-  
-  if (!tournament || !currentMatch) {
-    return;
-  }
-  
-  const homeGoals = Number(document.getElementById("homeGoals").value);
-  const awayGoals = Number(document.getElementById("awayGoals").value);
-  
-  if (isNaN(homeGoals) || isNaN(awayGoals)) {
-    return showAlert("Enter both scores.");
-  }
-  
-  const file =
-    document.getElementById("matchScreenshot").files[0];
-  
-  if (!file) {
-    return showAlert("Please upload a match screenshot.");
-  }
-  
-  showLoader();
-  
-  try {
-    
-    const screenshot = await fileToBase64(file);
-    
-    await submitMatchResult({
-      tournamentId: tournament.id,
-      matchId: currentMatch.id,
-      homeGoals,
-      awayGoals,
-      screenshot
-    });
-    
-    closeResultRecord();
-    
-    showActionModal(
-      "Result submitted for admin approval.",
-      "success"
-    );
-    await refreshCurrentTournament();
-    await renderFixtures();
-    
-  } catch (err) {
-    
-    console.error(err);
-    
-    showAlert(err.message);
-    
-  } finally {
-    
-    hideLoader();
-    
-  }
-  
-}

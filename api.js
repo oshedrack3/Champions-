@@ -292,10 +292,10 @@ async function uploadTeamLogo(tournamentId, teamId, teamName, logo) {
       Authorization: token
     },
     body: JSON.stringify({
-  teamId,
-  teamName,
-  logo
-})
+      teamId,
+      teamName,
+      logo
+    })
   });
   
   const result = await res.json();
@@ -535,8 +535,65 @@ async function reviewMatchSubmission(
   
 }
 
-
-
+async function sendMatchSubmission() {
+  closeResultRecord();
+  
+  const tournament = getCurrentTournament();
+  
+  if (!tournament || !currentMatch) {
+    return;
+  }
+  
+  const homeGoals = Number(document.getElementById("homeGoals").value);
+  const awayGoals = Number(document.getElementById("awayGoals").value);
+  
+  if (isNaN(homeGoals) || isNaN(awayGoals)) {
+    return showAlert("Enter both scores.");
+  }
+  
+  const file =
+    document.getElementById("matchScreenshot").files[0];
+  
+  if (!file) {
+    return showAlert("Please upload a match screenshot.");
+  }
+  
+  showLoader();
+  
+  try {
+    
+    const screenshot = await fileToBase64(file);
+    
+    await submitMatchResult({
+      tournamentId: tournament.id,
+      matchId: currentMatch.id,
+      homeGoals,
+      awayGoals,
+      screenshot
+    });
+    
+    closeResultRecord();
+    
+    showActionModal(
+      "Result submitted for admin approval.",
+      "success"
+    );
+    await refreshCurrentTournament();
+    await renderFixtures();
+    
+  } catch (err) {
+    
+    console.error(err);
+    
+    showAlert(err.message);
+    
+  } finally {
+    
+    hideLoader();
+    
+  }
+  
+}
 
 async function invitePlayer(username) {
   const tournament = getCurrentTournament();
@@ -710,6 +767,7 @@ function startNotificationEvents() {
   };
   
 }
+
 function handleNewNotification(notification) {
   
   notifications.unshift(notification);
@@ -805,6 +863,95 @@ async function getPublicCompetitions() {
   }
   
   return result.competitions;
+}
+async function getHallOfFame() {
+  const token = getToken();
+  
+  const res = await apiRequest(
+    `${API}/tournaments/hall-of-fame`,
+    {
+      method: "GET",
+      headers: {
+        Authorization: token
+      }
+    },
+    getHallOfFame
+  );
+  
+  if (!res) return null;
+  
+  const result = await res.json();
+  
+  if (!res.ok || !result.hallOfFame) {
+    throw new Error(
+      result.message || "Failed to load Hall of Fame."
+    );
+  }
+  
+  return result.hallOfFame;
+}
+async function saveHallOfFame() {
+  if (!hallOfFameAdminData) return;
+
+  try {
+    showLoader();
+
+    const token = getToken();
+
+    const res = await apiRequest(
+      `${API}/tournaments/hall-of-fame`,
+      {
+        method: "PATCH",
+        headers: {
+          Authorization: token,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          categories:
+            hallOfFameAdminData.categories
+        })
+      },
+      saveHallOfFame
+    );
+
+    if (!res) return;
+
+    const result = await res.json();
+
+    if (!res.ok) {
+      throw new Error(
+        result.message ||
+        "Failed to save Hall of Fame."
+      );
+    }
+
+    hallOfFameAdminData =
+      result.hallOfFame;
+
+    renderHallOfFame(
+      hallOfFameAdminData
+    );
+
+    renderHallOfFameAdminEditor();
+
+    alert(
+      "Hall of Fame updated successfully."
+    );
+
+  } catch (error) {
+    console.error(
+      "Failed to save Hall of Fame:",
+      error
+    );
+
+    alert(
+      error.message ||
+      "Failed to save Hall of Fame."
+    );
+
+  } finally {
+    hideLoader();
+  }
 }
 
 
@@ -908,6 +1055,32 @@ async function removeCompetition(id) {
   
   return result;
 }
+async function updateCompetition(id, data) {
+  const token = getToken();
+  
+  const res = await fetch(
+    `${API}/competitions/${id}`,
+    {
+      method: "PATCH",
+      headers: {
+        Authorization: token,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(data)
+    }
+  );
+  
+  const result = await res.json();
+  
+  if (!res.ok || !result.success) {
+    throw new Error(
+      result.message || "Failed to update competition."
+    );
+  }
+  
+  return result.competition;
+}
+
 
 async function joinTournament(tournamentId) {
   const token = getToken();
@@ -942,7 +1115,7 @@ async function joinTournament(tournamentId) {
     showActionModal("Successfully joined tournament", "success");
     
     await loadPublicTournaments();
-   
+    
     
   } catch (err) {
     showAlert(err.message || "Join failed");
@@ -986,6 +1159,28 @@ async function getPublicTournaments() {
   }
 }
 
+async function subscribeUser() {
+  const reg = await navigator.serviceWorker.ready;
+  
+  const subscription = await reg.pushManager.subscribe({
+    userVisibleOnly: true,
+    applicationServerKey: "BMH9R6X0Z8y6nZzJqZ9dJX0FzYq2kK5F2o0z7W9n2lC0ZxV5m8g1yJ7u3m2c5X9yQ8F3nP4L6vT2bH1wZ0kQ"
+  });
+  
+  console.log("Subscription:", subscription);
+  
+  
+  await fetch("/api/save-subscription", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": "Bearer " + getToken()
+    },
+    body: JSON.stringify(subscription)
+  });
+}
+
+
 window.addEventListener("load", async () => {
   showLoader();
   
@@ -993,12 +1188,14 @@ window.addEventListener("load", async () => {
   
   if (loggedIn) {
     hideAllPages();
-   await goToCompetitionPage();
+    await goToCompetitionPage();
     loadMyCompetitions();
-  await renderCompetitionList();
-   startNotificationEvents();
-  await  loadNotifications();
- 
+    await renderCompetitionList();
+    startNotificationEvents();
+    await loadNotifications();
+    await registerSW();
+    await askPermission();
+    await subscribeUser();
     
   } else {
     goToLoginPage();
@@ -1006,4 +1203,3 @@ window.addEventListener("load", async () => {
   
   hideLoader();
 });
-

@@ -1,27 +1,40 @@
 async function handleLogin() {
-  const loginValue = document.getElementById("loginInput").value.trim();
-  const password = document.getElementById("loginPassword").value;
+  const loginValue =
+    document.getElementById("loginInput").value.trim();
+  
+  const password =
+    document.getElementById("loginPassword").value;
   
   if (!loginValue || !password) {
     showAlert("Please fill in all fields.");
     return;
   }
   
-   const user = await login(loginValue, password);
-  
-  
-  
-  if (!user) return;
-  await goToCompetitionPage();
-  loadMyCompetitions();
-  startNotificationEvents();
-  loadNotifications();
-  await renderCompetitionList();
-
-  
-
+  try {
+    const user =
+      await login(
+        loginValue,
+        password
+      );
+    
+    if (!user) {
+      return;
+    }
+    
+    window.location.reload();
+    
+  } catch (error) {
+    console.error(
+      "Login error:",
+      error
+    );
+    
+    showAlert(
+      error.message ||
+      "Login failed. Please try again."
+    );
+  }
 }
-
 async function handleLogout() {
   closeMenu();
   const confirmed = await showConfirmModal("Are you sure you want to log out?", "Logout", "Cancel");
@@ -94,6 +107,23 @@ async function login(login, password) {
     
   }
 }
+async function registerSW() {
+  if (!("serviceWorker" in navigator)) return;
+  
+  try {
+    const reg = await navigator.serviceWorker.register("/sw.js");
+    console.log("Service Worker registered ✅", reg);
+  } catch (err) {
+    console.error("SW failed ❌", err);
+  }
+}
+async function askPermission() {
+  if (!("Notification" in window)) return;
+  
+  const permission = await Notification.requestPermission();
+  
+  console.log("Permission:", permission);
+}
 
 async function logout() {
   const token = getToken();
@@ -141,3 +171,6 @@ function switchAppMode() {
     setAppMode("view");
   }
 }
+
+
+
