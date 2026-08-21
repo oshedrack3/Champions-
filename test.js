@@ -2010,121 +2010,7 @@ function previewTournamentImage(event) {
 }
 
 
-async function addTeam(name, logo) {
-  showLoader();
-  
-  try {
-    const current = getCurrentTournament();
-    
-    if (!current) {
-      hideLoader();
-      return showAlert("No tournament selected");
-    }
-    
-    const user = getCurrentUser();
-    
-    if (user.role === "player") {
-      const player = current.players?.[user.uid];
-      
-      if (!player || player.status !== "accepted") {
-        hideLoader();
-        return showAlert("You must join this tournament before registering a team.");
-      }
-    }
-    
-    const latest = await getMyTournaments();
-    
-    let tournament = latest.find(
-      t => String(t.id) === String(current.id)
-    );
-    
-    if (!tournament) {
-      hideLoader();
-      return showAlert("Tournament not found");
-    }
-    
-    if (Array.isArray(tournament.teams)) {
-      const converted = {};
-      
-      tournament.teams.forEach(oldName => {
-        const id = crypto.randomUUID();
-        
-        converted[id] = {
-          id,
-          name: oldName,
-          ownerUid: null,
-          createdAt: Date.now(),
-          logo: tournament.teamLogos?.[oldName] || null
-        };
-      });
-      
-      tournament.teams = converted;
-    }
-    
-    tournament.teams = tournament.teams || {};
-    tournament.teamLogos = tournament.teamLogos || {};
-    
-    const exists = Object.values(tournament.teams).some(
-      team =>
-      team.name &&
-      team.name.trim().toLowerCase() ===
-      name.trim().toLowerCase()
-    );
-    
-    if (exists) {
-      hideLoader();
-      return showAlert("Team already exists");
-    }
-    
-    const teamId = crypto.randomUUID();
-    
-    const image = await uploadTeamLogo(
-      tournament.id,
-      teamId,
-      name,
-      logo
-    );
-    
-    const newTeam = {
-      id: teamId,
-      name,
-      ownerUid: user.role === "player" ? user.uid : null,
-      createdAt: Date.now(),
-      logo: image.url
-    };
-    
-    await updateTournament(tournament.id, {
-      updates: {
-        [`teams/${teamId}`]: newTeam,
-        [`teamLogos/${name}`]: image
-      }
-    });
-    
-    tournament.teams[teamId] = newTeam;
-    tournament.teamLogos[name] = image;
-    
-    const index = myTournaments.findIndex(
-      t => String(t.id) === String(tournament.id)
-    );
-    
-    if (index !== -1) {
-      myTournaments[index] = tournament;
-    }
-    
-    currentTournament = tournament;
-    
-    showActionModal("✅ Team Registered", "success");
-    closeAddTeam();
-    rebuildTableFromMatches();
-    renderTeams?.();
-    
-  } catch (err) {
-    console.error("[addTeam]", err);
-    showAlert(err.message || "Failed to add team");
-  } finally {
-    hideLoader();
-  }
-}
+
 
 
 async function renderTeams(containerId = "teamList") {
@@ -3912,4 +3798,219 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 });
 
+
+function renderNotices(notices) {
+  const container =
+    document.getElementById("noticeBoard");
+  
+  if (!container) return;
+  
+  if (!notices.length) {
+    container.innerHTML = `
+      <div class="notice-empty">
+        No notices available.
+      </div>
+    `;
+    return;
+  }
+  
+  container.innerHTML = `
+    <div class="notice-slider-wrapper">
+      <div class="notice-slider">
+        ${notices.map(notice => {
+          const images =
+            Array.isArray(notice.images) ?
+            notice.images :
+            [];
+
+          const imagesHTML = images.length ?
+            `
+              <div class="notice-images">
+                ${images.map(image => `
+                  <img
+                    src="${escapeHtml(image.url)}"
+                    alt="${escapeHtml(notice.title)}"
+                    loading="lazy"
+                    class="notice-image"
+                  >
+                `).join("")}
+              </div>
+            ` :
+            "";
+
+          return `
+            <article
+              class="notice-card"
+              data-notice-id="${notice.id}"
+            >
+              <div class="notice-card-header">
+                <span class="notice-category">
+                  ${escapeHtml(
+                    notice.category || "General"
+                  )}
+                </span>
+
+                <span class="notice-date">
+                  ${formatNoticeDate(
+                    notice.createdAt
+                  )}
+                </span>
+              </div>
+
+              <h3 class="notice-title">
+                ${escapeHtml(notice.title)}
+              </h3>
+
+              <div class="notice-content">
+                ${escapeHtml(notice.content)}
+              </div>
+
+              ${imagesHTML}
+            </article>
+          `;
+        }).join("")}
+      </div>
+    </div>
+  `;
+  
+  setupNoticeInteraction();
+setupNoticeScrollTracking();
+startNoticeAutoScroll();
+}
+
+function formatNoticeDate(timestamp) {
+  if (!timestamp) return "";
+  
+  return new Date(timestamp).toLocaleString(
+    "en-NG",
+    {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true
+    }
+  );
+}
+
+function startNoticeAutoScroll() {
+  const slider =
+    document.querySelector(".notice-slider");
+
+  if (!slider) return;
+
+  const cards =
+    slider.querySelectorAll(".notice-card");
+
+  if (cards.length <= 1) return;
+
+  if (noticeScrollTimer) {
+    clearInterval(noticeScrollTimer);
+  }
+
+  noticeScrollIndex = 0;
+
+  noticeScrollTimer = setInterval(() => {
+    if (slider.dataset.interacting === "true") {
+      return;
+    }
+
+    noticeScrollIndex++;
+
+    if (noticeScrollIndex >= cards.length) {
+      noticeScrollIndex = 0;
+    }
+
+    slider.scrollTo({
+      left:
+        slider.clientWidth * noticeScrollIndex,
+      behavior: "smooth"
+    });
+
+  }, 5000);
+}
+function setupNoticeInteraction() {
+  const slider =
+    document.querySelector(".notice-slider");
+
+  if (!slider) return;
+
+  slider.addEventListener(
+    "touchstart",
+    () => {
+      slider.dataset.interacting = "true";
+
+      if (noticeInteractionTimeout) {
+        clearTimeout(noticeInteractionTimeout);
+      }
+    },
+    { passive: true }
+  );
+
+  slider.addEventListener(
+    "touchend",
+    () => {
+      resumeNoticeAutoScroll(slider);
+    },
+    { passive: true }
+  );
+
+  slider.addEventListener(
+    "touchcancel",
+    () => {
+      resumeNoticeAutoScroll(slider);
+    },
+    { passive: true }
+  );
+
+  slider.addEventListener(
+    "mousedown",
+    () => {
+      slider.dataset.interacting = "true";
+
+      if (noticeInteractionTimeout) {
+        clearTimeout(noticeInteractionTimeout);
+      }
+    }
+  );
+
+  slider.addEventListener(
+    "mouseup",
+    () => {
+      resumeNoticeAutoScroll(slider);
+    }
+  );
+}
+function resumeNoticeAutoScroll(slider) {
+  if (!slider) return;
+  
+  if (noticeInteractionTimeout) {
+    clearTimeout(noticeInteractionTimeout);
+  }
+  
+  noticeInteractionTimeout = setTimeout(() => {
+    slider.dataset.interacting = "false";
+  }, 2000);
+}
+
+function setupNoticeScrollTracking() {
+  const slider =
+    document.querySelector(".notice-slider");
+  
+  if (!slider) return;
+  
+  slider.addEventListener("scroll", () => {
+    const width = slider.clientWidth;
+    
+    if (!width) return;
+    
+    const index =
+      Math.round(slider.scrollLeft / width);
+    
+    if (index >= 0) {
+      noticeScrollIndex = index;
+    }
+  }, { passive: true });
+}
 

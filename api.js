@@ -1203,3 +1203,205 @@ window.addEventListener("load", async () => {
   
   hideLoader();
 });
+
+async function updateSubmissionDeadline(
+  tournamentId,
+  fromRound,
+  toRound,
+  deadline,
+  enabled
+) {
+  const token = getToken();
+  
+  const res = await apiRequest(
+    `${API}/tournaments/${tournamentId}/submission-deadline`,
+    {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: token
+      },
+      body: JSON.stringify({
+        fromRound,
+        toRound,
+        deadline,
+        enabled
+      })
+    },
+    () => updateSubmissionDeadline(
+      tournamentId,
+      fromRound,
+      toRound,
+      deadline,
+      enabled
+    )
+  );
+  
+  if (!res) return null;
+  
+  const result = await res.json();
+  
+  if (!res.ok || !result.success) {
+    throw new Error(
+      result.message ||
+      "Failed to update submission deadline."
+    );
+  }
+  
+  return result.submissionDeadline;
+}
+
+
+async function createNotice() {
+  const title =
+    document.getElementById("noticeTitle").value.trim();
+  
+  const category =
+    document.getElementById("noticeCategory").value;
+  
+  const content =
+    document.getElementById("noticeContent").value.trim();
+  
+  const files =
+    Array.from(
+      document.getElementById("noticeImages").files || []
+    );
+  
+  const published =
+    document.getElementById("noticePublished").checked;
+  
+  const noExpiry =
+    document.getElementById("noticeNoExpiry").checked;
+  
+  const expiryValue =
+    document.getElementById("noticeExpiresAt").value;
+  
+  if (!title) {
+    showAlert("Enter a notice title.");
+    return;
+  }
+  
+  if (!content) {
+    showAlert("Enter the notice content.");
+    return;
+  }
+  
+  let expiresAt = null;
+  
+  if (!noExpiry) {
+    if (!expiryValue) {
+      showAlert("Select an expiry date.");
+      return;
+    }
+    
+    expiresAt = new Date(expiryValue).getTime();
+    
+    if (
+      !Number.isFinite(expiresAt) ||
+      expiresAt <= Date.now()
+    ) {
+      showAlert("Expiry date must be in the future.");
+      return;
+    }
+  }
+  
+  if (files.length > 10) {
+    showAlert("You can upload a maximum of 10 images.");
+    return;
+  }
+  
+  showLoader();
+  
+  try {
+    const images = [];
+    
+    for (const file of files) {
+      const base64 =
+        await fileToBase64(file, 1200);
+      
+      images.push(base64);
+    }
+    
+    const response = await apiRequest(
+      `${API}/notices`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: getToken()
+        },
+        body: JSON.stringify({
+          title,
+          content,
+          category,
+          images,
+          published,
+          expiresAt
+        })
+      },
+      createNotice
+    );
+    
+    if (!response) return;
+    
+    const data = await response.json();
+    
+    if (!response.ok || !data.success) {
+      throw new Error(
+        data.message ||
+        "Failed to create notice."
+      );
+    }
+    
+    closeNoticeBoardModal();
+    
+    showActionModal(
+      "Notice published successfully.",
+      "success"
+    );
+    
+  } catch (err) {
+    console.error("[createNotice]", err);
+    
+    showAlert(
+      err.message ||
+      "Failed to create notice."
+    );
+    
+  } finally {
+    hideLoader();
+  }
+}
+
+
+async function getNotices() {
+  const token = getToken();
+  
+  if (!token) {
+    throw new Error("Invalid session.");
+  }
+  
+  const response = await apiRequest(
+    `${API}/notices`,
+    {
+      method: "GET",
+      headers: {
+        Authorization: token
+      }
+    },
+    getNotices
+  );
+  
+  if (!response) return [];
+  
+  const data = await response.json();
+  
+  if (!response.ok || !data.success) {
+    throw new Error(
+      data.message ||
+      "Failed to load notices."
+    );
+  }
+  
+  return data.notices || [];
+}

@@ -2,9 +2,11 @@ let APP_MODE = "view";
 let myCompetitions = [];
 let currentCompetition = null;
 const STORE = "tournaments";
-
+let noticeScrollTimer = null;
+let noticeScrollIndex = 0;
+let noticeInteractionTimeout = null;
 let hallOfFameAdminData = null;
-
+let submissionDeadlineInterval = null;
 let currentTournament = null;
 let currentReviewMatch = null;
 let currentReviewSubmission = null;
@@ -215,7 +217,7 @@ async function openTournament(id) {
       
       goToTournamentPage();
       rebuildTableFromMatches();
-      
+      loadSubmissionDeadlineCountdown(tournament);
     } else {
       document.getElementById("cupName").textContent = name;
       document.getElementById("cupName2").textContent = `${name} Bracket`;
@@ -872,7 +874,46 @@ function editCompetition(id) {
 function setSelectedCompetition(id) {
   selectedCompetitionId = id;
 }
-async function addTeam(name, logo) {
+async function handleAddTeam() {
+  const nameInput = document.getElementById("teamNameInput");
+  const logoInput = document.getElementById("teamLogoInput");
+  
+  if (!nameInput || !logoInput) {
+    showAlert("Error: Form elements not found");
+    return;
+  }
+  
+  const name = nameInput.value.trim();
+  
+  if (!name) {
+    showAlert("Enter a team name");
+    return;
+  }
+  
+  const file = logoInput.files[0];
+  
+  if (!file) {
+    showAlert("Team logo is required");
+    return;
+  }
+  
+  if (!file.type.startsWith("image/")) {
+    showAlert("Please select an image file");
+    return;
+  }
+  
+  try {
+    await addTeam(name, file);
+    
+    nameInput.value = "";
+    resetLogoUI();
+    
+  } catch (err) {
+    console.error("[handleAddTeam] Error:", err);
+    showAlert("Something went wrong");
+  }
+}
+async function addTeam(name, file) {
   showLoader();
   
   try {
@@ -903,6 +944,8 @@ async function addTeam(name, logo) {
     
     const teamId = crypto.randomUUID();
     const currentUser = getCurrentUser();
+    
+    const logo = await fileToBase64(file, 300);
     
     const image = await uploadTeamLogo(
       tournament.id,
@@ -957,65 +1000,9 @@ async function addTeam(name, logo) {
     
   } finally {
     hideLoader();
-   closeAddTeam();
+    closeAddTeam();
   }
 }
-
-
-async function handleAddTeam() {
-  const nameInput = document.getElementById("teamNameInput");
-  const logoInput = document.getElementById("teamLogoInput");
-  
-  if (!nameInput || !logoInput) {
-    showAlert("Error: Form elements not found");
-    return;
-  }
-  
-  const name = nameInput.value.trim();
-  
-  if (!name) {
-    showAlert("Enter a team name");
-    return;
-  }
-  
-  const file = logoInput.files[0];
-  
-  if (!file) {
-    showAlert("Team logo is required");
-    return;
-  }
-  
-  if (!file.type.startsWith("image/")) {
-    showAlert("Please select an image file");
-    return;
-  }
-  
-  if (file.size > 500 * 1024) {
-    showAlert("Logo size must not exceed 500KB");
-    logoInput.value = "";
-    resetLogoUI();
-    return;
-  }
-  
-  removeBackground(file, async (logo) => {
-    if (!logo) {
-      showAlert("Failed to process logo");
-      return;
-    }
-    
-    try {
-      await addTeam(name, logo);
-      
-      nameInput.value = "";
-      resetLogoUI();
-      
-    } catch (err) {
-      console.error("[handleAddTeam] Error:", err);
-      showAlert("Something went wrong");
-    }
-  });
-}
-
 async function saveEdit() {
   const tournament = getCurrentTournament();
   
@@ -3136,5 +3123,255 @@ async function importTournamentsData(jsonString) {
     );
   } finally {
     hideLoader();
+  }
+}
+
+async function saveSubmissionDeadline() {
+  const tournament = getCurrentTournament();
+  
+  if (!tournament) {
+    showAlert("No tournament selected.");
+    return;
+  }
+  
+  const fromRound = Number(
+    document.getElementById("submissionFromRound").value
+  );
+  
+  const toRound = Number(
+    document.getElementById("submissionToRound").value
+  );
+  
+  const deadlineValue =
+    document.getElementById("submissionDeadline").value;
+  
+  const enabled =
+    document.getElementById("submissionDeadlineEnabled").checked;
+  
+  if (
+    !Number.isInteger(fromRound) ||
+    !Number.isInteger(toRound)
+  ) {
+    showAlert("Enter a valid round range.");
+    return;
+  }
+  
+  if (fromRound < 1 || toRound < fromRound) {
+    showAlert("Invalid round range.");
+    return;
+  }
+  
+  if (!deadlineValue) {
+    showAlert("Please select a deadline.");
+    return;
+  }
+  
+  const deadline =
+    new Date(deadlineValue).getTime();
+  
+  if (
+    !Number.isFinite(deadline) ||
+    deadline <= Date.now()
+  ) {
+    showAlert("Deadline must be a future date or time.");
+    return;
+  }
+  
+  showLoader();
+  
+  try {
+    const submissionDeadline =
+      await updateSubmissionDeadline(
+        tournament.id,
+        fromRound,
+        toRound,
+        deadline,
+        enabled
+      );
+    
+    tournament.settings =
+      tournament.settings || {};
+    
+    tournament.settings.submissionDeadline =
+      submissionDeadline;
+    
+    showActionModal(
+      "Submission deadline updated successfully.",
+      "success"
+    );
+    
+  } catch (err) {
+    showAlert(
+      err.message ||
+      "Failed to update submission deadline."
+    );
+    
+  } finally {
+    hideLoader();
+  }
+}
+function loadSubmissionDeadlineSettings(tournament) {
+  const settings =
+    tournament?.settings?.submissionDeadline;
+  
+  const fromInput =
+    document.getElementById("submissionFromRound");
+  
+  const toInput =
+    document.getElementById("submissionToRound");
+  
+  const deadlineInput =
+    document.getElementById("submissionDeadline");
+  
+  const enabledInput =
+    document.getElementById("submissionDeadlineEnabled");
+  
+  if (!fromInput || !toInput || !deadlineInput || !enabledInput) {
+    return;
+  }
+  
+  if (!settings) {
+    fromInput.value = 1;
+    toInput.value = 1;
+    deadlineInput.value = "";
+    enabledInput.checked = false;
+    return;
+  }
+  
+  fromInput.value =
+    settings.fromRound ?? 1;
+  
+  toInput.value =
+    settings.toRound ?? settings.fromRound ?? 1;
+  
+  enabledInput.checked =
+    settings.enabled === true;
+  
+  if (settings.deadline) {
+    const date =
+      new Date(settings.deadline);
+    
+    const offset =
+      date.getTimezoneOffset() * 60000;
+    
+    deadlineInput.value =
+      new Date(
+        date.getTime() - offset
+      )
+      .toISOString()
+      .slice(0, 16);
+  } else {
+    deadlineInput.value = "";
+  }
+}
+
+
+function loadSubmissionDeadlineCountdown(tournament) {
+  const countdownElement =
+    document.getElementById("submissionDeadlineCountdown");
+  
+  const settings =
+    tournament?.settings?.submissionDeadline;
+  
+  if (!countdownElement) return;
+  
+  if (submissionDeadlineInterval) {
+    clearInterval(submissionDeadlineInterval);
+    submissionDeadlineInterval = null;
+  }
+  
+  if (
+    !settings ||
+    settings.enabled !== true ||
+    !settings.deadline
+  ) {
+    countdownElement.style.display = "none";
+    return;
+  }
+  
+  const deadline = Number(settings.deadline);
+  const fromRound = Number(settings.fromRound);
+  const toRound = Number(settings.toRound);
+  
+  if (
+    !Number.isFinite(deadline) ||
+    !Number.isInteger(fromRound) ||
+    !Number.isInteger(toRound)
+  ) {
+    countdownElement.style.display = "none";
+    return;
+  }
+  
+  countdownElement.style.display = "block";
+  
+  const roundText =
+    fromRound === toRound ?
+    `Round ${fromRound}` :
+    `Rounds ${fromRound}–${toRound}`;
+  
+  function updateCountdown() {
+    const remaining = deadline - Date.now();
+    
+    if (remaining <= 0) {
+      countdownElement.textContent =
+        `${roundText} submission deadline has passed.`;
+      
+      clearInterval(submissionDeadlineInterval);
+      submissionDeadlineInterval = null;
+      return;
+    }
+    
+    const totalSeconds = Math.floor(remaining / 1000);
+    
+    const days = Math.floor(totalSeconds / 86400);
+    const hours = Math.floor((totalSeconds % 86400) / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+    
+    let timeText;
+    
+    if (days > 0) {
+      timeText =
+        `${days}d ${hours}h ${minutes}m ${seconds}s`;
+    } else {
+      timeText =
+        `${hours}h ${minutes}m ${seconds}s`;
+    }
+    
+    countdownElement.textContent =
+      `${roundText} submission deadline: ${timeText}`;
+  }
+  
+  updateCountdown();
+  
+  submissionDeadlineInterval =
+    setInterval(updateCountdown, 1000);
+}
+
+async function loadNotices() {
+  const container =
+    document.getElementById("noticeBoard");
+  
+  if (!container) return;
+  
+  container.innerHTML = `
+    <div class="notice-loader">
+      Loading notices...
+    </div>
+  `;
+  
+  try {
+    const notices = await getNotices();
+    
+    renderNotices(notices);
+    
+  } catch (err) {
+    console.error("[loadNotices]", err);
+    
+    container.innerHTML = `
+      <div class="notice-empty">
+        Failed to load notices.
+      </div>
+    `;
   }
 }

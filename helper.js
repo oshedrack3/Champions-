@@ -455,7 +455,9 @@ function handleMenuAction(action) {
   closeMenu();
   
   const actions = {
-    editHallofFame:showHallOfFameEditor,
+    newNotice:openNoticeBoardModal,
+    deadlineEdit: openSubmissionDeadlineModal,
+    editHallofFame: showHallOfFameEditor,
     addTeam: openAddTeam,
     shareCup: shareCupFixture,
     importTeams: importTeams,
@@ -510,13 +512,13 @@ const menuConfig = {
       action: "editHallofFame",
       roles: ["admin"]
     },
-    /*
+    
     {
-      label: "Import Tournament",
-      action: "importTournament",
+      label: "Add New Notice",
+      action: "newNotice",
       roles: ["admin"]
     },
-    
+   /* 
     {
       label: "Export Tournament",
       action: "enableExportMode",
@@ -677,12 +679,17 @@ const menuConfig = {
       action: "createFixture",
       roles: ["admin"]
     },
-    
+    {
+      label: "Set Deadline",
+      action: "deadlineEdit",
+      roles: ["admin"]
+    },
     {
       label: "Change Played Match Date",
       action: "dateEdit",
       roles: ["admin"]
     }
+    
     
   ],
   
@@ -1077,7 +1084,7 @@ async function goToCompetitionPage() {
   document.getElementById("usernameText").textContent = currentUser.username;
   pageOrigin = "MyComp";
   currentSwapView = 0;
-  
+  loadNotices();
   updateSwapView();
 }
 
@@ -1585,7 +1592,7 @@ async function handleResultAction() {
   
 }
 
-function fileToBase64(file) {
+function fileToBase64(file, maxWidth = 1200) {
   
   return new Promise((resolve, reject) => {
     
@@ -1604,8 +1611,6 @@ function fileToBase64(file) {
       
       let width = img.width;
       let height = img.height;
-      
-      const maxWidth = 1200;
       
       if (width > maxWidth) {
         const ratio = maxWidth / width;
@@ -1638,7 +1643,6 @@ function fileToBase64(file) {
     reader.readAsDataURL(file);
     
   });
-  
 }
 
 function getReviewTeamName(team) {
@@ -1980,9 +1984,9 @@ function setupCompetitionToggle() {
     btnMy.classList.remove("active");
     btnHallOfFame.classList.remove("active");
     
-   
-        loadPublicTournaments();
-        loadMyTournaments();
+    
+    loadPublicTournaments();
+    loadMyTournaments();
     
   };
   
@@ -2097,8 +2101,8 @@ function goToCupPage() {
     toggleCupView("knockOut");
     document.getElementById("cupTab").style.display = "none";
     document.getElementById("btnbackBracket").style.display = "block";
-  
-  
+    
+    
     return;
   }
   
@@ -2110,3 +2114,97 @@ function goToCupPage() {
     toggleCupView("tables");
   }
 }
+
+function openSubmissionDeadlineModal() {
+  const tournament = getCurrentTournament();
+  
+  if (!tournament) {
+    showAlert("No tournament selected.");
+    return;
+  }
+  
+  loadSubmissionDeadlineSettings(tournament);
+  
+  document
+    .getElementById("submissionDeadlineModal")
+    .style.display = "flex";
+}
+
+function closeSubmissionDeadlineModal() {
+  document
+    .getElementById("submissionDeadlineModal")
+    .style.display = "none";
+}
+
+function openNoticeBoardModal() {
+  const modal =
+    document.getElementById("noticeCreateModal");
+  
+  if (!modal) return;
+  
+  modal.style.display = "flex";
+  
+  document.getElementById("noticeTitle").value = "";
+  document.getElementById("noticeCategory").value = "general";
+  document.getElementById("noticeContent").value = "";
+  document.getElementById("noticeImages").value = "";
+  document.getElementById("noticeExpiresAt").value = "";
+  document.getElementById("noticeNoExpiry").checked = true;
+  document.getElementById("noticePublished").checked = true;
+  
+  document.getElementById("noticeExpiresAt").disabled = true;
+  
+  document.getElementById("noticeImagePreview").innerHTML = "";
+}
+
+function closeNoticeBoardModal() {
+  const modal =
+    document.getElementById("noticeCreateModal");
+  
+  if (!modal) return;
+  
+  modal.style.display = "none";
+}
+
+document
+  .getElementById("noticeNoExpiry")
+  ?.addEventListener("change", function() {
+    const expiryInput =
+      document.getElementById("noticeExpiresAt");
+    
+    if (!expiryInput) return;
+    
+    expiryInput.disabled = this.checked;
+    
+    if (this.checked) {
+      expiryInput.value = "";
+    }
+  });
+document
+  .getElementById("noticeImages")
+  ?.addEventListener("change", function() {
+    const preview =
+      document.getElementById("noticeImagePreview");
+    
+    if (!preview) return;
+    
+    preview.innerHTML = "";
+    
+    Array.from(this.files).forEach(file => {
+      if (!file.type.startsWith("image/")) return;
+      
+      const reader = new FileReader();
+      
+      reader.onload = event => {
+        const img =
+          document.createElement("img");
+        
+        img.src = event.target.result;
+        
+        preview.appendChild(img);
+      };
+      
+      reader.readAsDataURL(file);
+    });
+  });
+

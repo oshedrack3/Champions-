@@ -94,8 +94,8 @@
   
   <!-- cupPageHead -->
   <section id="cupPageHead" style="display:none">
-       
-
+    
+    
     <div id="cupHome" style="display:none">
       <button class="menu-btn" onclick="setPageAndToggleMenu('cup')">
         ☰
@@ -133,35 +133,35 @@
     
     -->
     <div class="cupRoundBar" style="display:none">
-       <button class="menu-btn data-admin" onclick="setPageAndToggleMenu('group')">
+      <button class="menu-btn data-admin" onclick="setPageAndToggleMenu('group')">
         ☰
       </button>
- 
-    <div class="roundbarNav">
       
-      <button onclick="prevCupRound()">◀</button>
-      
-      <span id="cupRoundLabel">Matchday 1</span>
-      <button onclick="nextCupRound()">▶</button>
-    </div>
+      <div class="roundbarNav">
+        
+        <button onclick="prevCupRound()">◀</button>
+        
+        <span id="cupRoundLabel">Matchday 1</span>
+        <button onclick="nextCupRound()">▶</button>
+      </div>
     </div>
     
     
     
     <div class="bracketControls" id="bracketControl" style="display:none">
       <div class="bracketTopActions">
-           
-    <div id="cupName2">
-      
-    </div>
+        
+        <div id="cupName2">
+          
+        </div>
         <button id="btnbackBracket" class="btn-back" onclick="goBackFromTournament()">
-      ❮
-    </button>
-
-            <button class="menu-btn" onclick="setPageAndToggleMenu('bracket')">
-      ☰
-    </button>
-    </div>
+          ❮
+        </button>
+        
+        <button class="menu-btn" onclick="setPageAndToggleMenu('bracket')">
+          ☰
+        </button>
+      </div>
     </div>
     </div>
     
@@ -190,47 +190,61 @@
   
   <main>
     
-<section id="competitionPage" class="comPage">
-  
-  <div class="compToggle">
-    
-    <button id="btnMy" class="active">
-      Competitions
-    </button>
-    
-    <button id="btnPublic">
-      Tournaments
-    </button>
-        <button id="btnHallOfFame">
-      Hall of Fame
-    </button>
-    
-
-    
+    <section id="competitionPage" class="comPage">
+      
+      <section class="notice-board-section">
+  <div class="notice-board-header">
+    <div>
+      <h2>Notice Board</h2>
+      <p>Stay updated with the latest announcements.</p>
+    </div>
   </div>
   
-  
-  <div id="mySection">
-    
-    <div id="competitionList"></div>
-    
+  <div id="noticeBoard" class="notice-board">
+    <div class="notice-loading">
+      Loading notices...
+    </div>
   </div>
-  
-  
-  <div id="publicSection" style="display:none;">
-    
-    <div id="publicTournaments"></div>
-    
-  </div>
-  
-  
-  <div id="hallOfFameSection" style="display:none;">
-    
-    <div id="hallOfFameList"></div>
-    
-  </div>
-  
 </section>
+      <div class="compToggle">
+        
+        <button id="btnMy" class="active">
+          Competitions
+        </button>
+        
+        <button id="btnPublic">
+          Tournaments
+        </button>
+        <button id="btnHallOfFame">
+          Hall of Fame
+        </button>
+        
+        
+        
+      </div>
+      
+      
+      <div id="mySection">
+        
+        <div id="competitionList"></div>
+        
+      </div>
+      
+      
+      <div id="publicSection" style="display:none;">
+        
+        <div id="publicTournaments"></div>
+        
+      </div>
+      
+      
+      <div id="hallOfFameSection" style="display:none;">
+        
+        <div id="hallOfFameList"></div>
+        
+      </div>
+      
+    </section>
     <section id="listOfTournamentPage" class="page" style="display:none">
       
       
@@ -377,7 +391,7 @@
         <div id="cupFixtures" style="display:none"></div>
         
         
-           
+        
       </section>
       
       
@@ -463,6 +477,7 @@
             
             
             
+            <div id="submissionDeadlineCountdown"></div>
             
             <div id="fixtureList"></div>
             
@@ -984,7 +999,7 @@
   </div>
   
   
-  <div id="alertModal" class="modal-overlay">
+  <div id="alertModal" class="modal-overlay alert">
     <div class="modal-box">
       
       <h3 id="alertTitle" class="modal-title">
@@ -1328,31 +1343,23 @@
   </div>
   
   <div id="hallOfFameAdminPanel" style="display:none;">
-  <div class="hallOfFameAdminHeader">
-    <h3>Edit Hall of Fame</h3>
-    <button type="button" onclick="addHallOfFameCategory()">
-      + Add Category
+    <div class="hallOfFameAdminHeader">
+      <h3>Edit Hall of Fame</h3>
+      <button type="button" onclick="addHallOfFameCategory()">
+        + Add Category
+      </button>
+    </div>
+    
+    <div id="hallOfFameAdminList"></div>
+    
+    <button type="button" class="hallOfFameSaveBtn" onclick="saveHallOfFame()">
+      Save Hall of Fame
     </button>
+    <button type="button" class="hallOfFameSaveBtn" onclick="closeHallofFameEditor()">
+      Cancel
+    </button>
+    
   </div>
-
-  <div id="hallOfFameAdminList"></div>
-
-  <button
-    type="button"
-    class="hallOfFameSaveBtn"
-    onclick="saveHallOfFame()"
-  >
-    Save Hall of Fame
-  </button>
-    <button
-    type="button"
-    class="hallOfFameSaveBtn"
-    onclick="closeHallofFameEditor()"
-  >
-  Cancel
-  </button>
-  
-</div>
   
   
   <div id="loader" class="loader-overlay" style="display:none;">
@@ -1366,7 +1373,71 @@
     </div>
   </div>
   
-  
+  <div id="submissionDeadlineModal" class="modal-overlay" style="display:none">
+    <div class="modal-box submission-deadline-modal">
+      
+      <div class="modal-header">
+        <h3>Submission Deadline</h3>
+        <button type="button" onclick="closeSubmissionDeadlineModal()">
+          ×
+        </button>
+      </div>
+      
+      <div class="modal-body">
+        
+        <div class="round-range">
+          
+          <div class="deadline-field">
+            <label for="submissionFromRound">
+              From Round
+            </label>
+            
+            <input type="number" id="submissionFromRound" min="1" placeholder="1">
+          </div>
+          
+          <div class="deadline-field">
+            <label for="submissionToRound">
+              To Round
+            </label>
+            
+            <input type="number" id="submissionToRound" min="1" placeholder="3">
+          </div>
+          
+        </div>
+        
+        <div class="deadline-field">
+          <label for="submissionDeadline">
+            Deadline
+          </label>
+          
+          <input type="datetime-local" id="submissionDeadline">
+        </div>
+        
+        <label class="deadline-toggle">
+          <input type="checkbox" id="submissionDeadlineEnabled">
+          
+          <span>Enable submission deadline</span>
+        </label>
+        
+        <p class="deadline-info">
+          Matches within the selected round range can only be
+          submitted before the deadline.
+        </p>
+        
+      </div>
+      
+      <div class="modal-footer">
+        <button type="button" onclick="closeSubmissionDeadlineModal()">
+          Cancel
+        </button>
+        
+        <button type="button" onclick="saveSubmissionDeadline()">
+          Save Deadline
+        </button>
+      </div>
+      
+    </div>
+  </div>
   
   <div id="noficationSection" class="notification-wrapper" style="display:none">
     <button id="notificationBtn" onclick="showNotification();" class="notification-btn">
@@ -1395,6 +1466,140 @@
   </div>
   
   
+  <div id="noticeCreateModal">
+  <div class="notice-create-container">
+
+    <div class="notice-create-header">
+      <h3>Create Notice</h3>
+
+      <button
+        type="button"
+        class="notice-create-close"
+        onclick="closeNoticeBoardModal()"
+      >
+        ×
+      </button>
+    </div>
+
+    <div class="notice-create-body">
+
+      <div class="notice-create-field">
+        <label for="noticeTitle">
+          Title
+        </label>
+
+        <input
+          type="text"
+          id="noticeTitle"
+          placeholder="Enter notice title"
+        >
+      </div>
+
+      <div class="notice-create-field">
+        <label for="noticeCategory">
+          Category
+        </label>
+
+        <select id="noticeCategory">
+          <option value="general">General</option>
+          <option value="announcement">Announcement</option>
+          <option value="competition">Competition</option>
+          <option value="event">Event</option>
+          <option value="update">Update</option>
+          <option value="rules">Rules</option>
+        </select>
+      </div>
+
+      <div class="notice-create-field">
+        <label for="noticeContent">
+          Content
+        </label>
+
+        <textarea
+          id="noticeContent"
+          placeholder="Write your notice..."
+          rows="7"
+        ></textarea>
+      </div>
+
+      <div class="notice-create-field">
+        <label for="noticeImages">
+          Images
+        </label>
+
+        <input
+          type="file"
+          id="noticeImages"
+          accept="image/*"
+          multiple
+        >
+      </div>
+
+      <div
+        id="noticeImagePreview"
+        class="notice-create-image-preview"
+      ></div>
+
+      <div class="notice-create-field">
+        <label for="noticeExpiresAt">
+          Expiry Date
+        </label>
+
+        <input
+          type="datetime-local"
+          id="noticeExpiresAt"
+          disabled
+        >
+      </div>
+
+      <label class="notice-create-toggle">
+        <input
+          type="checkbox"
+          id="noticeNoExpiry"
+          checked
+        >
+
+        <span>
+          No expiry
+        </span>
+      </label>
+
+      <label class="notice-create-toggle">
+        <input
+          type="checkbox"
+          id="noticePublished"
+          checked
+        >
+
+        <span>
+          Publish immediately
+        </span>
+      </label>
+
+    </div>
+
+    <div class="notice-create-footer">
+
+      <button
+        type="button"
+        class="notice-create-cancel"
+        onclick="closeNoticeBoardModal()"
+      >
+        Cancel
+      </button>
+
+      <button
+        type="button"
+        class="notice-create-submit"
+        onclick="createNotice()"
+      >
+        Publish Notice
+      </button>
+
+    </div>
+
+  </div>
+</div>
   
   
   
