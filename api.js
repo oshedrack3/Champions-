@@ -1160,26 +1160,93 @@ async function getPublicTournaments() {
 }
 
 async function subscribeUser() {
-  const reg = await navigator.serviceWorker.ready;
-  
-  const subscription = await reg.pushManager.subscribe({
-    userVisibleOnly: true,
-    applicationServerKey: "BMH9R6X0Z8y6nZzJqZ9dJX0FzYq2kK5F2o0z7W9n2lC0ZxV5m8g1yJ7u3m2c5X9yQ8F3nP4L6vT2bH1wZ0kQ"
-  });
-  
-  console.log("Subscription:", subscription);
-  
-  
-  await fetch("/api/save-subscription", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": "Bearer " + getToken()
-    },
-    body: JSON.stringify(subscription)
-  });
-}
+  try {
+    if (!("serviceWorker" in navigator)) {
+      throw new Error("Service Worker is not supported.");
+    }
 
+    if (!("PushManager" in window)) {
+      throw new Error("Push notifications are not supported.");
+    }
+
+    const permission = await Notification.requestPermission();
+
+    if (permission !== "granted") {
+      throw new Error("Notification permission was not granted.");
+    }
+
+    const reg = await navigator.serviceWorker.ready;
+
+    const publicKey =
+      "BB0Mj76Yp4Of8Z3PdEzapp7mUSe05UwIPmjGNMFvdfZ5g4Wzub4YzBs4I_mUXT7vlpD286h2vi4mCvnKBTa1IrU";
+
+    const subscription =
+      await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey:
+          urlBase64ToUint8Array(publicKey)
+      });
+
+    console.log(
+      "Push subscription:",
+      subscription
+    );
+
+    const res = await fetch(
+      `${API}/api/push/subscribe`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${getToken()}`
+        },
+        body: JSON.stringify(subscription)
+      }
+    );
+
+    const result = await res.json();
+
+    if (!res.ok || !result.success) {
+      throw new Error(
+        result.message ||
+        "Failed to save push subscription."
+      );
+    }
+
+    console.log(
+      "Push subscription saved successfully."
+    );
+
+    return subscription;
+
+  } catch (err) {
+    console.error(
+      "Push subscription failed:",
+      err
+    );
+
+    return null;
+  }
+}
+function urlBase64ToUint8Array(base64String) {
+  const padding =
+    "=".repeat(
+      (4 - (base64String.length % 4)) % 4
+    );
+  
+  const base64 =
+    (base64String + padding)
+    .replace(/-/g, "+")
+    .replace(/_/g, "/");
+  
+  const rawData = atob(base64);
+  
+  return Uint8Array.from(
+    [...rawData].map(
+      char => char.charCodeAt(0)
+    )
+  );
+}
 
 window.addEventListener("load", async () => {
   showLoader();

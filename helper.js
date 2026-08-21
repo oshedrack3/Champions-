@@ -20,7 +20,8 @@ const PAGES = [
   "competitionPage",
   "notificationPanel",
   "noficationSection",
-  "bracketControl"
+  "bracketControl",
+  "compageToggle"
   
   
   
@@ -1076,6 +1077,8 @@ async function goToCompetitionPage() {
   closeTournamentEvents();
   
   document.getElementById("competitionPage").style.display = "block";
+  document.getElementById("compageToggle").style.display = "flex";
+  
   document.getElementById("noficationSection").style.display = "block";
   
   document.getElementById("tourListPageHead").style.display = "none";
@@ -1942,6 +1945,8 @@ function closeDeleteAccountModal() {
 function setupCompetitionToggle() {
   const btnMy = document.getElementById("btnMy");
   const btnPublic = document.getElementById("btnPublic");
+  const noticeBoard = 
+  document.getElementById("noticeSection");
   const btnHallOfFame = document.getElementById("btnHallOfFame");
   
   const mySection = document.getElementById("mySection");
@@ -1955,13 +1960,15 @@ function setupCompetitionToggle() {
     !btnHallOfFame ||
     !mySection ||
     !publicSection ||
-    !hallOfFameSection
+    !hallOfFameSection||
+    !noticeBoard
   ) return;
   
   
   btnMy.onclick = () => {
     
     mySection.style.display = "block";
+    noticeBoard.style.display = "block";
     publicSection.style.display = "none";
     hallOfFameSection.style.display = "none";
     
@@ -1977,6 +1984,7 @@ function setupCompetitionToggle() {
     TournamentListStyle = "row";
     
     mySection.style.display = "none";
+    noticeBoard.style.display = "none";
     publicSection.style.display = "block";
     hallOfFameSection.style.display = "none";
     
@@ -1993,7 +2001,9 @@ function setupCompetitionToggle() {
   
   btnHallOfFame.onclick = async () => {
     
+    
     mySection.style.display = "none";
+    noticeBoard.style.display = "none";
     publicSection.style.display = "none";
     hallOfFameSection.style.display = "block";
     
