@@ -193,19 +193,19 @@
     <section id="competitionPage" class="comPage">
       
       <section id="noticeSection" class="notice-board-section">
-  <div class="notice-board-header">
-    <div>
-      <h2>Notice Board</h2>
-      <p>Stay updated with the latest announcements.</p>
-    </div>
-  </div>
-  
-  <div id="noticeBoard" class="notice-board">
-    <div class="notice-loading">
-      Loading notices...
-    </div>
-  </div>
-</section>
+        <div class="notice-board-header">
+          <div>
+            <h2>Notice Board</h2>
+            <p>Stay updated with the latest announcements.</p>
+          </div>
+        </div>
+        
+        <div id="noticeBoard" class="notice-board">
+          <div class="notice-loading">
+            Loading notices...
+          </div>
+        </div>
+      </section>
       <div id="mySection">
         
         <div id="competitionList"></div>
@@ -221,8 +221,15 @@
       
       
       <div id="hallOfFameSection" style="display:none;">
-        
-        <div id="hallOfFameList"></div>
+        <button
+<button
+  type="button"
+  class="hall-of-fame-back-btn"
+  onclick="closeHallOfFame()"
+>
+  ← Back
+</button>
+<div id="hallOfFameList"></div>
         
       </div>
       
@@ -383,7 +390,7 @@
       <section id="tablePage" style="display:none">
         
         <div id="tableView">
-           <div class="table-wrapper">
+          <div class="table-wrapper">
             <table id="leagueTable">
               <thead>
                 <tr>
@@ -529,7 +536,7 @@
         
         <select id="registerRole">
           <option value="player">Player</option>
-             </select>
+        </select>
         
         <button onclick="handleRegister()">
           Register
@@ -1176,21 +1183,12 @@
   
   
   
-        <div id="compageToggle" class="compToggle" style="display:none">
-        
-        <button id="btnMy" class="active">
-          Competitions
-        </button>
-        
+  <div id="compageToggle" class="compToggle" style="display:none">
     
-        <button id="btnHallOfFame">
-          Hall of Fame
-        </button>
-        
-        
-        
-      </div>
 
+    
+  </div>
+  
   
   
   <div id="deleteAccountModal" class="modal-overlay">
@@ -1461,278 +1459,287 @@
   
   
   <div id="noticeCreateModal">
-  <div class="notice-create-container">
-
-    <div class="notice-create-header">
-      <h3>Create Notice</h3>
-
-      <button
-        type="button"
-        class="notice-create-close"
-        onclick="closeNoticeBoardModal()"
-      >
-        ×
-      </button>
+    <div class="notice-create-container">
+      
+      <div class="notice-create-header">
+        <h3>Create Notice</h3>
+        
+        <button type="button" class="notice-create-close" onclick="closeNoticeBoardModal()">
+          ×
+        </button>
+      </div>
+      
+      <div class="notice-create-body">
+        
+        <div class="notice-create-field">
+          <label for="noticeTitle">
+            Title
+          </label>
+          
+          <input type="text" id="noticeTitle" placeholder="Enter notice title">
+        </div>
+        
+        <div class="notice-create-field">
+          <label for="noticeCategory">
+            Category
+          </label>
+          
+          <select id="noticeCategory">
+            <option value="general">General</option>
+            <option value="announcement">Announcement</option>
+            <option value="competition">Competition</option>
+            <option value="event">Event</option>
+            <option value="update">Update</option>
+            <option value="rules">Rules</option>
+          </select>
+        </div>
+        
+        <div class="notice-create-field">
+          <label for="noticeContent">
+            Content
+          </label>
+          
+          <textarea id="noticeContent" placeholder="Write your notice..." rows="7"></textarea>
+        </div>
+        
+        <div class="notice-create-field">
+          <label for="noticeImages">
+            Images
+          </label>
+          
+          <input type="file" id="noticeImages" accept="image/*" multiple>
+        </div>
+        
+        <div id="noticeImagePreview" class="notice-create-image-preview"></div>
+        
+        <div class="notice-create-field">
+          <label for="noticeExpiresAt">
+            Expiry Date
+          </label>
+          
+          <input type="datetime-local" id="noticeExpiresAt" disabled>
+        </div>
+        
+        <label class="notice-create-toggle">
+          <input type="checkbox" id="noticeNoExpiry" checked>
+          
+          <span>
+            No expiry
+          </span>
+        </label>
+        
+        <label class="notice-create-toggle">
+          <input type="checkbox" id="noticePublished" checked>
+          
+          <span>
+            Publish immediately
+          </span>
+        </label>
+        
+      </div>
+      
+      <div class="notice-create-footer">
+        
+        <button type="button" class="notice-create-cancel" onclick="closeNoticeBoardModal()">
+          Cancel
+        </button>
+        
+        <button type="button" class="notice-create-submit" onclick="createNotice()">
+          Publish Notice
+        </button>
+        
+      </div>
+      
     </div>
-
-    <div class="notice-create-body">
-
-      <div class="notice-create-field">
-        <label for="noticeTitle">
-          Title
-        </label>
-
-        <input
-          type="text"
-          id="noticeTitle"
-          placeholder="Enter notice title"
-        >
-      </div>
-
-      <div class="notice-create-field">
-        <label for="noticeCategory">
-          Category
-        </label>
-
-        <select id="noticeCategory">
-          <option value="general">General</option>
-          <option value="announcement">Announcement</option>
-          <option value="competition">Competition</option>
-          <option value="event">Event</option>
-          <option value="update">Update</option>
-          <option value="rules">Rules</option>
-        </select>
-      </div>
-
-      <div class="notice-create-field">
-        <label for="noticeContent">
-          Content
-        </label>
-
-        <textarea
-          id="noticeContent"
-          placeholder="Write your notice..."
-          rows="7"
-        ></textarea>
-      </div>
-
-      <div class="notice-create-field">
-        <label for="noticeImages">
-          Images
-        </label>
-
-        <input
-          type="file"
-          id="noticeImages"
-          accept="image/*"
-          multiple
-        >
-      </div>
-
-      <div
-        id="noticeImagePreview"
-        class="notice-create-image-preview"
-      ></div>
-
-      <div class="notice-create-field">
-        <label for="noticeExpiresAt">
-          Expiry Date
-        </label>
-
-        <input
-          type="datetime-local"
-          id="noticeExpiresAt"
-          disabled
-        >
-      </div>
-
-      <label class="notice-create-toggle">
-        <input
-          type="checkbox"
-          id="noticeNoExpiry"
-          checked
-        >
-
-        <span>
-          No expiry
-        </span>
-      </label>
-
-      <label class="notice-create-toggle">
-        <input
-          type="checkbox"
-          id="noticePublished"
-          checked
-        >
-
-        <span>
-          Publish immediately
-        </span>
-      </label>
-
-    </div>
-
-    <div class="notice-create-footer">
-
-      <button
-        type="button"
-        class="notice-create-cancel"
-        onclick="closeNoticeBoardModal()"
-      >
-        Cancel
-      </button>
-
-      <button
-        type="button"
-        class="notice-create-submit"
-        onclick="createNotice()"
-      >
-        Publish Notice
-      </button>
-
-    </div>
-
   </div>
-</div>
-  
+
   <div
   id="teamSelectionModal"
-  class="modal-overlay"
+  class="team-selection-modal-overlay"
   style="display: none;"
 >
-  <div class="modal-box team-selection-modal">
-
-    <div class="modal-header">
-      <h3>Select Team</h3>
-
+  <div class="team-selection-modal-box">
+    <div class="team-selection-modal-header">
+      <h3 class="team-selection-modal-title">
+        Select Team
+      </h3>
       <button
         type="button"
-        class="modal-close"
+        class="team-selection-modal-close"
         onclick="closeTeamSelectionModal()"
       >
         ×
       </button>
     </div>
-
-    <div class="modal-body">
-
+    <div class="team-selection-modal-body">
       <p
         id="teamSelectionMessage"
         class="team-selection-message"
       >
         Select the team you want to use in this tournament.
       </p>
-
       <div
         id="teamSelectionList"
         class="team-selection-list"
       ></div>
-
     </div>
-
-    <div class="modal-footer">
-
+    <div class="team-selection-modal-footer">
       <button
         type="button"
-        class="modal-cancel-btn"
+        class="team-selection-cancel-btn"
         onclick="closeTeamSelectionModal()"
       >
         Cancel
       </button>
-
       <button
         type="button"
         id="confirmTeamSelectionBtn"
-        class="modal-confirm-btn"
+        class="team-selection-confirm-btn"
         onclick="confirmTeamSelection()"
       >
         Join Tournament
       </button>
-
     </div>
+  </div>
+</div>
+  <div id="profileModal" class="profile-modal-page" aria-hidden="true">
+    <div class="profile-modal-page-header">
+      <button onclick="closeProfileModal()" id="closeProfileModal" class="profile-modal-page-back" aria-label="Close profile">
+        <span>←</span>
+      </button>
+      <h2 class="profile-modal-page-title">
+        My Profile
+      </h2>
+      <div class="profile-modal-page-header-spacer"></div>
+    </div>
+    <div class="profile-page-content">
+<div class="profile-page-user-section">
 
+  <div
+    id="profileUsername"
+    class="profile-page-username"
+  >
+    Username
+  </div>
+
+  <div
+    id="profilePhone"
+    class="profile-page-phone"
+  >
+    WhatsApp number not added
+  </div>
+
+  <button
+    type="button"
+    onclick="openUpdateProfile()"
+    class="profile-page-update-profile-btn"
+  >
+    Update Profile
+  </button>
+
+</div>    
+<section class="profile-page-teams-section">
+        <div class="profile-page-section-header">
+          <h3 class="profile-page-section-title">
+            My Teams
+          </h3>
+        </div>
+        <div id="profileTeams" class="profile-page-teams-list"></div>
+        <div id="profileTeamsEmpty" class="profile-page-empty" hidden>
+          You don't own any teams yet.
+        </div>
+      </section>
+      <div class="profile-page-team-actions">
+        <button type="button" onclick="openAddTeam()" class="profile-page-add-team-btn">
+          Add Team
+        </button>
+        <button type="button" onclick="openEditTeam()" class="profile-page-edit-team-btn">
+          Edit Team
+        </button>
+      </div>
+    </div>
+  </div>
+  
+<div
+  id="updateProfileModal"
+  class="update-profile-modal-overlay"
+  style="display: none;"
+  aria-hidden="true"
+>
+  <div class="update-profile-modal-box">
+    <div class="update-profile-modal-header">
+      <h3 class="update-profile-modal-title">
+        Update Your Profile
+      </h3>
+      <button
+        type="button"
+        class="update-profile-modal-close"
+        onclick="closeUpdateProfile()"
+        aria-label="Close"
+      >
+        ×
+      </button>
+    </div>
+    <div class="update-profile-modal-content">
+      <div class="update-profile-input-group">
+        <label
+          for="updateProfileUsername"
+          class="update-profile-input-label"
+        >
+          Username
+        </label>
+        <input
+          type="text"
+          id="updateProfileUsername"
+          class="update-profile-input"
+          placeholder="Enter username"
+          autocomplete="username"
+        >
+      </div>
+      <div class="update-profile-input-group">
+        <label
+          for="updateProfilePhone"
+          class="update-profile-input-label"
+        >
+          WhatsApp Number
+        </label>
+        <input
+          type="tel"
+          id="updateProfilePhone"
+          class="update-profile-input"
+          placeholder="e.g. 08012345678"
+          autocomplete="tel"
+        >
+      </div>
+      <p class="update-profile-description">
+        Your WhatsApp number is used
+        by other tournament players to contact you. Ensure you enter your active whatsapp number.
+      </p>
+      <div
+        id="updateProfileMessage"
+        class="update-profile-status"
+      ></div>
+    </div>
+    <div class="update-profile-modal-actions">
+      <button
+        type="button"
+        class="update-profile-cancel-button"
+        onclick="closeUpdateProfile()"
+      >
+        Cancel
+      </button>
+      <button
+        type="button"
+        id="saveProfileBtn"
+        class="update-profile-save-button"
+        onclick="saveUpdatedProfile()"
+      >
+        Save Changes
+      </button>
+    </div>
   </div>
 </div>
   
- 
-<div
-  id="profileModal"
-  class="profile-modal-page"
-  aria-hidden="true"
->
-  <div class="profile-modal-page-header">
-    <button
-      onclick="closeProfileModal()"
-      id="closeProfileModal"
-      class="profile-modal-page-back"
-      aria-label="Close profile"
-    >
-      <span>←</span>
-    </button>
-
-    <h2 class="profile-modal-page-title">
-      My Profile
-    </h2>
-
-    <div class="profile-modal-page-header-spacer"></div>
-  </div>
-
-  <div class="profile-page-content">
-
-    <div class="profile-page-user-section">
-      <div
-        id="profileUsername"
-        class="profile-page-username"
-      >
-        Username
-      </div>
-    </div>
-
-    <section class="profile-page-teams-section">
-
-      <div class="profile-page-section-header">
-        <h3 class="profile-page-section-title">
-          My Teams
-        </h3>
-      </div>
-
-      <div
-        id="profileTeams"
-        class="profile-page-teams-list"
-      ></div>
-
-      <div
-        id="profileTeamsEmpty"
-        class="profile-page-empty"
-        hidden
-      >
-        You don't own any teams yet.
-      </div>
-
-    </section>
-
-    <div class="profile-page-team-actions">
-
-      <button
-        type="button"
-        onclick="openAddTeam()"
-        class="profile-page-add-team-btn"
-      >
-        Add Team
-      </button>
-
-      <button
-        type="button"
-        onclick="openEditTeam()"
-        class="profile-page-edit-team-btn"
-      >
-        Edit Team
-      </button>
-
-    </div>
-
-  </div>
-</div>  
   <script src="storage.js"></script>
   <script src="league.js"></script>
   <script src="helper.js"></script>

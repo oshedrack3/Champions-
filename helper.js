@@ -456,6 +456,7 @@ function handleMenuAction(action) {
   closeMenu();
   
   const actions = {
+    openHOF:openHallOfFame,
     openProfile:openProfileModal,
     joinTour:handleJoinTournament,
     newNotice: openNoticeBoardModal,
@@ -527,13 +528,13 @@ const menuConfig = {
       action: "newNotice",
       roles: ["admin"]
     },
-    /* 
+    
      {
-       label: "Export Tournament",
-       action: "enableExportMode",
-       roles: ["admin"]
+       label: "Hall of Fame",
+       action: "openHOF",
+       roles: ["admin", "player"]
      },
-     
+     /*
      {
        label: "Delete Tournament",
        action: "deleteTournament",
@@ -2009,78 +2010,88 @@ function closeDeleteAccountModal() {
 
 function setupCompetitionToggle() {
   const btnMy =
-    document.getElementById("btnMy");
-  
+    document.getElementById(
+      "btnMy"
+    );
   const noticeBoard =
     document.getElementById(
       "noticeSection"
     );
-  
-  const btnHallOfFame =
-    document.getElementById(
-      "btnHallOfFame"
-    );
-  
   const mySection =
     document.getElementById(
       "mySection"
     );
-  
-  const hallOfFameSection =
-    document.getElementById(
-      "hallOfFameSection"
-    );
-  
   if (
     !btnMy ||
-    !btnHallOfFame ||
     !mySection ||
-    !hallOfFameSection ||
     !noticeBoard
   ) {
     return;
   }
-  
-  btnMy.onclick = () => {
+  mySection.style.display =
+    "block";
+  noticeBoard.style.display =
+    "block";
+  btnMy.classList.add(
+    "active"
+  );
+}
+async function openHallOfFame() {
+  const mySection =
+    document.getElementById(
+      "mySection"
+    );
+  const noticeBoard =
+    document.getElementById(
+      "noticeSection"
+    );
+  const hallOfFameSection =
+    document.getElementById(
+      "hallOfFameSection"
+    );
+  if (
+    !hallOfFameSection
+  ) {
+    return;
+  }
+  if (mySection) {
     mySection.style.display =
-      "block";
-    
+      "none";
+  }
+  if (noticeBoard) {
     noticeBoard.style.display =
-      "block";
-    
+      "none";
+  }
+  hallOfFameSection.style.display =
+    "block";
+  await loadHallOfFame();
+}
+function closeHallOfFame() {
+  const hallOfFameSection =
+    document.getElementById(
+      "hallOfFameSection"
+    );
+  const mySection =
+    document.getElementById(
+      "mySection"
+    );
+  const noticeBoard =
+    document.getElementById(
+      "noticeSection"
+    );
+  if (hallOfFameSection) {
     hallOfFameSection.style.display =
       "none";
-    
-    btnMy.classList.add("active");
-    
-    btnHallOfFame.classList.remove(
-      "active"
-    );
-  };
-  
-  btnHallOfFame.onclick =
-    async () => {
-      mySection.style.display =
-        "none";
-      
-      noticeBoard.style.display =
-        "none";
-      
-      hallOfFameSection.style.display =
-        "block";
-      
-      btnHallOfFame.classList.add(
-        "active"
-      );
-      
-      btnMy.classList.remove(
-        "active"
-      );
-      
-      await loadHallOfFame();
-    };
+  }
+  if (mySection) {
+    mySection.style.display =
+      "block";
+  }
+  if (noticeBoard) {
+    noticeBoard.style.display =
+      "block";
+  }
 }
-
 function toggleCupSetUpView() {
   const teamView =
     document.getElementById("cupTeamView");
@@ -2285,32 +2296,6 @@ document
   
   
   
-async function openProfileModal() {
-  const modal =
-    document.getElementById(
-      "profileModal"
-    );
-  
-  if (!modal) return;
-  
-  modal.classList.add("active");
-  modal.setAttribute(
-    "aria-hidden",
-    "false"
-  );
-  
-  try {
-    const profile =
-      await getUserProfile();
-    
-    renderUserProfile(profile);
-  } catch (error) {
-    console.error(
-      "Failed to load profile:",
-      error
-    );
-  }
-}
 function closeProfileModal() {
   const modal =
     document.getElementById(

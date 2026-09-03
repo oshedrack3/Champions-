@@ -348,140 +348,6 @@ function getSubmissionBadge(
   `;
 }
 
-function createFixtureCard(
-  tournament,
-  match
-) {
-  const submission =
-    getSubmission(
-      match,
-      tournament
-    );
-  
-  const div =
-    document.createElement("div");
-  
-  const played =
-    Boolean(match.played);
-  
-  const round =
-    Number(match.round) || 1;
-  
-  const homeName =
-    match.home || "Home";
-  
-  const awayName =
-    match.away || "Away";
-  
-  div.className =
-    `fixture-row ${
-      played
-        ? "played"
-        : "not-played"
-    }`;
-  
-  div.innerHTML = `
-    <div class="fixture-label">
-      ${tournament.name || "Tournament"} •
-      R${String(round).padStart(2, "0")}
-      ${getSubmissionBadge(
-        match,
-        submission
-      )}
-    </div>
-
-    <div class="fixture-row-content">
-      <div class="fixture-teams-stack">
-
-        <div class="team-row-item team-home-container">
-          <div class="fixture-team-logo-placeholder">
-            ?
-          </div>
-
-          <span class="fixture-team-name">
-            ${homeName}
-          </span>
-        </div>
-
-        <div class="team-row-item team-away-container">
-          <div class="fixture-team-logo-placeholder">
-            ?
-          </div>
-
-          <span class="fixture-team-name">
-            ${awayName}
-          </span>
-        </div>
-
-      </div>
-
-      <div class="fixture-status-pane">
-        ${
-          played
-            ? `
-              <div class="score-stack">
-                <span class="score-badge played">
-                  ${match.homeGoals ?? 0}
-                </span>
-
-                <span class="ft-badge">
-                  Full Time
-                </span>
-
-                <span class="score-badge played">
-                  ${match.awayGoals ?? 0}
-                </span>
-              </div>
-            `
-            : `
-              <span class="vs-text-alt">
-                ${formatMatchDay(
-                  match.scheduledAt
-                )}
-              </span>
-            `
-        }
-      </div>
-    </div>
-
-    ${
-      played
-        ? `
-          <div class="match-playedTime">
-            ${formatRecordedTime(
-              match.playedAt
-            )}
-          </div>
-        `
-        : ""
-    }
-  `;
-  
-  replaceTeamLogo(
-    div,
-    ".team-home-container",
-    match.homeLogo,
-    homeName
-  );
-  
-  replaceTeamLogo(
-    div,
-    ".team-away-container",
-    match.awayLogo,
-    awayName
-  );
-  
-  div.style.cursor =
-    "pointer";
-  
-  div.onclick = () =>
-    onFixtureClick(
-      match,
-      submission
-    );
-  
-  return div;
-}
 
 function renderEmptyFixtures(
   container,
@@ -2232,8 +2098,7 @@ function renderRoundList() {
     Array.isArray(fixtures) ?
     fixtures :
     Array.isArray(tournament.matches) ?
-    tournament.matches :
-    [];
+    tournament.matches : [];
   
   const max = Math.max(
     ...matches.map(
@@ -4640,8 +4505,7 @@ function showTeamSelectionModal(
       
       teamSelectionTeams =
         Array.isArray(teams) ?
-        teams :
-        [];
+        teams : [];
       
       selectedTeamIds =
         new Set();
@@ -5005,64 +4869,148 @@ function getSubmissionBadge(match) {
   `;
 }
 
+async function onFixtureClick(match) {
+  if (APP_MODE === "view") {
+    return;
+  }
+  
+  const status =
+    String(
+      match.submission_status || ""
+    ).toLowerCase();
+  
+  const user =
+    getCurrentUser();
+  
+  const isAdmin =
+    user?.role === "admin";
+  
+  if (
+    !isAdmin &&
+    status === "approved"
+  ) {
+    return;
+  }
+  
+  if (
+    !isAdmin &&
+    status !== "pending" &&
+    status !== "rejected"
+  ) {
+    return openLeagueRecorder(match);
+  }
+  
+  if (
+    isAdmin &&
+    status !== "pending" &&
+    status !== "rejected" &&
+    status !== "approved"
+  ) {
+    return openLeagueRecorder(match);
+  }
+  
+  try {
+    showLoader();
+    
+    const tournament =
+      getCurrentTournament();
+    
+    if (!tournament) return;
+    
+    let submission;
+    
+    if (isAdmin) {
+      const submissions =
+        await getMatchSubmissions(
+          tournament.id,
+          match.id
+        );
+      
+      submission =
+        Array.isArray(submissions) ?
+        submissions[0] :
+        null;
+    } else {
+      submission =
+        await getMatchSubmission(
+          tournament.id,
+          match.id
+        );
+    }
+    
+    if (!submission) {
+      showAlert(
+        "Submission not found."
+      );
+      return;
+    }
+    
+    openSubmissionReview(
+      match,
+      submission
+    );
+    
+  } catch (err) {
+    console.error(
+      "[onFixtureClick]",
+      err
+    );
+    
+    showAlert(
+      err.message ||
+      "Failed to load submission."
+    );
+    
+  } finally {
+    hideLoader();
+  }
+}
+
 function createFixtureCard(
   tournament,
   match
 ) {
   const div =
     document.createElement("div");
-  
   const played =
     Boolean(match.played);
-  
   const round =
     Number(match.round) || 1;
-  
   const homeName =
     match.home || "Home";
-  
   const awayName =
     match.away || "Away";
-  
   div.className =
     `fixture-row ${
       played
         ? "played"
         : "not-played"
     }`;
-  
   div.innerHTML = `
     <div class="fixture-label">
       ${tournament.name || "Tournament"} •
       R${String(round).padStart(2, "0")}
       ${getSubmissionBadge(match)}
     </div>
-
     <div class="fixture-row-content">
       <div class="fixture-teams-stack">
-
         <div class="team-row-item team-home-container">
           <div class="fixture-team-logo-placeholder">
             ?
           </div>
-
           <span class="fixture-team-name">
             ${homeName}
           </span>
         </div>
-
         <div class="team-row-item team-away-container">
           <div class="fixture-team-logo-placeholder">
             ?
           </div>
-
           <span class="fixture-team-name">
             ${awayName}
           </span>
         </div>
-
       </div>
-
       <div class="fixture-status-pane">
         ${
           played
@@ -5071,11 +5019,9 @@ function createFixtureCard(
                 <span class="score-badge played">
                   ${match.homeGoals ?? 0}
                 </span>
-
                 <span class="ft-badge">
                   Full Time
                 </span>
-
                 <span class="score-badge played">
                   ${match.awayGoals ?? 0}
                 </span>
@@ -5090,8 +5036,17 @@ function createFixtureCard(
             `
         }
       </div>
+      <div class="fixture-contact-area">
+        <button
+          class="fixture-contact-btn"
+          type="button"
+          aria-label="Team contacts"
+          title="Team contacts"
+        >
+          ☎
+        </button>
+      </div>
     </div>
-
     ${
       played
         ? `
@@ -5104,75 +5059,106 @@ function createFixtureCard(
         : ""
     }
   `;
-  
   replaceTeamLogo(
     div,
     ".team-home-container",
     match.homeLogo,
     homeName
   );
-  
   replaceTeamLogo(
     div,
     ".team-away-container",
     match.awayLogo,
     awayName
   );
-  
   div.style.cursor =
     "pointer";
-  
   div.onclick = () =>
     onFixtureClick(match);
-  
+  const contactBtn =
+    div.querySelector(
+      ".fixture-contact-btn"
+    );
+  if (contactBtn) {
+    contactBtn.onclick = (event) => {
+      event.stopPropagation();
+      openMatchContacts(match);
+    };
+  }
   return div;
+}
+
+async function openProfileModal() {
+  const modal =
+    document.getElementById(
+      "profileModal"
+    );
+  if (!modal) return;
+  modal.classList.add("active");
+  modal.setAttribute(
+    "aria-hidden",
+    "false"
+  );
+  try {
+    const profile =
+      await getUserProfile();
+    renderUserProfile(profile);
+  } catch (error) {
+    console.error(
+      "Failed to load profile:",
+      error
+    );
+  }
 }
 function renderUserProfile(profile) {
   const usernameElement =
     document.getElementById(
       "profileUsername"
     );
-  
+  const phoneElement =
+    document.getElementById(
+      "profilePhone"
+    );
   const teamsElement =
     document.getElementById(
       "profileTeams"
     );
-  
   const emptyElement =
     document.getElementById(
       "profileTeamsEmpty"
     );
-  
-  if (!usernameElement ||
+  if (
+    !usernameElement ||
+    !phoneElement ||
     !teamsElement ||
-    !emptyElement) {
+    !emptyElement
+  ) {
     return;
   }
-  
   usernameElement.textContent =
-    profile?.username || "Username";
-  
+    profile?.username ||
+    "Username";
+  const phone =
+    profile?.phone;
+  phoneElement.textContent =
+    phone
+      ? `WhatsApp: ${phone}`
+      : "WhatsApp number not added";
   teamsElement.innerHTML = "";
-  
   const teams =
-    Array.isArray(profile?.teams) ?
-    profile.teams :
-    [];
-  
+    Array.isArray(profile?.teams)
+      ? profile.teams
+      : [];
   if (!teams.length) {
     emptyElement.hidden = false;
     return;
   }
-  
   emptyElement.hidden = true;
-  
   teams.forEach(team => {
     const teamElement =
       document.createElement("div");
-    
     teamElement.className =
       "profile-page-team-card";
-    
     teamElement.innerHTML = `
       <div class="profile-page-team-logo">
         ${
@@ -5185,12 +5171,13 @@ function renderUserProfile(profile) {
             : `<div class="profile-page-team-logo-placeholder"></div>`
         }
       </div>
-
       <div class="profile-page-team-name">
-        ${escapeHtml(team.name || "Unnamed Team")}
+        ${escapeHtml(
+          team.name ||
+          "Unnamed Team"
+        )}
       </div>
     `;
-    
     teamsElement.appendChild(
       teamElement
     );

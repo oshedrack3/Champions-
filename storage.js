@@ -4150,3 +4150,311 @@ async function loadTournamentTeams(tournamentId) {
   
   return teamsByTournament[tournamentId];
 }
+
+async function openMatchContacts(match) {
+  const existing =
+    document.getElementById(
+      "matchContactsModal"
+    );
+  if (existing) {
+    existing.remove();
+  }
+  const homeTeamId =
+    match.home_team_id ||
+    match.homeTeamId;
+  const awayTeamId =
+    match.away_team_id ||
+    match.awayTeamId;
+  const homeName =
+    match.home || "Home";
+  const awayName =
+    match.away || "Away";
+  const homeLogo =
+    match.homeLogo || null;
+  const awayLogo =
+    match.awayLogo || null;
+  const modal =
+    document.createElement("div");
+  modal.id =
+    "matchContactsModal";
+  modal.className =
+    "match-contacts-modal";
+  modal.innerHTML = `
+    <div class="match-contacts-backdrop"></div>
+    <div
+      class="match-contacts-dialog"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="matchContactsTitle"
+    >
+      <div class="match-contacts-header">
+        <div>
+          <h3 id="matchContactsTitle">
+            Team Contacts
+          </h3>
+          <p>
+            Select a team to view their contact
+          </p>
+        </div>
+        <button
+          type="button"
+          class="match-contacts-close"
+          aria-label="Close"
+        >
+          ×
+        </button>
+      </div>
+      <div class="match-contacts-teams">
+        <button
+          type="button"
+          class="match-contact-team"
+          data-team-id="${homeTeamId || ""}"
+        >
+          <div class="match-contact-team-logo">
+            ${
+              homeLogo
+                ? `
+                  <img
+                    src="${homeLogo}"
+                    alt="${homeName}"
+                  >
+                `
+                : `
+                  <span>?</span>
+                `
+            }
+          </div>
+          <div class="match-contact-team-info">
+            <span class="match-contact-team-name">
+              ${homeName}
+            </span>
+            <span class="match-contact-team-action">
+              View contact
+            </span>
+          </div>
+          <span class="match-contact-arrow">
+            ›
+          </span>
+        </button>
+        <button
+          type="button"
+          class="match-contact-team"
+          data-team-id="${awayTeamId || ""}"
+        >
+          <div class="match-contact-team-logo">
+            ${
+              awayLogo
+                ? `
+                  <img
+                    src="${awayLogo}"
+                    alt="${awayName}"
+                  >
+                `
+                : `
+                  <span>?</span>
+                `
+            }
+          </div>
+          <div class="match-contact-team-info">
+            <span class="match-contact-team-name">
+              ${awayName}
+            </span>
+            <span class="match-contact-team-action">
+              View contact
+            </span>
+          </div>
+          <span class="match-contact-arrow">
+            ›
+          </span>
+        </button>
+      </div>
+      <div
+        class="match-contact-details"
+        hidden
+      ></div>
+    </div>
+  `;
+  document.body.appendChild(
+    modal
+  );
+  const closeModal = () => {
+    modal.remove();
+  };
+  const closeBtn =
+    modal.querySelector(
+      ".match-contacts-close"
+    );
+  const backdrop =
+    modal.querySelector(
+      ".match-contacts-backdrop"
+    );
+  closeBtn.onclick =
+    closeModal;
+  backdrop.onclick =
+    closeModal;
+  const teamButtons =
+    modal.querySelectorAll(
+      ".match-contact-team"
+    );
+  const details =
+    modal.querySelector(
+      ".match-contact-details"
+    );
+  teamButtons.forEach(
+    (button) => {
+      button.onclick =
+        async () => {
+          const teamId =
+            button.dataset.teamId;
+          if (!teamId) {
+            showAlert(
+              "Team information is unavailable."
+            );
+            return;
+          }
+          teamButtons.forEach(
+            item => {
+              item.disabled = true;
+            }
+          );
+          details.hidden =
+            false;
+          details.innerHTML = `
+            <div class="match-contact-loading">
+              Loading contact...
+            </div>
+          `;
+          try {
+            const token =
+              getToken();
+            if (!token) {
+              throw new Error(
+                "You are not logged in."
+              );
+            }
+            const res =
+              await apiRequest(
+                `${API}/teams/${encodeURIComponent(
+                  teamId
+                )}/contact`,
+                {
+                  method: "GET",
+                  headers: {
+                    Authorization:
+                      token
+                  }
+                },
+                () =>
+                  openMatchContacts(
+                    match
+                  )
+              );
+            if (!res) {
+              return;
+            }
+            const result =
+              await res.json();
+            if (
+              !res.ok ||
+              !result.success
+            ) {
+              throw new Error(
+                result.message ||
+                "Failed to load team contact."
+              );
+            }
+            const contact =
+              result.contact || {};
+            const username =
+              contact.username ||
+              "Not available";
+            const phone =
+              contact.phone ||
+              null;
+            let whatsappNumber = null;
+            if (phone) {
+              let cleaned =
+                String(phone)
+                  .replace(
+                    /[^\d+]/g,
+                    ""
+                  );
+              if (
+                cleaned.startsWith("+")
+              ) {
+                cleaned =
+                  cleaned.substring(1);
+              }
+              if (
+                cleaned.startsWith("0")
+              ) {
+                cleaned =
+                  "234" +
+                  cleaned.substring(1);
+              }
+              whatsappNumber =
+                cleaned;
+            }
+            details.innerHTML = `
+              <div class="match-contact-details-inner">
+                <div class="match-contact-details-header">
+                  <strong>
+                    ${contact.team_name || "Team"}
+                  </strong>
+                </div>
+                <div class="match-contact-info-row">
+                  <span class="match-contact-info-label">
+                    Owner
+                  </span>
+                  <span class="match-contact-info-value">
+                    ${username}
+                  </span>
+                </div>
+                <div class="match-contact-info-row">
+                  <span class="match-contact-info-label">
+                    WhatsApp
+                  </span>
+                  <span class="match-contact-info-value">
+                    ${
+                      whatsappNumber
+                        ? `
+                          <a
+                            href="https://wa.me/${whatsappNumber}"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            ${phone}
+                          </a>
+                        `
+                        : `
+                          Not provided
+                        `
+                    }
+                  </span>
+                </div>
+              </div>
+            `;
+          } catch (error) {
+            console.error(
+              "[openMatchContacts]",
+              error
+            );
+            details.innerHTML = `
+              <div class="match-contact-error">
+                ${
+                  error.message ||
+                  "Failed to load contact."
+                }
+              </div>
+            `;
+          } finally {
+            teamButtons.forEach(
+              item => {
+                item.disabled = false;
+              }
+            );
+          }
+        };
+    }
+  );
+}

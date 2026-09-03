@@ -606,8 +606,7 @@ async function reviewMatchSubmission(
       
       body: JSON.stringify({
         status: action === "approved" ?
-          "approved" :
-          "rejected",
+          "approved" : "rejected",
         rejection_reason: rejectionReason
       })
     }
@@ -1051,7 +1050,7 @@ async function getHallOfFame() {
     await getCachedData(
       "hall-of-fame"
     );
-
+  
   if (
     !hallOfFame ||
     typeof hallOfFame !== "object"
@@ -1060,31 +1059,31 @@ async function getHallOfFame() {
       categories: []
     };
   }
-
+  
   const cachedSync =
     await getCachedData(
       "hallOfFameSync"
     );
-
+  
   const lastChangeId =
     cachedSync &&
     Number.isInteger(
       Number(
         cachedSync.lastChangeId
       )
-    )
-      ? Number(
-          cachedSync.lastChangeId
-        )
-      : 0;
-
+    ) ?
+    Number(
+      cachedSync.lastChangeId
+    ) :
+    0;
+  
   const token =
     getToken();
-
+  
   if (!token) {
     return hallOfFame;
   }
-
+  
   const res =
     await apiRequest(
       `${API}/hall-of-fame/sync?since=${lastChangeId}`,
@@ -1096,14 +1095,14 @@ async function getHallOfFame() {
       },
       getHallOfFame
     );
-
+  
   if (!res) {
     return hallOfFame;
   }
-
+  
   const result =
     await res.json();
-
+  
   if (
     !res.ok ||
     !result.success
@@ -1113,46 +1112,45 @@ async function getHallOfFame() {
       "Failed to synchronize Hall of Fame."
     );
   }
-
+  
   if (
     result.changed &&
     result.hallOfFame
   ) {
     hallOfFame =
       result.hallOfFame;
-
+    
     await saveCachedData(
       "hall-of-fame",
       "",
       hallOfFame
     );
   }
-
+  
   await saveCachedData(
     "hallOfFameSync",
     "",
     {
-      lastChangeId:
-        Number(
-          result.lastChangeId ||
-          lastChangeId
-        )
+      lastChangeId: Number(
+        result.lastChangeId ||
+        lastChangeId
+      )
     }
   );
-
+  
   return hallOfFame;
 }
 async function saveHallOfFame() {
   if (!hallOfFameAdminData) {
     return;
   }
-
+  
   try {
     showLoader();
-
+    
     const token =
       getToken();
-
+    
     const res =
       await apiRequest(
         `${API}/hall-of-fame`,
@@ -1160,24 +1158,22 @@ async function saveHallOfFame() {
           method: "PATCH",
           headers: {
             Authorization: token,
-            "Content-Type":
-              "application/json"
+            "Content-Type": "application/json"
           },
           body: JSON.stringify({
-            categories:
-              hallOfFameAdminData.categories
+            categories: hallOfFameAdminData.categories
           })
         },
         saveHallOfFame
       );
-
+    
     if (!res) {
       return;
     }
-
+    
     const result =
       await res.json();
-
+    
     if (
       !res.ok ||
       !result.success
@@ -1187,16 +1183,16 @@ async function saveHallOfFame() {
         "Failed to save Hall of Fame."
       );
     }
-
+    
     hallOfFameAdminData =
       result.hallOfFame;
-
+    
     await saveCachedData(
       "hall-of-fame",
       "",
       hallOfFameAdminData
     );
-
+    
     if (
       result.changeId !== null &&
       result.changeId !== undefined
@@ -1205,35 +1201,34 @@ async function saveHallOfFame() {
         "hallOfFameSync",
         "",
         {
-          lastChangeId:
-            Number(
-              result.changeId
-            )
+          lastChangeId: Number(
+            result.changeId
+          )
         }
       );
     }
-
+    
     renderHallOfFame(
       hallOfFameAdminData
     );
-
+    
     renderHallOfFameAdminEditor();
-
+    
     alert(
       "Hall of Fame updated successfully."
     );
-
+    
   } catch (error) {
     console.error(
       "Failed to save Hall of Fame:",
       error
     );
-
+    
     alert(
       error.message ||
       "Failed to save Hall of Fame."
     );
-
+    
   } finally {
     hideLoader();
   }
@@ -1367,16 +1362,16 @@ async function updateCompetition(id, data) {
 
 async function joinTournament(tournamentId) {
   const token = getToken();
-
+  
   if (!token) {
     showAlert(
       "You must be logged in to join."
     );
     return;
   }
-
+  
   showLoader();
-
+  
   try {
     const teamsRes =
       await apiRequest(
@@ -1388,20 +1383,20 @@ async function joinTournament(tournamentId) {
           }
         },
         () =>
-          joinTournament(
-            tournamentId
-          )
+        joinTournament(
+          tournamentId
+        )
       );
-
+    
     if (!teamsRes) {
       throw new Error(
         "Failed to load your teams."
       );
     }
-
+    
     const teamsResult =
       await teamsRes.json();
-
+    
     if (
       !teamsRes.ok ||
       !teamsResult.success
@@ -1411,23 +1406,23 @@ async function joinTournament(tournamentId) {
         "Failed to load your teams."
       );
     }
-
+    
     const teams =
       teamsResult.teams || [];
-
+    
     if (!teams.length) {
       throw new Error(
         "You do not have any teams. Create a team first."
       );
     }
-
+    
     hideLoader();
-
+    
     const selectedTeamIds =
       await showTeamSelectionModal(
         teams
       );
-
+    
     if (
       !Array.isArray(
         selectedTeamIds
@@ -1436,9 +1431,9 @@ async function joinTournament(tournamentId) {
     ) {
       return;
     }
-
+    
     showLoader();
-
+    
     const res =
       await apiRequest(
         `${API}/tournaments/${encodeURIComponent(
@@ -1448,30 +1443,27 @@ async function joinTournament(tournamentId) {
           method: "POST",
           headers: {
             Authorization: token,
-            "Content-Type":
-              "application/json"
+            "Content-Type": "application/json"
           },
-          body:
-            JSON.stringify({
-              team_ids:
-                selectedTeamIds
-            })
+          body: JSON.stringify({
+            team_ids: selectedTeamIds
+          })
         },
         () =>
-          joinTournament(
-            tournamentId
-          )
+        joinTournament(
+          tournamentId
+        )
       );
-
+    
     if (!res) {
       throw new Error(
         "No response from server."
       );
     }
-
+    
     const result =
       await res.json();
-
+    
     if (
       !res.ok ||
       !result.success
@@ -1481,25 +1473,25 @@ async function joinTournament(tournamentId) {
         "Failed to join tournament."
       );
     }
-
+    
     showActionModal(
       "Successfully joined tournament",
       "success"
     );
-
+    
     await loadPublicTournaments();
-
+    
   } catch (err) {
     console.error(
       "[joinTournament]",
       err
     );
-
+    
     showAlert(
       err.message ||
       "Join failed"
     );
-
+    
   } finally {
     hideLoader();
   }
@@ -1744,35 +1736,35 @@ async function updateSubmissionDeadline(
 async function getNotices() {
   const token =
     getToken();
-
+  
   if (!token) {
     throw new Error(
       "Invalid session."
     );
   }
-
+  
   let notices =
     await getCachedData(
       "notices"
     );
-
+  
   if (!Array.isArray(notices)) {
     notices = [];
   }
-
+  
   const cachedSync =
     await getCachedData(
       "noticesSync"
     );
-
+  
   const lastChangeId =
     cachedSync &&
     Number.isInteger(
       Number(cachedSync.lastChangeId)
-    )
-      ? Number(cachedSync.lastChangeId)
-      : 0;
-
+    ) ?
+    Number(cachedSync.lastChangeId) :
+    0;
+  
   const response =
     await apiRequest(
       `${API}/notices/sync?since=${lastChangeId}`,
@@ -1784,14 +1776,14 @@ async function getNotices() {
       },
       getNotices
     );
-
+  
   if (!response) {
     return notices;
   }
-
+  
   const data =
     await response.json();
-
+  
   if (
     !response.ok ||
     !data.success
@@ -1801,17 +1793,15 @@ async function getNotices() {
       "Failed to synchronize notices."
     );
   }
-
+  
   const newNotices =
-    Array.isArray(data.notices)
-      ? data.notices
-      : [];
-
+    Array.isArray(data.notices) ?
+    data.notices : [];
+  
   const deleted =
-    Array.isArray(data.deleted)
-      ? data.deleted
-      : [];
-
+    Array.isArray(data.deleted) ?
+    data.deleted : [];
+  
   const noticeMap =
     new Map(
       notices.map(
@@ -1821,18 +1811,18 @@ async function getNotices() {
         ]
       )
     );
-
+  
   for (
     const notice of newNotices
   ) {
     if (!notice?.id) continue;
-
+    
     noticeMap.set(
       notice.id,
       notice
     );
   }
-
+  
   for (
     const noticeId of deleted
   ) {
@@ -1840,102 +1830,101 @@ async function getNotices() {
       noticeId
     );
   }
-
+  
   notices =
     Array.from(
       noticeMap.values()
     );
-
+  
   notices =
     notices.filter(
       notice =>
-        !notice.expires_at ||
-        Number(notice.expires_at) >
-          Date.now()
+      !notice.expires_at ||
+      Number(notice.expires_at) >
+      Date.now()
     );
-
+  
   notices.sort(
     (a, b) =>
-      Number(b.created_at || 0) -
-      Number(a.created_at || 0)
+    Number(b.created_at || 0) -
+    Number(a.created_at || 0)
   );
-
+  
   await saveCachedData(
     "notices",
     "",
     notices
   );
-
+  
   await saveCachedData(
     "noticesSync",
     "",
     {
-      lastChangeId:
-        Number(
-          data.lastChangeId ||
-          lastChangeId
-        )
+      lastChangeId: Number(
+        data.lastChangeId ||
+        lastChangeId
+      )
     }
   );
-
+  
   return notices;
 }
 async function createNotice() {
   const title =
     document
-      .getElementById("noticeTitle")
-      .value
-      .trim();
-
+    .getElementById("noticeTitle")
+    .value
+    .trim();
+  
   const category =
     document
-      .getElementById("noticeCategory")
-      .value;
-
+    .getElementById("noticeCategory")
+    .value;
+  
   const content =
     document
-      .getElementById("noticeContent")
-      .value
-      .trim();
-
+    .getElementById("noticeContent")
+    .value
+    .trim();
+  
   const files =
     Array.from(
       document
-        .getElementById("noticeImages")
-        .files || []
+      .getElementById("noticeImages")
+      .files || []
     );
-
+  
   const published =
     document
-      .getElementById("noticePublished")
-      .checked;
-
+    .getElementById("noticePublished")
+    .checked;
+  
   const noExpiry =
     document
-      .getElementById("noticeNoExpiry")
-      .checked;
-
+    .getElementById("noticeNoExpiry")
+    .checked;
+  
   const expiryValue =
     document
-      .getElementById("noticeExpiresAt")
-      .value;
-
+    .getElementById("noticeExpiresAt")
+    .value;
+  
   if (!title) {
     showAlert(
       "Enter a notice title."
     );
     return;
   }
-
+  
   if (!content) {
     showAlert(
       "Enter the notice content."
     );
     return;
   }
-
+  
   let expiresAt = null;
-
+  
   if (!noExpiry) {
     if (!expiryValue) {
       showAlert(
@@ -1943,12 +1932,12 @@ async function createNotice() {
       );
       return;
     }
-
+    
     expiresAt =
       new Date(
         expiryValue
       ).getTime();
-
+    
     if (
       !Number.isFinite(
         expiresAt
@@ -1961,39 +1950,37 @@ async function createNotice() {
       return;
     }
   }
-
+  
   if (files.length > 10) {
     showAlert(
       "You can upload a maximum of 10 images."
     );
     return;
   }
-
+  
   showLoader();
-
+  
   try {
     const images = [];
-
+    
     for (const file of files) {
       const base64 =
         await fileToBase64(
           file,
           1200
         );
-
+      
       images.push(base64);
     }
-
+    
     const response =
       await apiRequest(
         `${API}/notices`,
         {
           method: "POST",
           headers: {
-            "Content-Type":
-              "application/json",
-            Authorization:
-              getToken()
+            "Content-Type": "application/json",
+            Authorization: getToken()
           },
           body: JSON.stringify({
             title,
@@ -2006,14 +1993,14 @@ async function createNotice() {
         },
         createNotice
       );
-
+    
     if (!response) {
       return;
     }
-
+    
     const data =
       await response.json();
-
+    
     if (
       !response.ok ||
       !data.success
@@ -2023,7 +2010,7 @@ async function createNotice() {
         "Failed to create notice."
       );
     }
-
+    
     if (
       data.notice &&
       data.notice.published &&
@@ -2038,11 +2025,11 @@ async function createNotice() {
         await getCachedData(
           "notices"
         );
-
+      
       if (!Array.isArray(notices)) {
         notices = [];
       }
-
+      
       const noticeMap =
         new Map(
           notices.map(
@@ -2052,34 +2039,34 @@ async function createNotice() {
             ]
           )
         );
-
+      
       noticeMap.set(
         data.notice.id,
         data.notice
       );
-
+      
       notices =
         Array.from(
           noticeMap.values()
         );
-
+      
       notices.sort(
         (a, b) =>
-          Number(
-            b.created_at || 0
-          ) -
-          Number(
-            a.created_at || 0
-          )
+        Number(
+          b.created_at || 0
+        ) -
+        Number(
+          a.created_at || 0
+        )
       );
-
+      
       await saveCachedData(
         "notices",
         "",
         notices
       );
     }
-
+    
     if (
       data.changeId !== null &&
       data.changeId !== undefined
@@ -2088,32 +2075,31 @@ async function createNotice() {
         "noticesSync",
         "",
         {
-          lastChangeId:
-            Number(
-              data.changeId
-            )
+          lastChangeId: Number(
+            data.changeId
+          )
         }
       );
     }
-
+    
     closeNoticeBoardModal();
-
+    
     showActionModal(
       "Notice published successfully.",
       "success"
     );
-
+    
   } catch (err) {
     console.error(
       "[createNotice]",
       err
     );
-
+    
     showAlert(
       err.message ||
       "Failed to create notice."
     );
-
+    
   } finally {
     hideLoader();
   }
@@ -2321,3 +2307,342 @@ async function getUserProfile() {
   return profile;
 }
 
+function openUpdateProfile() {
+  const modal =
+    document.getElementById(
+      "updateProfileModal"
+    );
+  const usernameInput =
+    document.getElementById(
+      "updateProfileUsername"
+    );
+  const phoneInput =
+    document.getElementById(
+      "updateProfilePhone"
+    );
+  const message =
+    document.getElementById(
+      "updateProfileMessage"
+    );
+  if (!modal) {
+    return;
+  }
+  const username =
+    document.getElementById(
+      "profileUsername"
+    )?.textContent || "";
+  const phoneText =
+    document.getElementById(
+      "profilePhone"
+    )?.textContent || "";
+  if (usernameInput) {
+    usernameInput.value =
+      username === "Username" ?
+      "" :
+      username.trim();
+  }
+  if (phoneInput) {
+    phoneInput.value =
+      phoneText
+      .replace(/^WhatsApp:\s*/i, "")
+      .trim();
+    if (
+      phoneInput.value ===
+      "WhatsApp number not added"
+    ) {
+      phoneInput.value = "";
+    }
+  }
+  if (message) {
+    message.style.display = "none";
+    message.textContent = "";
+    message.className =
+      "update-profile-message";
+  }
+  modal.style.display = "flex";
+  modal.setAttribute(
+    "aria-hidden",
+    "false"
+  );
+  setTimeout(() => {
+    usernameInput?.focus();
+  }, 50);
+}
+
+function closeUpdateProfile() {
+  const modal =
+    document.getElementById(
+      "updateProfileModal"
+    );
+  if (!modal) {
+    return;
+  }
+  modal.style.display = "none";
+  modal.setAttribute(
+    "aria-hidden",
+    "true"
+  );
+}
+function openUpdateProfile() {
+  const modal =
+    document.getElementById(
+      "updateProfileModal"
+    );
+  const usernameInput =
+    document.getElementById(
+      "updateProfileUsername"
+    );
+  const phoneInput =
+    document.getElementById(
+      "updateProfilePhone"
+    );
+  const message =
+    document.getElementById(
+      "updateProfileMessage"
+    );
+  if (!modal) {
+    return;
+  }
+  const username =
+    document.getElementById(
+      "profileUsername"
+    )?.textContent
+    ?.trim() || "";
+  const phoneText =
+    document.getElementById(
+      "profilePhone"
+    )?.textContent
+    ?.trim() || "";
+  let phone =
+    phoneText.replace(
+      /^WhatsApp:\s*/i,
+      ""
+    ).trim();
+  if (
+    phone ===
+    "WhatsApp number not added"
+  ) {
+    phone = "";
+  }
+  if (usernameInput) {
+    usernameInput.value =
+      username === "Username" ?
+      "" :
+      username;
+  }
+  if (phoneInput) {
+    phoneInput.value =
+      phone;
+  }
+  if (message) {
+    message.style.display =
+      "none";
+    message.textContent =
+      "";
+    message.className =
+      "update-profile-status";
+  }
+  modal.style.display =
+    "flex";
+  modal.setAttribute(
+    "aria-hidden",
+    "false"
+  );
+  setTimeout(() => {
+    usernameInput?.focus();
+  }, 50);
+}
+
+function closeUpdateProfile() {
+  const modal =
+    document.getElementById(
+      "updateProfileModal"
+    );
+  if (!modal) {
+    return;
+  }
+  modal.style.display =
+    "none";
+  modal.setAttribute(
+    "aria-hidden",
+    "true"
+  );
+}
+async function saveUpdatedProfile() {
+  const usernameInput =
+    document.getElementById(
+      "updateProfileUsername"
+    );
+  const phoneInput =
+    document.getElementById(
+      "updateProfilePhone"
+    );
+  const saveButton =
+    document.getElementById(
+      "saveProfileBtn"
+    );
+  const message =
+    document.getElementById(
+      "updateProfileMessage"
+    );
+  if (
+    !usernameInput ||
+    !phoneInput ||
+    !saveButton
+  ) {
+    return;
+  }
+  const username =
+    usernameInput.value.trim();
+  const phone =
+    phoneInput.value.trim();
+  const cachedProfile =
+    await getCachedData(
+      "profile"
+    );
+  const currentProfile =
+    cachedProfile &&
+    typeof cachedProfile === "object" ?
+    cachedProfile :
+    {};
+  const currentUsername =
+    String(
+      currentProfile.username ||
+      ""
+    ).trim();
+  const currentPhone =
+    String(
+      currentProfile.phone ||
+      ""
+    ).trim();
+  if (!username) {
+    if (message) {
+      message.textContent =
+        "Username is required.";
+      message.className =
+        "update-profile-status update-profile-status-error";
+      message.style.display =
+        "block";
+    }
+    usernameInput.focus();
+    return;
+  }
+  const updates = {};
+  if (
+    username !== currentUsername
+  ) {
+    updates.username =
+      username;
+  }
+  if (
+    phone !== currentPhone
+  ) {
+    updates.phone =
+      phone;
+  }
+  if (
+    Object.keys(updates).length === 0
+  ) {
+    closeUpdateProfile();
+    return;
+  }
+  const token =
+    getToken();
+  if (!token) {
+    if (message) {
+      message.textContent =
+        "Please log in again.";
+      message.className =
+        "update-profile-status update-profile-status-error";
+      message.style.display =
+        "block";
+    }
+    return;
+  }
+  saveButton.disabled =
+    true;
+  saveButton.textContent =
+    "Saving...";
+  if (message) {
+    message.style.display =
+      "none";
+    message.textContent =
+      "";
+    message.className =
+      "update-profile-status";
+  }
+  try {
+    const res =
+      await apiRequest(
+        `${API}/profile`,
+        {
+          method: "PUT",
+          headers: {
+            Authorization: token,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify(
+            updates
+          )
+        },
+        saveUpdatedProfile
+      );
+    if (!res) {
+      return;
+    }
+    const result =
+      await res.json();
+    if (
+      !res.ok ||
+      !result.success
+    ) {
+      throw new Error(
+        result.message ||
+        "Failed to update profile."
+      );
+    }
+    const profile =
+      result.profile || {
+        ...currentProfile,
+        ...updates
+      };
+    await saveCachedData(
+      "profile",
+      "",
+      profile
+    );
+    renderUserProfile(
+      profile
+    );
+    if (message) {
+      message.textContent =
+        "Profile updated successfully.";
+      message.className =
+        "update-profile-status update-profile-status-success";
+      message.style.display =
+        "block";
+    }
+    setTimeout(() => {
+      closeUpdateProfile();
+    }, 700);
+  } catch (error) {
+    console.error(
+      "Failed to update profile:",
+      error
+    );
+    if (message) {
+      message.textContent =
+        error.message ||
+        "Failed to update profile.";
+      message.className =
+        "update-profile-status update-profile-status-error";
+      message.style.display =
+        "block";
+    }
+  } finally {
+    saveButton.disabled =
+      false;
+    saveButton.textContent =
+      "Save Changes";
+  }
+} 
