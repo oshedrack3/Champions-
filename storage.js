@@ -7,6 +7,13 @@ let noticeScrollIndex = 0;
 let noticeInteractionTimeout = null;
 let hallOfFameAdminData = null;
 let submissionDeadlineInterval = null;
+let teamsByTournament = {};
+let tournamentRefreshRunning = false;
+let tableCache = null;
+let cachedTournamentId = null;
+
+let tournamentRefreshQueued = false;
+
 let currentTournament = null;
 let currentReviewMatch = null;
 let currentReviewSubmission = null;
@@ -22,6 +29,10 @@ let publicTournaments = [];
 let editingTeamId = null;
 let currentPage = null;
 let cupRound = 1;
+let fixtures = [];
+let fixturesLoaded = false;
+let fixturesTournamentId = null;
+
 let currentKnockoutRoundIndex = 1;
 let TournamentListStyle = "row";
 const FetchGuard = {};
@@ -30,6 +41,156 @@ const RUN_KEYS = {
   LOAD_PUBLIC_TOURNAMENTS: "loadPublicTournaments",
 };
 const CallerGuard = {};
+const CACHE_DB_NAME = "TournamentAppCache";
+const CACHE_DB_VERSION = 1;
+
+let cacheDBPromise = null;
+
+function openCacheDB() {
+  if (cacheDBPromise) {
+    return cacheDBPromise;
+  }
+  
+  cacheDBPromise = new Promise((resolve, reject) => {
+    const request = indexedDB.open(
+      CACHE_DB_NAME,
+      CACHE_DB_VERSION
+    );
+    
+    request.onupgradeneeded = () => {
+      const db = request.result;
+      
+      if (!db.objectStoreNames.contains("data")) {
+        db.createObjectStore("data", {
+          keyPath: "key"
+        });
+      }
+    };
+    
+    request.onsuccess = () => {
+      resolve(request.result);
+    };
+    
+    request.onerror = () => {
+      reject(request.error);
+    };
+  });
+  
+  return cacheDBPromise;
+}
+
+function getCacheKey(type, id = "") {
+  const user = getCurrentUser();
+  
+  const uid = user?.uid || "guest";
+  
+  return `${uid}:${type}:${id}`;
+}
+
+async function getCachedData(type, id = "") {
+  try {
+    const db = await openCacheDB();
+    
+    return await new Promise((resolve, reject) => {
+      const transaction = db.transaction(
+        "data",
+        "readonly"
+      );
+      
+      const store = transaction.objectStore("data");
+      
+      const request = store.get(
+        getCacheKey(type, id)
+      );
+      
+      request.onsuccess = () => {
+        resolve(request.result?.data ?? null);
+      };
+      
+      request.onerror = () => {
+        reject(request.error);
+      };
+    });
+  } catch (err) {
+    console.error(
+      "Failed to read cache:",
+      err
+    );
+    
+    return null;
+  }
+}
+
+async function saveCachedData(type, id, data) {
+  try {
+    const db = await openCacheDB();
+    
+    return await new Promise((resolve, reject) => {
+      const transaction = db.transaction(
+        "data",
+        "readwrite"
+      );
+      
+      const store = transaction.objectStore("data");
+      
+      store.put({
+        key: getCacheKey(type, id),
+        data,
+        updatedAt: Date.now()
+      });
+      
+      transaction.oncomplete = () => {
+        resolve(true);
+      };
+      
+      transaction.onerror = () => {
+        reject(transaction.error);
+      };
+    });
+  } catch (err) {
+    console.error(
+      "Failed to save cache:",
+      err
+    );
+    
+    return false;
+  }
+}
+
+async function deleteCachedData(type, id = "") {
+  try {
+    const db = await openCacheDB();
+    
+    return await new Promise((resolve, reject) => {
+      const transaction = db.transaction(
+        "data",
+        "readwrite"
+      );
+      
+      const store = transaction.objectStore("data");
+      
+      store.delete(
+        getCacheKey(type, id)
+      );
+      
+      transaction.oncomplete = () => {
+        resolve(true);
+      };
+      
+      transaction.onerror = () => {
+        reject(transaction.error);
+      };
+    });
+  } catch (err) {
+    console.error(
+      "Failed to delete cache:",
+      err
+    );
+    
+    return false;
+  }
+}
+
 
 const notificationSound = new Audio(
   "/sounds/notifications.wav"
@@ -49,39 +210,79 @@ function runOnce(key, caller, fn) {
   fn();
 }
 async function removeTournament(id) {
-  const idStr = String(id).trim();
-  
-  showLoader();
+  const idStr =
+    String(id).trim();
   
   try {
-    await deleteTournamentFromFirebase(idStr);
+    const token =
+      getToken();
     
-    myTournaments = myTournaments.filter(
-      t => String(t.id) !== idStr
-    );
+    if (!token) {
+      throw new Error(
+        "You are not logged in."
+      );
+    }
+    
+    const res =
+      await apiRequest(
+        `${API}/tournaments/${encodeURIComponent(idStr)}`,
+        {
+          method: "DELETE",
+          headers: {
+            Authorization: token
+          }
+        },
+        () =>
+        removeTournament(id)
+      );
+    
+    if (!res) {
+      throw new Error(
+        "No response from server."
+      );
+    }
+    
+    const result =
+      await res.json();
+    
+    if (
+      !res.ok ||
+      !result.success
+    ) {
+      throw new Error(
+        result.message ||
+        "Failed to delete tournament."
+      );
+    }
+    
+    myTournaments =
+      myTournaments.filter(
+        t =>
+        String(t.id) !== idStr
+      );
     
     if (
       currentTournament &&
-      String(currentTournament.id) === idStr
+      String(
+        currentTournament.id
+      ) === idStr
     ) {
-      currentTournament = null;
+      currentTournament =
+        null;
     }
-    loadPublicTournaments();
-    await renderTournamentList();
     
-    console.log("Tournament deleted:", idStr);
+    console.log(
+      "Tournament deleted:",
+      idStr
+    );
     
   } catch (err) {
-    console.error("[DELETE] Failed:", err);
-    
-    showAlert(
-      "Failed to delete tournament: " + err.message
+    console.error(
+      "[DELETE] Failed:",
+      err
     );
     
     throw err;
-    
-  } finally {
-    hideLoader();
   }
 }
 
@@ -166,27 +367,47 @@ function getCurrentTournament() {
 
 
 async function deleteTournament(id) {
-  const tournament = myTournaments.find(
-    t => String(t.id) === String(id)
-  );
+  const tournament =
+    myTournaments.find(
+      t =>
+      String(t.id) ===
+      String(id)
+    );
   
-  const confirmed = await showConfirmModal(
-    `Delete "${tournament?.name || "this tournament"}" permanently? This cannot be undone.`,
-    "Yes",
-    "No"
-  );
+  const confirmed =
+    await showConfirmModal(
+      `Delete "${tournament?.name || "this tournament"}" permanently? This cannot be undone.`,
+      "Yes",
+      "No"
+    );
   
-  if (!confirmed) return;
+  if (!confirmed) {
+    return;
+  }
   
   showLoader();
   
   try {
     await removeTournament(id);
+    
     await renderTournamentList();
-    showActionModal("❌ Tournament Deleted", "delete");
+    
+    showActionModal(
+      "❌ Tournament Deleted",
+      "delete"
+    );
+    
   } catch (err) {
-    console.error(err);
-    showAlert(err.message);
+    console.error(
+      "Failed to delete tournament:",
+      err
+    );
+    
+    showAlert(
+      err.message ||
+      "Failed to delete tournament."
+    );
+    
   } finally {
     hideLoader();
   }
@@ -203,30 +424,60 @@ async function openTournament(id) {
   showLoader();
   
   try {
-    const tournament = await getTournament(id);
+    const tournament =
+      await getTournament(id);
     
-    currentTournament = tournament;
+    currentTournament =
+      tournament;
     
     startTournamentEvents(id);
     
-    const name = tournament.name;
-    const formatType = (tournament.format || "league").toLowerCase();
+    const name =
+      tournament.name;
+    
+    const formatType =
+      (
+        tournament.format ||
+        "league"
+      ).toLowerCase();
     
     if (formatType === "league") {
-      document.getElementById("leagueName").textContent = name;
+      document.getElementById(
+        "leagueName"
+      ).textContent = name;
       
       goToTournamentPage();
-      rebuildTableFromMatches();
-      loadSubmissionDeadlineCountdown(tournament);
+      
+      await rebuildTableFromMatches();
+      
+      loadSubmissionDeadlineCountdown(
+        tournament
+      );
+      
     } else {
-      document.getElementById("cupName").textContent = name;
-      document.getElementById("cupName2").textContent = `${name} Bracket`;
+      document.getElementById(
+        "cupName"
+      ).textContent = name;
+      
+      document.getElementById(
+          "cupName2"
+        ).textContent =
+        `${name} Bracket`;
       
       goToCupPage();
     }
     
   } catch (err) {
-    showAlert(err.message);
+    console.error(
+      "openTournament error:",
+      err
+    );
+    
+    showAlert(
+      err.message ||
+      "Failed to open tournament."
+    );
+    
   } finally {
     hideLoader();
   }
@@ -382,80 +633,10 @@ async function handleSave(tournament, newName, oldName) {
 }
 
 
-async function loadMatchSubmissions() {
-  
-  const tournament = getCurrentTournament();
-  
-  if (!tournament) return;
-  
-  showLoader();
-  
-  try {
-    
-    pendingMatchSubmissions =
-      await getMatchSubmissions(tournament.id);
-    
-    renderMatchSubmissions();
-    
-  } catch (err) {
-    
-    console.error(err);
-    showAlert(err.message);
-    
-  } finally {
-    
-    hideLoader();
-    
-  }
-  
-}
+
+
 function setCurrentTournament(tournament) {
   currentTournament = tournament;
-}
-async function rebuildTableFromMatches() {
-  const tournament = getCurrentTournament();
-  if (!tournament) return;
-  
-  const user = getCurrentUser();
-  
-  if (!user || user.role !== "admin")
-  {  return;
-  }
-  
-  showLoader();
-  
-  try {
-    const updatedTournament = await rebuildTournamentTable(tournament.id);
-    
-    currentTournament = updatedTournament;
-    
-    const cached = myTournaments.find(
-      t => String(t.id) === String(updatedTournament.id)
-    );
-    
-    if (cached) {
-      Object.assign(cached, updatedTournament);
-    }
-    
-    if (typeof renderTable === "function") {
-      renderTable(updatedTournament.table);
-    }
-    
-    if (typeof renderFixtures === "function") {
-      renderFixtures();
-    }
-    
-    if (typeof renderRecords === "function") {
-      renderRecords();
-    }
-    
-  } catch (err) {
-    console.error(err);
-    showAlert(err.message);
-    
-  } finally {
-    hideLoader();
-  }
 }
 
 
@@ -570,8 +751,8 @@ async function rejectSubmission() {
     }
     
     closeReviewModal();
-   await renderFixtures();
-   
+    await renderFixtures();
+    
     renderTable(tournament.table);
     
     if (typeof renderRecords === "function") {
@@ -596,11 +777,15 @@ async function rejectSubmission() {
 }
 
 async function refreshCurrentTournament() {
+  
   const current = getCurrentTournament();
   
   if (!current) return null;
   
-  const latest = await getTournament(current.id);
+  const latest = await getTournament(
+    current.id,
+    true
+  );
   
   setCurrentTournament(latest);
   
@@ -614,18 +799,55 @@ async function refreshCurrentTournament() {
   
   return latest;
 }
-
+async function refreshTournamentFromSSE() {
+  
+  if (tournamentRefreshRunning) {
+    tournamentRefreshQueued = true;
+    return;
+  }
+  
+  tournamentRefreshRunning = true;
+  
+  try {
+    
+    const latest = await refreshCurrentTournament();
+    
+    if (!latest) return;
+    
+    renderFixtures();
+    renderRecords();
+    renderFormView();
+    
+    if (latest.format === "league") {
+      renderTable(latest.table);
+    } else {
+      renderFullBracket();
+    }
+    
+  } catch (err) {
+    
+    console.error(
+      "Tournament UI refresh error:",
+      err
+    );
+    
+  } finally {
+    
+    tournamentRefreshRunning = false;
+    
+    if (tournamentRefreshQueued) {
+      tournamentRefreshQueued = false;
+      refreshTournamentFromSSE();
+    }
+    
+  }
+}
 async function loadMyCompetitions() {
   showLoader();
   
   try {
-    const user = getCurrentUser();
-    
-    if (user && user.role === "admin") {
-      myCompetitions = await getMyCompetitions();
-    } else {
-      myCompetitions = await getPublicCompetitions();
-    }
+    myCompetitions =
+      await getMyCompetitions();
     
     renderCompetitionList();
     
@@ -636,8 +858,6 @@ async function loadMyCompetitions() {
     hideLoader();
   }
 }
-
-
 async function handleCreateCompetition() {
   
   const name =
@@ -874,225 +1094,391 @@ function editCompetition(id) {
 function setSelectedCompetition(id) {
   selectedCompetitionId = id;
 }
-async function handleAddTeam() {
-  const nameInput = document.getElementById("teamNameInput");
-  const logoInput = document.getElementById("teamLogoInput");
-  
-  if (!nameInput || !logoInput) {
-    showAlert("Error: Form elements not found");
-    return;
-  }
-  
-  const name = nameInput.value.trim();
-  
-  if (!name) {
-    showAlert("Enter a team name");
-    return;
-  }
-  
-  const file = logoInput.files[0];
-  
-  if (!file) {
-    showAlert("Team logo is required");
-    return;
-  }
-  
-  if (!file.type.startsWith("image/")) {
-    showAlert("Please select an image file");
-    return;
-  }
-  
-  try {
-    await addTeam(name, file);
-    
-    nameInput.value = "";
-    resetLogoUI();
-    
-  } catch (err) {
-    console.error("[handleAddTeam] Error:", err);
-    showAlert("Something went wrong");
-  }
-}
+
 async function addTeam(name, file) {
   showLoader();
   
   try {
-    const current = getCurrentTournament();
+    const token =
+      getToken();
     
-    if (!current) {
-      showAlert("No tournament selected");
-      return;
+    if (!token) {
+      throw new Error(
+        "You are not logged in."
+      );
     }
     
-    let tournament =
-      myTournaments.find(
-        t => String(t.id) === String(current.id)
-      ) || current;
+    const logo =
+      await fileToBase64(
+        file,
+        300
+      );
     
-    const teamsObj = tournament.teams || {};
+    const res =
+      await apiRequest(
+        `${API}/teams/create`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: token,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            name,
+            logo
+          })
+        },
+        () =>
+        addTeam(
+          name,
+          file
+        )
+      );
     
-    const exists = Object.values(teamsObj).some(
-      team =>
-      team.name &&
-      team.name.trim().toLowerCase() === name.trim().toLowerCase()
-    );
-    
-    if (exists) {
-      showAlert("Team already exists");
-      return;
+    if (!res) {
+      throw new Error(
+        "No response from server."
+      );
     }
     
-    const teamId = crypto.randomUUID();
-    const currentUser = getCurrentUser();
+    const result =
+      await res.json();
     
-    const logo = await fileToBase64(file, 300);
-    
-    const image = await uploadTeamLogo(
-      tournament.id,
-      teamId,
-      name,
-      logo
-    );
-    
-    const newTeam = {
-      id: teamId,
-      name,
-      ownerUid: currentUser?.uid || null,
-      createdAt: Date.now(),
-      logo: image.url
-    };
-    
-    const updates = {
-      [`teams/${teamId}`]: newTeam,
-      [`teamLogos/${name}`]: image
-    };
-    
-    await updateTournament(tournament.id, { updates });
-    
-    if (!tournament.teams) tournament.teams = {};
-    if (!tournament.teamLogos) tournament.teamLogos = {};
-    
-    tournament.teams[teamId] = newTeam;
-    tournament.teamLogos[name] = image;
-    
-    const index = myTournaments.findIndex(
-      t => String(t.id) === String(tournament.id)
-    );
-    
-    if (index !== -1) {
-      myTournaments[index] = tournament;
+    if (
+      !res.ok ||
+      !result.success
+    ) {
+      throw new Error(
+        result.message ||
+        "Failed to create team."
+      );
     }
     
-    currentTournament = tournament;
+    showActionModal(
+      "✅ Team Created",
+      "success"
+    );
     
-    showActionModal("✅ Team Registered", "success");
+    if (
+      typeof loadMyTeams ===
+      "function"
+    ) {
+      await loadMyTeams();
+    }
     
-    if (typeof loadTournament === "function") {
-      await loadTournament(tournament.id);
-    } else {
-      if (typeof renderTeams === "function") renderTeams();
-      if (typeof renderTable === "function") renderTable();
+    if (
+      typeof renderTeams ===
+      "function"
+    ) {
+      await renderTeams();
     }
     
   } catch (err) {
-    console.error("[addTeam]", err);
-    showAlert(err.message || "Failed to add team");
+    console.error(
+      "[addTeam]",
+      err
+    );
+    
+    showAlert(
+      err.message ||
+      "Failed to create team"
+    );
     
   } finally {
     hideLoader();
     closeAddTeam();
   }
 }
-async function saveEdit() {
-  const tournament = getCurrentTournament();
+async function handleAddTeam() {
+  const nameInput =
+    document.getElementById(
+      "teamNameInput"
+    );
   
-  if (!tournament || editingIndex === null) {
-    showAlert("Something went wrong. Please try again");
+  const logoInput =
+    document.getElementById(
+      "teamLogoInput"
+    );
+  
+  if (!nameInput || !logoInput) {
+    showAlert(
+      "Error: Form elements not found"
+    );
     return;
   }
   
-  const newName = document
-    .getElementById("editNameInput")
-    .value.trim();
+  const name =
+    nameInput.value.trim();
   
-  const fileInput = document.getElementById("editLogoInput");
-  
-  const teams = Object.values(tournament.teams || {});
-  
-  const team = teams[editingIndex];
-  
-  if (!team) {
-    showAlert("Team not found");
+  if (!name) {
+    showAlert(
+      "Enter a team name"
+    );
     return;
   }
   
-  if (!newName) {
-    showAlert("Team name cannot be empty");
+  const file =
+    logoInput.files[0];
+  
+  if (!file) {
+    showAlert(
+      "Team logo is required"
+    );
     return;
   }
   
-  const duplicate = teams.some(
-    t =>
-    t.id !== team.id &&
-    t.name.trim().toLowerCase() ===
-    newName.toLowerCase()
-  );
-  
-  if (duplicate) {
-    showAlert("A team with this name already exists");
+  if (
+    !file.type.startsWith("image/")
+  ) {
+    showAlert(
+      "Please select an image file"
+    );
     return;
   }
   
-  let logo = null;
-  
-  if (fileInput?.files?.length) {
-    const file = fileInput.files[0];
-    
-    if (!file.type.startsWith("image/")) {
-      showAlert("Please select an image file");
-      return;
-    }
-    
-    if (file.size > 500 * 1024) {
-      showAlert("Logo size must not exceed 500KB");
-      return;
-    }
-    
-    logo = await fileToBase64(file);
+  if (
+    file.size >
+    500 * 1024
+  ) {
+    showAlert(
+      "Logo size must not exceed 500KB"
+    );
+    return;
   }
   
   try {
-    showLoader();
-    
-    await updateTeam(
-      tournament.id,
-      team.id,
-      {
-        name: newName,
-        logo
-      }
+    await addTeam(
+      name,
+      file
     );
     
-    await refreshCurrentTournament();
+    nameInput.value = "";
     
+    resetLogoUI();
+    
+  } catch (err) {
+    console.error(
+      "[handleAddTeam] Error:",
+      err
+    );
+    
+    showAlert(
+      err.message ||
+      "Something went wrong"
+    );
+  }
+}
+async function saveEdit() {
+  if (
+    editingIndex === null
+  ) {
+    showAlert(
+      "Something went wrong. Please try again"
+    );
+    return;
+  }
+
+  const newName =
+    document
+      .getElementById(
+        "editNameInput"
+      )
+      .value
+      .trim();
+
+  const fileInput =
+    document.getElementById(
+      "editLogoInput"
+    );
+
+  try {
+    const profile =
+      await getUserProfile();
+
+    const teams =
+      Array.isArray(profile?.teams)
+        ? profile.teams
+        : [];
+
+    const team =
+      teams[editingIndex];
+
+    if (!team) {
+      showAlert(
+        "Team not found"
+      );
+      return;
+    }
+
+    if (!newName) {
+      showAlert(
+        "Team name cannot be empty"
+      );
+      return;
+    }
+
+    const duplicate =
+      teams.some(
+        t =>
+          String(t.id) !==
+            String(team.id) &&
+          String(t.name || "")
+            .trim()
+            .toLowerCase() ===
+            newName.toLowerCase()
+      );
+
+    if (duplicate) {
+      showAlert(
+        "A team with this name already exists"
+      );
+      return;
+    }
+
+    let logo;
+
+    if (
+      fileInput?.files?.length
+    ) {
+      const file =
+        fileInput.files[0];
+
+      if (
+        !file.type.startsWith(
+          "image/"
+        )
+      ) {
+        showAlert(
+          "Please select an image file"
+        );
+        return;
+      }
+
+      if (
+        file.size >
+        500 * 1024
+      ) {
+        showAlert(
+          "Logo size must not exceed 500KB"
+        );
+        return;
+      }
+
+      logo =
+        await fileToBase64(
+          file
+        );
+    }
+
+    showLoader();
+
+    const token =
+      getToken();
+
+    if (!token) {
+      throw new Error(
+        "You are not logged in."
+      );
+    }
+
+    const updates = {
+      name: newName
+    };
+
+    if (
+      logo !== undefined
+    ) {
+      updates.logo = logo;
+    }
+
+    const res =
+      await apiRequest(
+        `${API}/teams/${encodeURIComponent(
+          team.id
+        )}`,
+        {
+          method: "PATCH",
+          headers: {
+            Authorization: token,
+            "Content-Type":
+              "application/json"
+          },
+          body:
+            JSON.stringify(updates)
+        },
+        saveEdit
+      );
+
+    if (!res) {
+      throw new Error(
+        "No response from server."
+      );
+    }
+
+    const result =
+      await res.json();
+
+    if (
+      !res.ok ||
+      !result.success
+    ) {
+      throw new Error(
+        result.message ||
+        "Failed to update team."
+      );
+    }
+
+    const updatedTeam =
+      result.team;
+
+    if (!updatedTeam) {
+      throw new Error(
+        "Team updated but no team data was returned."
+      );
+    }
+
+    teams[editingIndex] =
+      updatedTeam;
+
+    profile.teams =
+      teams;
+
+    await saveCachedData(
+      "profile",
+      "",
+      profile
+    );
+
     closeEditModal();
-    
-    renderTeams();
-    
+
+    if (
+      typeof renderUserProfile ===
+      "function"
+    ) {
+      renderUserProfile(
+        profile
+      );
+    }
+
     showActionModal(
       "✅ Team updated",
       "success"
     );
-    
+
   } catch (err) {
-    console.error("[saveEdit]", err);
-    showAlert(err.message || "Failed to update team");
+    console.error(
+      "[saveEdit]",
+      err
+    );
+
+    showAlert(
+      err.message ||
+      "Failed to update team"
+    );
   } finally {
     hideLoader();
   }
 }
-
-
 
 
 async function handleDeleteAccount() {
@@ -1364,19 +1750,20 @@ async function openCompetition(id) {
     
     setSelectedCompetition(id);
     
-    currentCompetition = myCompetitions.find(
-      c => String(c.id) === String(id)
-    );
+    currentCompetition =
+      myCompetitions.find(
+        c => String(c.id) === String(id)
+      );
     
     goToListOfTournamentPage();
     
-    const rawTournaments = await getMyTournaments();
+    myTournaments =
+      await getMyTournaments(id);
     
-    myTournaments = rawTournaments.filter(
-      t => String(t.competitionId) === String(id)
+    renderTournamentList(
+      "tournamentList",
+      myTournaments
     );
-    
-    renderTournamentList("tournamentList", myTournaments);
     
   } catch (err) {
     console.error(err);
@@ -1759,27 +2146,16 @@ async function tournamentCreator() {
     
     
     const result = await createTournament({
-      
       name,
-      
       format,
-      
       startDate,
-      
       endDate,
-      
       matchDays,
-      
       tournamentImage,
-      
-      competitionId,
-      
+      competition_id: competitionId,
       season,
-      
-      seasonStatus
-      
+      season_status: seasonStatus
     });
-    
     
     
     if (!result.success) {
@@ -1827,10 +2203,10 @@ async function tournamentCreator() {
     
     
     hideCreateTournament();
-
-showAlert("Tournament season created successfully!");
-
-renderTournamentList(myTournaments);    
+    
+    showAlert("Tournament season created successfully!");
+    
+    renderTournamentList(myTournaments);
     
     
   } catch (err) {
@@ -1850,26 +2226,45 @@ function openLeagueRecorder(match) {
   
   currentMatch = match;
   
+  const homeTeam =
+    match.home_team_name ||
+    match.home_name ||
+    match.home ||
+    "Home Team";
+  
+  const awayTeam =
+    match.away_team_name ||
+    match.away_name ||
+    match.away ||
+    "Away Team";
+  
   document.getElementById("homeTeam").textContent =
-    match.home;
+    homeTeam;
   
   document.getElementById("awayTeam").textContent =
-    match.away;
+    awayTeam;
   
   document.getElementById("homeGoals").value =
-    match.played ? match.homeGoals : "";
+    match.played ?
+    Number(match.home_score ?? 0) :
+    "";
   
   document.getElementById("awayGoals").value =
-    match.played ? match.awayGoals : "";
+    match.played ?
+    Number(match.away_score ?? 0) :
+    "";
   
   if (APP_MODE === "admin") {
     setupAdminResultModal();
   } else {
     setupPlayerResultModal();
     
-    document.getElementById(
-      "matchScreenshot"
-    ).value = "";
+    const screenshot =
+      document.getElementById("matchScreenshot");
+    
+    if (screenshot) {
+      screenshot.value = "";
+    }
   }
   
   document.getElementById(
@@ -1894,31 +2289,44 @@ function openLeagueRecorder(match) {
   ).classList.remove("hidden");
 }
 
-function handleSetScore() {
-  closeResultRecord();
+async function handleSetScore() {
   if (!currentMatch) {
+    closeResultRecord();
     return;
   }
   
   const hg = parseInt(
-    document.getElementById("homeGoals").value
+    document.getElementById("homeGoals").value,
+    10
   );
   
   const ag = parseInt(
-    document.getElementById("awayGoals").value
+    document.getElementById("awayGoals").value,
+    10
   );
   
   if (
-    !currentMatch.home ||
-    !currentMatch.away ||
-    isNaN(hg) ||
-    isNaN(ag)
+    !currentMatch.home_team_id ||
+    !currentMatch.away_team_id ||
+    !Number.isInteger(hg) ||
+    !Number.isInteger(ag) ||
+    hg < 0 ||
+    ag < 0
   ) {
     showAlert("Invalid Team or Score input");
     return;
   }
   
-  setMatchResult(
+  const tournament =
+    getCurrentTournament();
+  
+  if (!tournament) {
+    showAlert("Tournament not found.");
+    return;
+  }
+  
+  await saveLeagueResult(
+    tournament,
     currentMatch,
     hg,
     ag
@@ -1926,7 +2334,8 @@ function handleSetScore() {
 }
 
 async function setMatchResult(match, hg, ag) {
-  const tournament = getCurrentTournament();
+  const tournament =
+    getCurrentTournament();
   
   if (!tournament || !match) {
     return;
@@ -1936,8 +2345,10 @@ async function setMatchResult(match, hg, ag) {
   const awayGoals = Number(ag);
   
   if (
-    !Number.isFinite(homeGoals) ||
-    !Number.isFinite(awayGoals)
+    !Number.isInteger(homeGoals) ||
+    !Number.isInteger(awayGoals) ||
+    homeGoals < 0 ||
+    awayGoals < 0
   ) {
     return;
   }
@@ -1945,16 +2356,23 @@ async function setMatchResult(match, hg, ag) {
   const groupMatch = (
     tournament.groupMatches || []
   ).find(
-    m => String(m.id) === String(match.id)
+    m =>
+    String(m.id) ===
+    String(match.id)
   );
   
   if (groupMatch) {
-    groupMatch.homeGoals = homeGoals;
-    groupMatch.awayGoals = awayGoals;
+    groupMatch.home_score =
+      homeGoals;
+    
+    groupMatch.away_score =
+      awayGoals;
+    
     groupMatch.played = true;
     
-    if (!groupMatch.playedAt) {
-      groupMatch.playedAt = Date.now();
+    if (!groupMatch.played_at) {
+      groupMatch.played_at =
+        Date.now();
     }
     
     return await saveCupGroupResult(
@@ -1965,16 +2383,23 @@ async function setMatchResult(match, hg, ag) {
   const knockoutMatch = (
     tournament.knockoutMatches || []
   ).find(
-    m => String(m.id) === String(match.id)
+    m =>
+    String(m.id) ===
+    String(match.id)
   );
   
   if (knockoutMatch) {
-    knockoutMatch.homeGoals = homeGoals;
-    knockoutMatch.awayGoals = awayGoals;
+    knockoutMatch.home_score =
+      homeGoals;
+    
+    knockoutMatch.away_score =
+      awayGoals;
+    
     knockoutMatch.played = true;
     
-    if (!knockoutMatch.playedAt) {
-      knockoutMatch.playedAt = Date.now();
+    if (!knockoutMatch.played_at) {
+      knockoutMatch.played_at =
+        Date.now();
     }
     
     return await saveKnockoutResult(
@@ -1983,89 +2408,189 @@ async function setMatchResult(match, hg, ag) {
     );
   }
   
-  if (tournament.matches?.length) {
-    const leagueMatch =
-      tournament.matches.find(
-        m => String(m.id) === String(match.id)
-      );
-    
-    if (leagueMatch) {
-      leagueMatch.homeGoals = homeGoals;
-      leagueMatch.awayGoals = awayGoals;
-      leagueMatch.played = true;
-      
-      if (!leagueMatch.playedAt) {
-        leagueMatch.playedAt = Date.now();
-      }
-      
-      return await saveLeagueResult(
-        tournament
-      );
-    }
+  const leagueMatch = (
+    tournament.matches || []
+  ).find(
+    m =>
+    String(m.id) ===
+    String(match.id)
+  );
+  
+  if (leagueMatch) {
+    return await saveLeagueResult(
+      tournament,
+      leagueMatch,
+      homeGoals,
+      awayGoals
+    );
   }
 }
 
 async function saveLeagueResult(
-  tournament
+  tournament,
+  match,
+  homeGoals,
+  awayGoals
 ) {
-  updateStreaks(
-    tournament
-  );
-
+  if (!tournament || !match || !match.id) {
+    return;
+  }
+  
+  if (
+    !match.home_team_id ||
+    !match.away_team_id
+  ) {
+    showAlert(
+      "This match is missing team information."
+    );
+    return;
+  }
+  
   showLoader();
-
+  
   try {
-    await updateTournament(
-      tournament.id,
+    const response = await apiRequest(
+      `${API}/tournaments/${encodeURIComponent(
+        tournament.id
+      )}/matches/${encodeURIComponent(
+        match.id
+      )}/result`,
       {
-        updates: {
-          matches:
-            tournament.matches,
-          table:
-            tournament.table,
-          prevRanks:
-            tournament.prevRanks,
-          records:
-            tournament.records
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${getToken()}`
+        },
+        body: JSON.stringify({
+          home_score: Number(homeGoals),
+          away_score: Number(awayGoals)
+        })
+      },
+      () => saveLeagueResult(
+        tournament,
+        match,
+        homeGoals,
+        awayGoals
+      )
+    );
+    
+    if (!response) {
+      throw new Error(
+        "No response from server."
+      );
+    }
+    
+    const data = await response.json();
+    
+    if (!response.ok || !data.success) {
+      throw new Error(
+        data.message ||
+        "Failed to save match result."
+      );
+    }
+    
+    const updatedMatch =
+      data.match;
+    
+    const updatedPlayers =
+      Array.isArray(data.players) ?
+      data.players : [];
+    
+    if (updatedMatch) {
+      const matchIndex =
+        (tournament.matches || []).findIndex(
+          m =>
+          String(m.id) ===
+          String(updatedMatch.id)
+        );
+      
+      if (matchIndex !== -1) {
+        tournament.matches[matchIndex] =
+          updatedMatch;
+      }
+    }
+    
+    if (
+      Array.isArray(
+        tournament.tournament_players
+      )
+    ) {
+      for (const player of updatedPlayers) {
+        const playerIndex =
+          tournament.tournament_players.findIndex(
+            p =>
+            String(p.id) ===
+            String(player.id)
+          );
+        
+        if (playerIndex !== -1) {
+          tournament.tournament_players[
+            playerIndex
+          ] = player;
         }
       }
-    );
-
+    }
+    
     const cached =
       myTournaments.find(
         t =>
-          String(t.id) ===
-          String(tournament.id)
+        String(t.id) ===
+        String(tournament.id)
       );
-
+    
     if (cached) {
       cached.matches =
         tournament.matches;
-
-      cached.table =
-        tournament.table;
-
-      cached.prevRanks =
-        tournament.prevRanks;
-
-      cached.records =
-        tournament.records;
+      
+      cached.tournament_players =
+        tournament.tournament_players;
     }
-
+    
+    const table =
+      buildTableFromTournamentPlayers(
+        tournament
+      );
+    
+    tournament.table =
+      table;
+    
+    if (cached) {
+      cached.table =
+        table;
+    }
+    fixturesLoaded = false;
+  fixturesTournamentId = null;
+  fixtures = [];
     renderFixtures();
-    rebuildTableFromMatches();
-    renderTable(
-      tournament.table
-    );
-    renderRecords();
-
+    renderTable(table);
+    
+    if (
+      typeof renderRecords ===
+      "function"
+    ) {
+      renderRecords();
+    }
+    
+    closeResultRecord();
+    
     showActionModal(
       "Result Saved",
       "success"
     );
-
-  } catch (err) {
-    console.error(err);
+    
+    return data;
+    
+  } catch (error) {
+    console.error(
+      "Error saving league result:",
+      error
+    );
+    
+    showAlert(
+      error.message ||
+      "Failed to save match result."
+    );
+    
   } finally {
     hideLoader();
   }
@@ -2075,7 +2600,7 @@ async function saveCupGroupResult(tournament) {
   if (!tournament) return;
   
   generateGroupTables(tournament);
- 
+  
   showLoader();
   
   try {
@@ -2122,6 +2647,7 @@ async function saveCupGroupResult(tournament) {
     hideLoader();
   }
 }
+
 function processKnockoutUpdate(match, tournament) {
   if (
     !match ||
@@ -2237,41 +2763,40 @@ async function saveKnockoutResult(
     match,
     tournament
   );
-
+  
   showLoader();
-
+  
   try {
     await updateTournament(
       tournament.id,
       {
         updates: {
-          knockoutMatches:
-            tournament.knockoutMatches
+          knockoutMatches: tournament.knockoutMatches
         }
       }
     );
-
+    
     const cached =
       myTournaments.find(
         t =>
-          String(t.id) ===
-          String(tournament.id)
+        String(t.id) ===
+        String(tournament.id)
       );
-
+    
     if (cached) {
       cached.knockoutMatches =
         tournament.knockoutMatches;
     }
-
+    
     closeResultRecord();
-
+    
     await renderFullBracket();
-
+    
     showActionModal(
       "Result Saved",
       "success"
     );
-
+    
   } catch (err) {
     console.error(
       "Error saving knockout result:",
@@ -2709,8 +3234,8 @@ async function loadHallOfFame() {
     }
     
     renderHallOfFame(hallOfFame);
-  
-
+    
+    
   } catch (err) {
     console.error("Failed to load Hall of Fame:", err);
     
@@ -2726,22 +3251,23 @@ async function loadHallOfFame() {
 }
 
 
-async function showHallOfFameEditor () {
-
+async function showHallOfFameEditor() {
+  
   closeMenu();
   showLoader();
   const hallOfFame = await getHallOfFame();
-    
-    if (!hallOfFame) {
-      container.innerHTML = "";
-      return;
-    }
-    
-     openHallOfFameEditor(hallOfFame);
+  
+  if (!hallOfFame) {
+    container.innerHTML = "";
+    return;
+  }
+  
+  openHallOfFameEditor(hallOfFame);
   hideLoader();
 }
-function closeHallofFameEditor () {
-  document.getElementById("hallOfFameAdminPanel").style.display="none"
+
+function closeHallofFameEditor() {
+  document.getElementById("hallOfFameAdminPanel").style.display = "none"
 }
 
 function openHallOfFameEditor(hallOfFame) {
@@ -2989,89 +3515,149 @@ function deleteHallOfFameCategory(
   renderHallOfFameAdminEditor();
 }
 
+function buildTableFromTournamentPlayers(tournament) {
+  if (
+    !tournament ||
+    !Array.isArray(tournament.tournament_players)
+  ) {
+    return [];
+  }
+  
+  const table =
+    tournament.tournament_players
+    .filter(
+      player =>
+      player &&
+      player.team_id
+    )
+    .map(player => {
+      const gf =
+        Number(player.gf) || 0;
+      
+      const ga =
+        Number(player.ga) || 0;
+      
+      return {
+        id: player.team_id,
+        name: player.team_name ||
+          player.team?.name ||
+          "",
+        logo: player.team_logo ||
+          player.team?.logo ||
+          null,
+        played: Number(player.played) || 0,
+        wins: Number(player.wins) || 0,
+        draws: Number(player.draws) || 0,
+        losses: Number(player.losses) || 0,
+        gf,
+        ga,
+        gd: gf - ga,
+        pts: Number(player.points) || 0
+      };
+    });
+  
+  table.sort((a, b) => {
+    if (b.pts !== a.pts) {
+      return b.pts - a.pts;
+    }
+    
+    if (b.gd !== a.gd) {
+      return b.gd - a.gd;
+    }
+    
+    if (b.gf !== a.gf) {
+      return b.gf - a.gf;
+    }
+    
+    return a.name.localeCompare(b.name);
+  });
+  
+  table.forEach((team, index) => {
+    team.pos = index + 1;
+  });
+  
+  return table;
+}
+
 async function importTournamentsData(jsonString) {
   try {
     const token = getToken();
-
+    
     if (!token) {
       showAlert("Invalid session. Please log in again.");
       return;
     }
-
+    
     const competitionId = selectedCompetitionId;
-
+    
     if (!competitionId) {
       showAlert("Please select a competition before importing.");
       return;
     }
-
+    
     const importedData = JSON.parse(jsonString);
-
+    
     if (!importedData) {
       showAlert("Invalid backup file structure.");
       return;
     }
-
-    const tournament = Array.isArray(importedData)
-      ? importedData[0]
-      : importedData;
-
+    
+    const tournament = Array.isArray(importedData) ?
+      importedData[0] :
+      importedData;
+    
     if (!tournament || typeof tournament !== "object") {
       showAlert("Invalid tournament data.");
       return;
     }
-
+    
     const name = tournament.name || tournament.title;
-
+    
     if (!name) {
       showAlert("Imported file is missing a tournament name.");
       return;
     }
-
+    
     showLoader();
-
+    
     const payload = {
       name,
       format: tournament.format || "league",
       competitionId,
       season: tournament.season || "Season 1",
       seasonStatus: tournament.seasonStatus || "upcoming",
-      startDate:
-        tournament.startDate ||
+      startDate: tournament.startDate ||
         new Date().toISOString().split("T")[0],
-      endDate:
-        tournament.endDate ||
+      endDate: tournament.endDate ||
         new Date().toISOString().split("T")[0],
-      matchDays:
-        Array.isArray(tournament.matchDays) &&
-        tournament.matchDays.length
-          ? tournament.matchDays
-          : [1],
-      tournamentImage:
-        typeof tournament.tournamentImage === "string"
-          ? tournament.tournamentImage
-          : null
+      matchDays: Array.isArray(tournament.matchDays) &&
+        tournament.matchDays.length ?
+        tournament.matchDays :
+        [1],
+      tournamentImage: typeof tournament.tournamentImage === "string" ?
+        tournament.tournamentImage :
+        null
     };
-
+    
     const result = await createTournament(payload);
-
+    
     if (!result?.success) {
       throw new Error(
         result?.message ||
         "Failed to create imported tournament."
       );
     }
-
+    
     const newTournament = result.tournament;
-
+    
     if (!newTournament?.id) {
       throw new Error(
         "Tournament was created but no tournament ID was returned."
       );
     }
-
+    
     const patchUpdates = {};
-
+    
     const fields = [
       "teams",
       "teamLogos",
@@ -3084,18 +3670,17 @@ async function importTournamentsData(jsonString) {
       "knockoutMatches",
       "settings"
     ];
-
+    
     fields.forEach(field => {
       if (tournament[field] !== undefined) {
         patchUpdates[field] = tournament[field];
       }
     });
-
+    
     if (Object.keys(patchUpdates).length > 0) {
       try {
         await updateTournament(
-          newTournament.id,
-          { updates: patchUpdates }
+          newTournament.id, { updates: patchUpdates }
         );
       } catch (err) {
         console.warn(
@@ -3104,17 +3689,17 @@ async function importTournamentsData(jsonString) {
         );
       }
     }
-
+    
     if (Array.isArray(window.myTournaments)) {
       window.myTournaments.unshift(newTournament);
     }
-
+    
     showAlert(
       `Tournament "${name}" imported successfully!`
     );
-
+    
     await openCompetition();
-
+    
   } catch (err) {
     console.error("Import error:", err);
     showAlert(
@@ -3210,6 +3795,7 @@ async function saveSubmissionDeadline() {
     hideLoader();
   }
 }
+
 function loadSubmissionDeadlineSettings(tournament) {
   const settings =
     tournament?.settings?.submissionDeadline;
@@ -3374,4 +3960,193 @@ async function loadNotices() {
       </div>
     `;
   }
+}
+
+async function buildFixturesFromMatches(
+  matches,
+  tournamentId
+) {
+  const teams =
+    await getTeams(
+      tournamentId
+    );
+  
+  const teamMap = {};
+  
+  teams.forEach(team => {
+    teamMap[String(team.id)] =
+      team;
+  });
+  
+  return matches.map(match => {
+    const homeTeam =
+      teamMap[
+        String(match.home_team_id)
+      ];
+    
+    const awayTeam =
+      teamMap[
+        String(match.away_team_id)
+      ];
+    
+    return {
+      ...match,
+      home: homeTeam?.name ||
+        "Unknown Team",
+      away: awayTeam?.name ||
+        "Unknown Team",
+      homeGoals: match.home_score,
+      awayGoals: match.away_score,
+      played: Number(match.played) === 1,
+      playedAt: match.played_at,
+      scheduledAt: match.scheduled_at,
+      homeLogo: homeTeam?.logo ||
+        null,
+      awayLogo: awayTeam?.logo ||
+        null
+    };
+  });
+}
+async function loadTournamentFixtures(
+  tournamentId
+) {
+  if (!tournamentId) {
+    throw new Error(
+      "Tournament ID is required."
+    );
+  }
+  
+  if (
+    fixturesLoaded &&
+    String(fixturesTournamentId) ===
+    String(tournamentId)
+  ) {
+    return fixtures;
+  }
+  
+  const matches =
+    await getTournamentMatches(
+      tournamentId
+    );
+  
+  fixtures =
+    await buildFixturesFromMatches(
+      matches,
+      tournamentId
+    );
+  
+  fixturesTournamentId =
+    tournamentId;
+  
+  fixturesLoaded =
+    true;
+  
+  return fixtures;
+}
+
+
+async function rebuildTableFromMatches() {
+  const tournament = getCurrentTournament();
+  if (!tournament) return;
+  
+  if (
+    cachedTournamentId === tournament.id &&
+    tableCache
+  ) {
+    if (typeof renderTable === "function") {
+      renderTable(tableCache);
+    }
+    
+    return tableCache;
+  }
+  
+  showLoader();
+  
+  try {
+    let table = null;
+    
+    if (
+      Array.isArray(
+        tournament.tournament_players
+      )
+    ) {
+      table =
+        buildTableFromTournamentPlayers(
+          tournament
+        );
+    } else {
+      const response =
+        await fetch(
+          `/tournaments/${tournament.id}/table`,
+          {
+            headers: {
+              Authorization: `Bearer ${getToken()}`
+            }
+          }
+        );
+      
+      const data =
+        await response.json();
+      
+      if (
+        !response.ok ||
+        !data.success
+      ) {
+        throw new Error(
+          data.message ||
+          "Failed to load tournament table."
+        );
+      }
+      
+      table = data.table || [];
+    }
+    
+    tableCache = table;
+    cachedTournamentId = tournament.id;
+    
+    tournament.table = table;
+    
+    if (typeof renderTable === "function") {
+      renderTable(table);
+    }
+    
+    return table;
+    
+  } catch (err) {
+    console.error(
+      "[rebuildTableFromMatches]",
+      err
+    );
+    
+    showAlert(
+      err.message ||
+      "Failed to rebuild table."
+    );
+    
+  } finally {
+    hideLoader();
+  }
+}
+async function loadTournamentTeams(tournamentId) {
+  if (!tournamentId) {
+    throw new Error("Tournament ID is required.");
+  }
+  
+  if (
+    Array.isArray(
+      teamsByTournament[tournamentId]
+    ) &&
+    teamsByTournament[tournamentId].length
+  ) {
+    return teamsByTournament[tournamentId];
+  }
+  
+  const teams =
+    await getTeams(tournamentId);
+  
+  teamsByTournament[tournamentId] =
+    Array.isArray(teams) ?
+    teams : [];
+  
+  return teamsByTournament[tournamentId];
 }

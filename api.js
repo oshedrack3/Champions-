@@ -1,4 +1,5 @@
-const API = "https://tour-backend-vohh.onrender.com";
+const API = "https://champions.oshedrack3.workers.dev";
+
 async function apiRequest(url, options = {}, retryCallback = null) {
   
   const controller = new AbortController();
@@ -213,28 +214,40 @@ async function createTournament(data) {
   return await res.json();
 }
 
-async function getMyTournaments() {
+async function getMyTournaments(
+  competitionId
+) {
   const token = getToken();
   
   const res = await apiRequest(
-    `${API}/tournaments/my`,
+    `${API}/tournaments/my?competition_id=${encodeURIComponent(competitionId)}`,
     {
       headers: {
         Authorization: token
       }
     },
-    getMyTournaments
+    () =>
+    getMyTournaments(
+      competitionId
+    )
   );
   
   if (!res) return [];
   
-  const result = await res.json();
+  const result =
+    await res.json();
   
-  if (!res.ok || !result.success) {
-    throw new Error(result.message || "Failed to load tournaments.");
+  if (
+    !res.ok ||
+    !result.success
+  ) {
+    throw new Error(
+      result.message ||
+      "Failed to load tournaments."
+    );
   }
   
-  return result.tournaments;
+  return result.tournaments || [];
 }
 
 
@@ -401,100 +414,176 @@ async function respondToInvitation(tournamentId, action) {
 async function getTournament(id) {
   const token = getToken();
   
-  const res = await fetch(`${API}/tournaments/${id}`, {
-    headers: {
-      Authorization: token
-    }
-  });
+  const res = await apiRequest(
+    `${API}/tournaments/${id}`,
+    {
+      headers: {
+        Authorization: token
+      }
+    },
+    () => getTournament(id)
+  );
+  
+  if (!res) return null;
   
   const result = await res.json();
   
   if (!res.ok || !result.success) {
-    throw new Error(result.message || "Failed to load tournament.");
+    throw new Error(
+      result.message ||
+      "Failed to load tournament."
+    );
   }
   
   return result.tournament;
 }
 
-async function submitMatchResult(data) {
-  
+async function getTeams(tournamentId) {
+  if (!tournamentId) {
+    throw new Error("Tournament ID is required.");
+  }
   const token = getToken();
-  
+  if (!token) {
+    throw new Error("You are not logged in.");
+  }
+  const res = await apiRequest(
+    `${API}/tournaments/${encodeURIComponent(tournamentId)}/teams`,
+    {
+      method: "GET",
+      headers: {
+        Authorization: token
+      }
+    },
+    () => getTeams(tournamentId)
+  );
+  if (!res) {
+    throw new Error("No response from server.");
+  }
+  const result = await res.json();
+  if (!res.ok || !result.success) {
+    throw new Error(
+      result.message ||
+      "Failed to load teams."
+    );
+  }
+  return result.teams || [];
+}
+
+
+async function submitMatchResult(data) {
+  const token = getToken();
   const res = await fetch(
-    `${API}/tournaments/${data.tournamentId}/match-submission`,
+    `${API}/tournaments/${data.tournamentId}/matches/${data.matchId}/submission`,
     {
       method: "POST",
-      
       headers: {
         "Content-Type": "application/json",
         Authorization: token
       },
-      
       body: JSON.stringify({
-        matchId: data.matchId,
-        homeGoals: data.homeGoals,
-        awayGoals: data.awayGoals,
+        home_goals: data.homeGoals,
+        away_goals: data.awayGoals,
         screenshot: data.screenshot
       })
     }
   );
-  
   const result = await res.json();
-  
   if (!res.ok || !result.success) {
     throw new Error(
-      result.message || "Failed to submit result."
+      result.message ||
+      "Failed to submit result."
     );
   }
-  
   return result;
-  
 }
 
-async function getMatchSubmissions(tournamentId) {
-  
+async function getMatchSubmission(
+  tournamentId,
+  matchId,
+  forceRefresh = false
+) {
   const token = getToken();
   
-  const res = await fetch(
-    `${API}/tournaments/${tournamentId}/match-submissions`,
+  const res = await apiRequest(
+    `${API}/tournaments/${tournamentId}/matches/${matchId}/submission`,
     {
       headers: {
         Authorization: token
       }
-    }
+    },
+    () =>
+    getMatchSubmission(
+      tournamentId,
+      matchId,
+      forceRefresh
+    )
   );
+  
+  if (!res) return null;
   
   const result = await res.json();
   
   if (!res.ok || !result.success) {
     throw new Error(
-      result.message || "Failed to load submissions."
+      result.message ||
+      "Failed to load submission."
+    );
+  }
+  
+  return result.submission || null;
+}
+async function getMatchSubmissions(
+  tournamentId,
+  matchId,
+  forceRefresh = false
+) {
+  const token = getToken();
+  
+  const res = await apiRequest(
+    `${API}/tournaments/${tournamentId}/matches/${matchId}/submissions`,
+    {
+      headers: {
+        Authorization: token
+      }
+    },
+    () =>
+    getMatchSubmissions(
+      tournamentId,
+      matchId,
+      forceRefresh
+    )
+  );
+  
+  if (!res) return [];
+  
+  const result = await res.json();
+  
+  if (!res.ok || !result.success) {
+    throw new Error(
+      result.message ||
+      "Failed to load submissions."
     );
   }
   
   return result.submissions || [];
-  
 }
+
 async function rebuildTournamentTable(tournamentId) {
   const token = getToken();
-  
   const res = await fetch(
-    `${API}/tournaments/${tournamentId}/rebuild-table`,
+    `${API}/tournaments/${tournamentId}/table`,
     {
-      method: "POST",
+      method: "GET",
       headers: {
         Authorization: token
       }
     }
   );
-  
   const result = await res.json();
-  
   if (!res.ok || !result.success) {
-    throw new Error(result.message);
+    throw new Error(result.message || "Failed to rebuild table.");
   }
-  
-  return result.tournament;
+  return result.table;
 }
 
 async function reviewMatchSubmission(
@@ -503,13 +592,12 @@ async function reviewMatchSubmission(
   action,
   rejectionReason = ""
 ) {
-  
   const token = getToken();
   
   const res = await fetch(
     `${API}/tournaments/${tournamentId}/match-submission/${submissionId}/review`,
     {
-      method: "POST",
+      method: "PATCH",
       
       headers: {
         "Content-Type": "application/json",
@@ -517,23 +605,27 @@ async function reviewMatchSubmission(
       },
       
       body: JSON.stringify({
-        action,
-        rejectionReason
+        status: action === "approved" ?
+          "approved" :
+          "rejected",
+        rejection_reason: rejectionReason
       })
     }
   );
   
-  const result = await res.json();
+  const result =
+    await res.json();
   
   if (!res.ok || !result.success) {
     throw new Error(
-      result.message || "Review failed."
+      result.message ||
+      "Review failed."
     );
   }
   
   return result;
-  
 }
+
 
 async function sendMatchSubmission() {
   closeResultRecord();
@@ -644,10 +736,51 @@ async function invitePlayer(username) {
 
 
 
+
+
+async function refreshTournamentFromSSE() {
+  
+  if (tournamentRefreshRunning) {
+    tournamentRefreshQueued = true;
+    return;
+  }
+  
+  tournamentRefreshRunning = true;
+  
+  try {
+    await refreshCurrentTournament();
+    
+    renderFixtures();
+    renderRecords();
+    renderFormView();
+    
+    if (currentTournament.format === "league") {
+      renderTable(currentTournament.table);
+    } else {
+      renderFullBracket();
+    }
+    
+  } catch (err) {
+    console.error(
+      "Tournament UI refresh error:",
+      err
+    );
+    
+  } finally {
+    tournamentRefreshRunning = false;
+    
+    if (tournamentRefreshQueued) {
+      tournamentRefreshQueued = false;
+      refreshTournamentFromSSE();
+    }
+  }
+}
+
 function startTournamentEvents(tournamentId) {
   
   if (tournamentEvents) {
     tournamentEvents.close();
+    tournamentEvents = null;
   }
   
   tournamentEvents = new EventSource(
@@ -660,7 +793,7 @@ function startTournamentEvents(tournamentId) {
   
   tournamentEvents.addEventListener(
     "tournament-update",
-    async (event) => {
+    async event => {
       try {
         const data = JSON.parse(event.data);
         
@@ -668,20 +801,13 @@ function startTournamentEvents(tournamentId) {
           return;
         }
         
-        await refreshCurrentTournament();
-        
-        renderFixtures();
-        renderRecords();
-        renderFormView();
-        
-        if (currentTournament.format === "league") {
-          renderTable(currentTournament.table);
-        } else {
-          renderFullBracket();
-        }
+        await refreshTournamentFromSSE();
         
       } catch (err) {
-        console.error(err);
+        console.error(
+          "Tournament SSE update error:",
+          err
+        );
       }
     }
   );
@@ -691,33 +817,55 @@ function startTournamentEvents(tournamentId) {
   };
 }
 
-async function loadNotifications() {
+async function loadNotifications(forceRefresh = false) {
+  if (!forceRefresh) {
+    const cached = await getCachedData(
+      "notifications"
+    );
+    
+    if (cached) {
+      notifications = cached;
+      renderNotifications();
+      return cached;
+    }
+  }
   
-  const res = await fetch(
+  const res = await apiRequest(
     `${API}/notifications`,
     {
       headers: {
         Authorization: getToken()
       }
-    }
+    },
+    () => loadNotifications(forceRefresh)
   );
   
+  if (!res) return [];
   
   const data = await res.json();
   
-  
-  if (data.success) {
-    
-    notifications = data.notifications;
-    
-    renderNotifications();
-    
+  if (!res.ok || !data.success) {
+    throw new Error(
+      data.message ||
+      "Failed to load notifications."
+    );
   }
   
+  notifications =
+    data.notifications || [];
+  
+  await saveCachedData(
+    "notifications",
+    "",
+    notifications
+  );
+  
+  renderNotifications();
+  
+  return notifications;
 }
 
 function startNotificationEvents() {
-  
   if (notificationEvents) {
     notificationEvents.close();
   }
@@ -727,7 +875,6 @@ function startNotificationEvents() {
   notificationEvents = new EventSource(
     `${API}/notifications/events?token=${token}`
   );
-  
   
   notificationEvents.addEventListener(
     "connected",
@@ -739,25 +886,22 @@ function startNotificationEvents() {
     }
   );
   
-  
   notificationEvents.addEventListener(
     "notification",
     (event) => {
-      
-      const notification = JSON.parse(
-        event.data
-      );
+      const notification =
+        JSON.parse(event.data);
       
       console.log(
         "New notification:",
         notification
       );
       
-      handleNewNotification(notification);
-      
+      handleNewNotification(
+        notification
+      );
     }
   );
-  
   
   notificationEvents.onerror = (err) => {
     console.log(
@@ -765,17 +909,23 @@ function startNotificationEvents() {
       err
     );
   };
-  
 }
 
-function handleNewNotification(notification) {
+async function handleNewNotification(
+  notification
+) {
+  notifications.unshift(
+    notification
+  );
   
-  notifications.unshift(notification);
+  await saveCachedData(
+    "notifications",
+    "",
+    notifications
+  );
   
   renderNotifications();
-  
 }
-
 async function openNotification(id) {
   
   await fetch(
@@ -826,99 +976,212 @@ async function createCompetition(data) {
 async function getMyCompetitions() {
   const token = getToken();
   
-  const res = await fetch(
+  const res = await apiRequest(
     `${API}/competitions/my`,
     {
       headers: {
         Authorization: token
       }
-    }
+    },
+    () => getMyCompetitions()
   );
+  
+  if (!res) return [];
   
   const result = await res.json();
   
   if (!res.ok || !result.success) {
-    throw new Error(result.message || "Failed to load competitions.");
+    throw new Error(
+      result.message ||
+      "Failed to load competitions."
+    );
   }
   
-  return result.competitions;
+  return result.competitions || [];
 }
 
-async function getPublicCompetitions() {
+async function getPublicCompetitions(forceRefresh = false) {
+  if (!forceRefresh) {
+    const cached = await getCachedData(
+      "public-competitions"
+    );
+    
+    if (cached) {
+      return cached;
+    }
+  }
+  
   const token = getToken();
   
-  const res = await fetch(
+  const res = await apiRequest(
     `${API}/competitions/public`,
     {
       headers: {
         Authorization: token
       }
-    }
+    },
+    () => getPublicCompetitions(forceRefresh)
   );
+  
+  if (!res) return [];
   
   const result = await res.json();
   
   if (!res.ok || !result.success) {
-    throw new Error(result.message || "Failed to load public competitions.");
-  }
-  
-  return result.competitions;
-}
-async function getHallOfFame() {
-  const token = getToken();
-  
-  const res = await apiRequest(
-    `${API}/tournaments/hall-of-fame`,
-    {
-      method: "GET",
-      headers: {
-        Authorization: token
-      }
-    },
-    getHallOfFame
-  );
-  
-  if (!res) return null;
-  
-  const result = await res.json();
-  
-  if (!res.ok || !result.hallOfFame) {
     throw new Error(
-      result.message || "Failed to load Hall of Fame."
+      result.message ||
+      "Failed to load public competitions."
     );
   }
   
-  return result.hallOfFame;
+  const competitions =
+    result.competitions || [];
+  
+  await saveCachedData(
+    "public-competitions",
+    "",
+    competitions
+  );
+  
+  return competitions;
+}
+
+async function getHallOfFame() {
+  let hallOfFame =
+    await getCachedData(
+      "hall-of-fame"
+    );
+
+  if (
+    !hallOfFame ||
+    typeof hallOfFame !== "object"
+  ) {
+    hallOfFame = {
+      categories: []
+    };
+  }
+
+  const cachedSync =
+    await getCachedData(
+      "hallOfFameSync"
+    );
+
+  const lastChangeId =
+    cachedSync &&
+    Number.isInteger(
+      Number(
+        cachedSync.lastChangeId
+      )
+    )
+      ? Number(
+          cachedSync.lastChangeId
+        )
+      : 0;
+
+  const token =
+    getToken();
+
+  if (!token) {
+    return hallOfFame;
+  }
+
+  const res =
+    await apiRequest(
+      `${API}/hall-of-fame/sync?since=${lastChangeId}`,
+      {
+        method: "GET",
+        headers: {
+          Authorization: token
+        }
+      },
+      getHallOfFame
+    );
+
+  if (!res) {
+    return hallOfFame;
+  }
+
+  const result =
+    await res.json();
+
+  if (
+    !res.ok ||
+    !result.success
+  ) {
+    throw new Error(
+      result.message ||
+      "Failed to synchronize Hall of Fame."
+    );
+  }
+
+  if (
+    result.changed &&
+    result.hallOfFame
+  ) {
+    hallOfFame =
+      result.hallOfFame;
+
+    await saveCachedData(
+      "hall-of-fame",
+      "",
+      hallOfFame
+    );
+  }
+
+  await saveCachedData(
+    "hallOfFameSync",
+    "",
+    {
+      lastChangeId:
+        Number(
+          result.lastChangeId ||
+          lastChangeId
+        )
+    }
+  );
+
+  return hallOfFame;
 }
 async function saveHallOfFame() {
-  if (!hallOfFameAdminData) return;
+  if (!hallOfFameAdminData) {
+    return;
+  }
 
   try {
     showLoader();
 
-    const token = getToken();
+    const token =
+      getToken();
 
-    const res = await apiRequest(
-      `${API}/tournaments/hall-of-fame`,
-      {
-        method: "PATCH",
-        headers: {
-          Authorization: token,
-          "Content-Type": "application/json"
+    const res =
+      await apiRequest(
+        `${API}/hall-of-fame`,
+        {
+          method: "PATCH",
+          headers: {
+            Authorization: token,
+            "Content-Type":
+              "application/json"
+          },
+          body: JSON.stringify({
+            categories:
+              hallOfFameAdminData.categories
+          })
         },
-        body: JSON.stringify({
-          categories:
-            hallOfFameAdminData.categories
-        })
-      },
-      saveHallOfFame
-    );
+        saveHallOfFame
+      );
 
-    if (!res) return;
+    if (!res) {
+      return;
+    }
 
-    const result = await res.json();
+    const result =
+      await res.json();
 
-    if (!res.ok) {
+    if (
+      !res.ok ||
+      !result.success
+    ) {
       throw new Error(
         result.message ||
         "Failed to save Hall of Fame."
@@ -927,6 +1190,28 @@ async function saveHallOfFame() {
 
     hallOfFameAdminData =
       result.hallOfFame;
+
+    await saveCachedData(
+      "hall-of-fame",
+      "",
+      hallOfFameAdminData
+    );
+
+    if (
+      result.changeId !== null &&
+      result.changeId !== undefined
+    ) {
+      await saveCachedData(
+        "hallOfFameSync",
+        "",
+        {
+          lastChangeId:
+            Number(
+              result.changeId
+            )
+        }
+      );
+    }
 
     renderHallOfFame(
       hallOfFameAdminData
@@ -953,7 +1238,6 @@ async function saveHallOfFame() {
     hideLoader();
   }
 }
-
 
 async function updateTeam(tournamentId, teamId, data) {
   const token = getToken();
@@ -1081,49 +1365,171 @@ async function updateCompetition(id, data) {
   return result.competition;
 }
 
-
 async function joinTournament(tournamentId) {
   const token = getToken();
-  
+
   if (!token) {
-    showAlert("You must be logged in to join.");
+    showAlert(
+      "You must be logged in to join."
+    );
     return;
   }
-  
+
   showLoader();
-  
+
   try {
-    const res = await apiRequest(
-      `${API}/tournaments/${tournamentId}/join`,
-      {
-        method: "POST",
-        headers: {
-          Authorization: token
-        }
-      },
-      () => joinTournament(tournamentId)
-    );
-    
-    if (!res) return;
-    
-    const result = await res.json();
-    
-    if (!res.ok || !result.success) {
-      throw new Error(result.message || "Failed to join tournament.");
+    const teamsRes =
+      await apiRequest(
+        `${API}/teams`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: token
+          }
+        },
+        () =>
+          joinTournament(
+            tournamentId
+          )
+      );
+
+    if (!teamsRes) {
+      throw new Error(
+        "Failed to load your teams."
+      );
     }
-    
-    showActionModal("Successfully joined tournament", "success");
-    
+
+    const teamsResult =
+      await teamsRes.json();
+
+    if (
+      !teamsRes.ok ||
+      !teamsResult.success
+    ) {
+      throw new Error(
+        teamsResult.message ||
+        "Failed to load your teams."
+      );
+    }
+
+    const teams =
+      teamsResult.teams || [];
+
+    if (!teams.length) {
+      throw new Error(
+        "You do not have any teams. Create a team first."
+      );
+    }
+
+    hideLoader();
+
+    const selectedTeamIds =
+      await showTeamSelectionModal(
+        teams
+      );
+
+    if (
+      !Array.isArray(
+        selectedTeamIds
+      ) ||
+      !selectedTeamIds.length
+    ) {
+      return;
+    }
+
+    showLoader();
+
+    const res =
+      await apiRequest(
+        `${API}/tournaments/${encodeURIComponent(
+          tournamentId
+        )}/join`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: token,
+            "Content-Type":
+              "application/json"
+          },
+          body:
+            JSON.stringify({
+              team_ids:
+                selectedTeamIds
+            })
+        },
+        () =>
+          joinTournament(
+            tournamentId
+          )
+      );
+
+    if (!res) {
+      throw new Error(
+        "No response from server."
+      );
+    }
+
+    const result =
+      await res.json();
+
+    if (
+      !res.ok ||
+      !result.success
+    ) {
+      throw new Error(
+        result.message ||
+        "Failed to join tournament."
+      );
+    }
+
+    showActionModal(
+      "Successfully joined tournament",
+      "success"
+    );
+
     await loadPublicTournaments();
-    
-    
+
   } catch (err) {
-    showAlert(err.message || "Join failed");
+    console.error(
+      "[joinTournament]",
+      err
+    );
+
+    showAlert(
+      err.message ||
+      "Join failed"
+    );
+
   } finally {
     hideLoader();
   }
 }
-async function getPublicTournaments() {
+async function handleJoinTournament() {
+  const tournament =
+    getCurrentTournament();
+  
+  if (!tournament?.id) {
+    showAlert(
+      "No tournament selected."
+    );
+    return;
+  }
+  
+  await joinTournament(
+    tournament.id
+  );
+}
+async function getPublicTournaments(forceRefresh = false) {
+  if (!forceRefresh) {
+    const cached = await getCachedData(
+      "public-tournaments"
+    );
+    
+    if (cached) {
+      return cached;
+    }
+  }
+  
   showLoader();
   
   try {
@@ -1137,7 +1543,7 @@ async function getPublicTournaments() {
           Authorization: token
         }
       },
-      getPublicTournaments
+      () => getPublicTournaments(forceRefresh)
     );
     
     if (!res) return [];
@@ -1145,13 +1551,29 @@ async function getPublicTournaments() {
     const result = await res.json();
     
     if (!res.ok || !result.success) {
-      throw new Error(result.message || "Failed to load public tournaments.");
+      throw new Error(
+        result.message ||
+        "Failed to load public tournaments."
+      );
     }
     
-    return result.tournaments || [];
+    const tournaments =
+      result.tournaments || [];
+    
+    await saveCachedData(
+      "public-tournaments",
+      "",
+      tournaments
+    );
+    
+    return tournaments;
     
   } catch (err) {
-    showAlert(err.message || "Error loading tournaments");
+    showAlert(
+      err.message ||
+      "Error loading tournaments"
+    );
+    
     return [];
     
   } finally {
@@ -1164,34 +1586,33 @@ async function subscribeUser() {
     if (!("serviceWorker" in navigator)) {
       throw new Error("Service Worker is not supported.");
     }
-
+    
     if (!("PushManager" in window)) {
       throw new Error("Push notifications are not supported.");
     }
-
+    
     const permission = await Notification.requestPermission();
-
+    
     if (permission !== "granted") {
       throw new Error("Notification permission was not granted.");
     }
-
+    
     const reg = await navigator.serviceWorker.ready;
-
+    
     const publicKey =
       "BB0Mj76Yp4Of8Z3PdEzapp7mUSe05UwIPmjGNMFvdfZ5g4Wzub4YzBs4I_mUXT7vlpD286h2vi4mCvnKBTa1IrU";
-
+    
     const subscription =
       await reg.pushManager.subscribe({
         userVisibleOnly: true,
-        applicationServerKey:
-          urlBase64ToUint8Array(publicKey)
+        applicationServerKey: urlBase64ToUint8Array(publicKey)
       });
-
+    
     console.log(
       "Push subscription:",
       subscription
     );
-
+    
     const res = await fetch(
       `${API}/api/push/subscribe`,
       {
@@ -1203,31 +1624,32 @@ async function subscribeUser() {
         body: JSON.stringify(subscription)
       }
     );
-
+    
     const result = await res.json();
-
+    
     if (!res.ok || !result.success) {
       throw new Error(
         result.message ||
         "Failed to save push subscription."
       );
     }
-
+    
     console.log(
       "Push subscription saved successfully."
     );
-
+    
     return subscription;
-
+    
   } catch (err) {
     console.error(
       "Push subscription failed:",
       err
     );
-
+    
     return null;
   }
 }
+
 function urlBase64ToUint8Array(base64String) {
   const padding =
     "=".repeat(
@@ -1319,156 +1741,583 @@ async function updateSubmissionDeadline(
 }
 
 
+async function getNotices() {
+  const token =
+    getToken();
+
+  if (!token) {
+    throw new Error(
+      "Invalid session."
+    );
+  }
+
+  let notices =
+    await getCachedData(
+      "notices"
+    );
+
+  if (!Array.isArray(notices)) {
+    notices = [];
+  }
+
+  const cachedSync =
+    await getCachedData(
+      "noticesSync"
+    );
+
+  const lastChangeId =
+    cachedSync &&
+    Number.isInteger(
+      Number(cachedSync.lastChangeId)
+    )
+      ? Number(cachedSync.lastChangeId)
+      : 0;
+
+  const response =
+    await apiRequest(
+      `${API}/notices/sync?since=${lastChangeId}`,
+      {
+        method: "GET",
+        headers: {
+          Authorization: token
+        }
+      },
+      getNotices
+    );
+
+  if (!response) {
+    return notices;
+  }
+
+  const data =
+    await response.json();
+
+  if (
+    !response.ok ||
+    !data.success
+  ) {
+    throw new Error(
+      data.message ||
+      "Failed to synchronize notices."
+    );
+  }
+
+  const newNotices =
+    Array.isArray(data.notices)
+      ? data.notices
+      : [];
+
+  const deleted =
+    Array.isArray(data.deleted)
+      ? data.deleted
+      : [];
+
+  const noticeMap =
+    new Map(
+      notices.map(
+        notice => [
+          notice.id,
+          notice
+        ]
+      )
+    );
+
+  for (
+    const notice of newNotices
+  ) {
+    if (!notice?.id) continue;
+
+    noticeMap.set(
+      notice.id,
+      notice
+    );
+  }
+
+  for (
+    const noticeId of deleted
+  ) {
+    noticeMap.delete(
+      noticeId
+    );
+  }
+
+  notices =
+    Array.from(
+      noticeMap.values()
+    );
+
+  notices =
+    notices.filter(
+      notice =>
+        !notice.expires_at ||
+        Number(notice.expires_at) >
+          Date.now()
+    );
+
+  notices.sort(
+    (a, b) =>
+      Number(b.created_at || 0) -
+      Number(a.created_at || 0)
+  );
+
+  await saveCachedData(
+    "notices",
+    "",
+    notices
+  );
+
+  await saveCachedData(
+    "noticesSync",
+    "",
+    {
+      lastChangeId:
+        Number(
+          data.lastChangeId ||
+          lastChangeId
+        )
+    }
+  );
+
+  return notices;
+}
 async function createNotice() {
   const title =
-    document.getElementById("noticeTitle").value.trim();
-  
+    document
+      .getElementById("noticeTitle")
+      .value
+      .trim();
+
   const category =
-    document.getElementById("noticeCategory").value;
-  
+    document
+      .getElementById("noticeCategory")
+      .value;
+
   const content =
-    document.getElementById("noticeContent").value.trim();
-  
+    document
+      .getElementById("noticeContent")
+      .value
+      .trim();
+
   const files =
     Array.from(
-      document.getElementById("noticeImages").files || []
+      document
+        .getElementById("noticeImages")
+        .files || []
     );
-  
+
   const published =
-    document.getElementById("noticePublished").checked;
-  
+    document
+      .getElementById("noticePublished")
+      .checked;
+
   const noExpiry =
-    document.getElementById("noticeNoExpiry").checked;
-  
+    document
+      .getElementById("noticeNoExpiry")
+      .checked;
+
   const expiryValue =
-    document.getElementById("noticeExpiresAt").value;
-  
+    document
+      .getElementById("noticeExpiresAt")
+      .value;
+
   if (!title) {
-    showAlert("Enter a notice title.");
+    showAlert(
+      "Enter a notice title."
+    );
     return;
   }
-  
+
   if (!content) {
-    showAlert("Enter the notice content.");
+    showAlert(
+      "Enter the notice content."
+    );
     return;
   }
-  
+
   let expiresAt = null;
-  
+
   if (!noExpiry) {
     if (!expiryValue) {
-      showAlert("Select an expiry date.");
+      showAlert(
+        "Select an expiry date."
+      );
       return;
     }
-    
-    expiresAt = new Date(expiryValue).getTime();
-    
+
+    expiresAt =
+      new Date(
+        expiryValue
+      ).getTime();
+
     if (
-      !Number.isFinite(expiresAt) ||
+      !Number.isFinite(
+        expiresAt
+      ) ||
       expiresAt <= Date.now()
     ) {
-      showAlert("Expiry date must be in the future.");
+      showAlert(
+        "Expiry date must be in the future."
+      );
       return;
     }
   }
-  
+
   if (files.length > 10) {
-    showAlert("You can upload a maximum of 10 images.");
+    showAlert(
+      "You can upload a maximum of 10 images."
+    );
     return;
   }
-  
+
   showLoader();
-  
+
   try {
     const images = [];
-    
+
     for (const file of files) {
       const base64 =
-        await fileToBase64(file, 1200);
-      
+        await fileToBase64(
+          file,
+          1200
+        );
+
       images.push(base64);
     }
-    
-    const response = await apiRequest(
-      `${API}/notices`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: getToken()
+
+    const response =
+      await apiRequest(
+        `${API}/notices`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type":
+              "application/json",
+            Authorization:
+              getToken()
+          },
+          body: JSON.stringify({
+            title,
+            content,
+            category,
+            images,
+            published,
+            expiresAt
+          })
         },
-        body: JSON.stringify({
-          title,
-          content,
-          category,
-          images,
-          published,
-          expiresAt
-        })
-      },
-      createNotice
-    );
-    
-    if (!response) return;
-    
-    const data = await response.json();
-    
-    if (!response.ok || !data.success) {
+        createNotice
+      );
+
+    if (!response) {
+      return;
+    }
+
+    const data =
+      await response.json();
+
+    if (
+      !response.ok ||
+      !data.success
+    ) {
       throw new Error(
         data.message ||
         "Failed to create notice."
       );
     }
-    
+
+    if (
+      data.notice &&
+      data.notice.published &&
+      (
+        !data.notice.expires_at ||
+        Number(
+          data.notice.expires_at
+        ) > Date.now()
+      )
+    ) {
+      let notices =
+        await getCachedData(
+          "notices"
+        );
+
+      if (!Array.isArray(notices)) {
+        notices = [];
+      }
+
+      const noticeMap =
+        new Map(
+          notices.map(
+            notice => [
+              notice.id,
+              notice
+            ]
+          )
+        );
+
+      noticeMap.set(
+        data.notice.id,
+        data.notice
+      );
+
+      notices =
+        Array.from(
+          noticeMap.values()
+        );
+
+      notices.sort(
+        (a, b) =>
+          Number(
+            b.created_at || 0
+          ) -
+          Number(
+            a.created_at || 0
+          )
+      );
+
+      await saveCachedData(
+        "notices",
+        "",
+        notices
+      );
+    }
+
+    if (
+      data.changeId !== null &&
+      data.changeId !== undefined
+    ) {
+      await saveCachedData(
+        "noticesSync",
+        "",
+        {
+          lastChangeId:
+            Number(
+              data.changeId
+            )
+        }
+      );
+    }
+
     closeNoticeBoardModal();
-    
+
     showActionModal(
       "Notice published successfully.",
       "success"
     );
-    
+
   } catch (err) {
-    console.error("[createNotice]", err);
-    
+    console.error(
+      "[createNotice]",
+      err
+    );
+
     showAlert(
       err.message ||
       "Failed to create notice."
     );
-    
+
+  } finally {
+    hideLoader();
+  }
+}
+async function handleRegister() {
+  const username =
+    document.getElementById("registerUsername").value.trim();
+  const email =
+    document.getElementById("registerEmail").value.trim();
+  const password =
+    document.getElementById("registerPassword").value;
+  const role =
+    document.getElementById("registerRole").value;
+  if (!username || !email || !password || !role) {
+    showAlert("Please fill in all fields.");
+    return;
+  }
+  showLoader();
+  try {
+    const res = await fetch(`${API}/auth/register`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        username,
+        email,
+        password,
+        role
+      })
+    });
+    console.log("REGISTER HTTP STATUS:", res.status);
+    console.log("REGISTER HTTP OK:", res.ok);
+    const responseText = await res.text();
+    console.log(
+      "REGISTER RAW RESPONSE:",
+      responseText
+    );
+    let result;
+    try {
+      result = JSON.parse(responseText);
+    } catch (parseError) {
+      console.error(
+        "REGISTER JSON PARSE ERROR:",
+        parseError
+      );
+      throw new Error(
+        `Server returned an invalid response (${res.status}).`
+      );
+    }
+    console.log(
+      "REGISTER JSON:",
+      result
+    );
+    if (!res.ok || !result.success) {
+      throw new Error(
+        result.message ||
+        `Registration failed (${res.status}).`
+      );
+    }
+    showAlert(
+      "Account created successfully."
+    );
+    document.getElementById(
+      "registerUsername"
+    ).value = "";
+    document.getElementById(
+      "registerEmail"
+    ).value = "";
+    document.getElementById(
+      "registerPassword"
+    ).value = "";
+    document.getElementById(
+      "registerRole"
+    ).selectedIndex = 0;
+    showLogin();
+  } catch (err) {
+    console.error(
+      "Registration request failed:",
+      err
+    );
+    showAlert(
+      err.message ||
+      "Failed to create account."
+    );
   } finally {
     hideLoader();
   }
 }
 
+async function getTournamentMatches(tournamentId) {
+  const token = getToken();
+  
+  const res = await fetch(
+    `${API}/tournaments/${tournamentId}/matches`,
+    {
+      method: "GET",
+      headers: {
+        Authorization: token
+      }
+    }
+  );
+  
+  const result = await res.json();
+  
+  console.log("[getTournamentMatches]", result);
+  
+  if (!res.ok || !result.success) {
+    throw new Error(
+      result.message ||
+      "Failed to load tournament matches."
+    );
+  }
+  
+  return result.matches || [];
+}
 
-async function getNotices() {
+async function updateMatch(matchId, updates) {
   const token = getToken();
   
   if (!token) {
-    throw new Error("Invalid session.");
+    throw new Error("Not authenticated");
   }
   
-  const response = await apiRequest(
-    `${API}/notices`,
+  const response = await fetch(
+    `/matches/${encodeURIComponent(matchId)}`,
+    {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`
+      },
+      body: JSON.stringify(updates)
+    }
+  );
+  
+  const data = await response.json().catch(() => ({}));
+  
+  if (!response.ok) {
+    throw new Error(
+      data.message ||
+      data.error ||
+      "Failed to update match"
+    );
+  }
+  
+  return data;
+}
+
+async function getUserProfile() {
+  const cachedProfile =
+    await getCachedData("profile");
+  
+  let profile =
+    cachedProfile &&
+    typeof cachedProfile === "object" ?
+    cachedProfile :
+    {
+      username: "",
+      teams: []
+    };
+  
+  const token = getToken();
+  
+  if (!token) {
+    return profile;
+  }
+  
+  const res = await apiRequest(
+    `${API}/profile`,
     {
       method: "GET",
       headers: {
         Authorization: token
       }
     },
-    getNotices
+    getUserProfile
   );
   
-  if (!response) return [];
+  if (!res) {
+    return profile;
+  }
   
-  const data = await response.json();
+  const result = await res.json();
   
-  if (!response.ok || !data.success) {
+  if (!res.ok || !result.success) {
     throw new Error(
-      data.message ||
-      "Failed to load notices."
+      result.message ||
+      "Failed to load profile."
     );
   }
   
-  return data.notices || [];
+  profile =
+    result.profile || {
+      username: "",
+      teams: []
+    };
+  
+  await saveCachedData(
+    "profile",
+    "",
+    profile
+  );
+  
+  return profile;
 }
+

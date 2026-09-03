@@ -2,80 +2,129 @@ const LOGO_DB_NAME = "TournamentLogosDB";
 const LOGO_STORE = "logos";
 
 async function renderFixtures() {
+  const tournament =
+    getCurrentTournament();
   
-  const tournament = getCurrentTournament();
   if (!tournament) return;
   
   const container =
-    document.getElementById("fixtureList");
+    document.getElementById(
+      "fixtureList"
+    );
   
   if (!container) return;
-  
-  container.innerHTML = "";
   
   const search =
     document.getElementById(
       "fixtureSearchInput"
-    )?.value.toLowerCase() || "";
+    )?.value
+    .toLowerCase()
+    .trim() || "";
   
-  toggleRoundCarousel(search);
-  
-  const matches =
-    getVisibleMatches(tournament, search);
-  
-  if (!matches.length) {
-    renderEmptyFixtures(container, search);
-    return;
-  }
-  
-  let lastRound = null;
-  
-  matches.forEach(match => {
+  try {
+    showLoader();
     
-    const round = match.round || 1;
+    await loadTournamentFixtures(
+      tournament.id
+    );
     
-    if (round !== lastRound) {
-      lastRound = round;
-      container.appendChild(
-        createRoundHeader(round)
+    toggleRoundCarousel(
+      search
+    );
+    
+    const visibleMatches =
+      getVisibleMatches(
+        search
       );
+    
+    container.innerHTML = "";
+    
+    if (!visibleMatches.length) {
+      renderEmptyFixtures(
+        container,
+        search
+      );
+      
+      renderRoundList();
+      
+      return;
     }
     
-    container.appendChild(
-      createFixtureCard(
-        tournament,
-        match
-      )
+    let lastRound = null;
+    
+    visibleMatches.forEach(
+      match => {
+        const round =
+          Number(match.round) || 1;
+        
+        if (round !== lastRound) {
+          lastRound = round;
+          
+          container.appendChild(
+            createRoundHeader(
+              round
+            )
+          );
+        }
+        
+        container.appendChild(
+          createFixtureCard(
+            tournament,
+            match
+          )
+        );
+      }
     );
     
-  });
-  
-  renderRoundList();
-}
-function getVisibleMatches(tournament, search) {
-  let matches = [...(tournament.matches ?? [])];
-  
-  const maxRound = Math.max(
-    ...matches.map(m => m.round || 1),
-    1
-  );
-  
-  if (!search && maxRound !== 1) {
-    matches = matches.filter(
-      m => (m.round || 1) === getCurrentRound()
+    renderRoundList();
+    
+  } catch (err) {
+    console.error(
+      "[renderFixtures]",
+      err
     );
+    
+    container.innerHTML = "";
+    
+    renderEmptyFixtures(
+      container,
+      false
+    );
+    
+    showAlert(
+      err.message ||
+      "Failed to load fixtures."
+    );
+    
+  } finally {
+    hideLoader();
   }
+}
+
+function getVisibleMatches(search = "") {
+  const matches =
+    Array.isArray(fixtures) ? [...fixtures] : [];
   
   if (search) {
-    matches = matches.filter(m =>
-      m.home.toLowerCase().includes(search) ||
-      m.away.toLowerCase().includes(search)
+    return matches.filter(
+      match =>
+      (match.home || "")
+      .toLowerCase()
+      .includes(search) ||
+      (match.away || "")
+      .toLowerCase()
+      .includes(search)
     );
   }
   
-  matches.sort((a, b) => (a.round || 1) - (b.round || 1));
+  const currentRound =
+    getCurrentRound();
   
-  return matches;
+  return matches.filter(
+    match =>
+    Number(match.round) ===
+    currentRound
+  );
 }
 
 function getSubmission(match, tournament) {
@@ -101,27 +150,28 @@ function replaceTeamLogo(container, selector, logoUrl, teamName) {
   
   teamEl.replaceChild(img, placeholder);
 }
+
 function replaceTeamLogo(container, selector, logoUrl, teamName, fallbackUrl = "") {
   // Extract URL string if logoUrl was passed as an object
   if (typeof logoUrl === "object" && logoUrl !== null) {
     logoUrl = logoUrl.url || logoUrl.src || logoUrl.href || "";
   }
-
+  
   // Guard against non-string or empty values
   if (typeof logoUrl !== "string" || !logoUrl.trim()) {
     console.warn(`[replaceTeamLogo] Invalid logoUrl provided for ${teamName}:`, logoUrl);
     return;
   }
-
+  
   const teamEl = container.querySelector(selector);
   const placeholder = teamEl?.querySelector(".fixture-team-logo-placeholder");
   if (!teamEl || !placeholder) return;
-
+  
   const img = document.createElement("img");
   img.className = "fixture-team-logo";
   img.src = logoUrl;
   img.alt = teamName || "";
-
+  
   // Handle broken/invalid image URLs
   img.onerror = () => {
     console.error(`Failed to load image at: ${logoUrl}`);
@@ -130,7 +180,7 @@ function replaceTeamLogo(container, selector, logoUrl, teamName, fallbackUrl = "
       img.src = fallbackUrl;
     }
   };
-
+  
   teamEl.replaceChild(img, placeholder);
 }
 
@@ -157,6 +207,7 @@ function onFixtureClick(match, submission) {
   }
   
 }
+
 function toggleRoundCarousel(searchQuery) {
   const roundCarousel = document.getElementById("roundCarousel");
   if (!roundCarousel) return;
@@ -172,6 +223,7 @@ function createRoundHeader(round) {
   
   return header;
 }
+
 function getSubmissionBadge(match, submission) {
   
   if (!submission) return "";
@@ -189,49 +241,187 @@ function getSubmissionBadge(match, submission) {
   `;
 }
 
-function createFixtureCard(tournament, match) {
+function getSubmission(match, tournament) {
+  return Object.values(
+    tournament.matchSubmissions || {}
+  ).find(
+    s => String(s.matchId) === String(match.id)
+  );
+}
+
+function replaceTeamLogo(
+  container,
+  selector,
+  logoUrl,
+  teamName,
+  fallbackUrl = ""
+) {
+  if (
+    typeof logoUrl === "object" &&
+    logoUrl !== null
+  ) {
+    logoUrl =
+      logoUrl.url ||
+      logoUrl.src ||
+      logoUrl.href ||
+      "";
+  }
+  if (
+    typeof logoUrl !== "string" ||
+    !logoUrl.trim()
+  ) {
+    return;
+  }
+  const teamEl =
+    container.querySelector(selector);
+  const placeholder =
+    teamEl?.querySelector(
+      ".fixture-team-logo-placeholder"
+    );
+  if (!teamEl || !placeholder) {
+    return;
+  }
+  const img =
+    document.createElement("img");
+  img.className =
+    "fixture-team-logo";
+  img.src = logoUrl;
+  img.alt =
+    teamName || "";
+  img.onerror = () => {
+    if (fallbackUrl) {
+      img.onerror = null;
+      img.src = fallbackUrl;
+    } else {
+      img.remove();
+    }
+  };
+  teamEl.replaceChild(
+    img,
+    placeholder
+  );
+}
+
+function onFixtureClick(
+  match,
+  submission
+) {
+  if (APP_MODE === "view") {
+    return;
+  }
+  if (APP_MODE === "admin") {
+    if (submission) {
+      return openSubmissionReview(
+        match,
+        submission
+      );
+    }
+    return openLeagueRecorder(match);
+  }
+  if (APP_MODE === "player") {
+    if (submission) {
+      return openSubmissionReview(
+        match,
+        submission
+      );
+    }
+    return openLeagueRecorder(match);
+  }
+}
+
+function getSubmissionBadge(
+  match,
+  submission
+) {
+  if (!submission) {
+    return "";
+  }
+  const status =
+    submission.status?.toLowerCase();
+  if (status === "approved") {
+    return "";
+  }
+  return `
+    <span class="submission-badge ${status}">
+      ${status}
+    </span>
+  `;
+}
+
+function createFixtureCard(
+  tournament,
+  match
+) {
+  const submission =
+    getSubmission(
+      match,
+      tournament
+    );
   
-  const submission = getSubmission(match, tournament);
+  const div =
+    document.createElement("div");
   
-  const div = document.createElement("div");
+  const played =
+    Boolean(match.played);
+  
+  const round =
+    Number(match.round) || 1;
+  
+  const homeName =
+    match.home || "Home";
+  
+  const awayName =
+    match.away || "Away";
   
   div.className =
-    `fixture-row ${match.played ? "played" : "not-played"}`;
+    `fixture-row ${
+      played
+        ? "played"
+        : "not-played"
+    }`;
   
   div.innerHTML = `
     <div class="fixture-label">
-      ${tournament.name || "Tournament"} • R${String(match.round || 1).padStart(2, "0")}
-      ${getSubmissionBadge(match, submission)}
+      ${tournament.name || "Tournament"} •
+      R${String(round).padStart(2, "0")}
+      ${getSubmissionBadge(
+        match,
+        submission
+      )}
     </div>
 
     <div class="fixture-row-content">
-
       <div class="fixture-teams-stack">
 
         <div class="team-row-item team-home-container">
-          <div class="fixture-team-logo-placeholder">?</div>
+          <div class="fixture-team-logo-placeholder">
+            ?
+          </div>
+
           <span class="fixture-team-name">
-            ${match.home}
+            ${homeName}
           </span>
         </div>
 
         <div class="team-row-item team-away-container">
-          <div class="fixture-team-logo-placeholder">?</div>
+          <div class="fixture-team-logo-placeholder">
+            ?
+          </div>
+
           <span class="fixture-team-name">
-            ${match.away}
+            ${awayName}
           </span>
         </div>
 
       </div>
 
       <div class="fixture-status-pane">
-
         ${
-          match.played
+          played
             ? `
               <div class="score-stack">
                 <span class="score-badge played">
-                  ${match.homeGoals}
+                  ${match.homeGoals ?? 0}
                 </span>
 
                 <span class="ft-badge">
@@ -239,26 +429,28 @@ function createFixtureCard(tournament, match) {
                 </span>
 
                 <span class="score-badge played">
-                  ${match.awayGoals}
+                  ${match.awayGoals ?? 0}
                 </span>
               </div>
             `
             : `
               <span class="vs-text-alt">
-                ${formatMatchDay(match.scheduledAt)}
+                ${formatMatchDay(
+                  match.scheduledAt
+                )}
               </span>
             `
         }
-
       </div>
-
     </div>
 
     ${
-      match.played
+      played
         ? `
           <div class="match-playedTime">
-            ${formatRecordedTime(match.playedAt)}
+            ${formatRecordedTime(
+              match.playedAt
+            )}
           </div>
         `
         : ""
@@ -268,23 +460,121 @@ function createFixtureCard(tournament, match) {
   replaceTeamLogo(
     div,
     ".team-home-container",
-    tournament.teamLogos?.[match.home],
-    match.home
+    match.homeLogo,
+    homeName
   );
   
   replaceTeamLogo(
     div,
     ".team-away-container",
-    tournament.teamLogos?.[match.away],
-    match.away
+    match.awayLogo,
+    awayName
   );
   
-  div.style.cursor = "pointer";
+  div.style.cursor =
+    "pointer";
   
   div.onclick = () =>
-    onFixtureClick(match, submission);
+    onFixtureClick(
+      match,
+      submission
+    );
   
   return div;
+}
+
+function renderEmptyFixtures(
+  container,
+  search
+) {
+  let message = "";
+  if (search) {
+    message =
+      "No fixtures match your search.";
+  } else if (
+    APP_MODE === "admin"
+  ) {
+    message =
+      "No fixtures yet. <br>Generate fixtures to begin.";
+  } else if (
+    APP_MODE === "player"
+  ) {
+    message =
+      "No fixtures available yet. <br>Fixtures will appear here as soon as they are created";
+  } else {
+    message =
+      "No fixtures available.";
+  }
+  container.innerHTML = `
+    <div class="emptyText">
+      ${message}
+    </div>
+  `;
+}
+
+function formatMatchDay(
+  value
+) {
+  if (!value) {
+    return "Vs";
+  }
+  const date =
+    new Date(value);
+  if (
+    isNaN(date.getTime())
+  ) {
+    return "";
+  }
+  const weekday =
+    date.toLocaleDateString(
+      "en-GB",
+      {
+        weekday: "short"
+      }
+    );
+  const day =
+    date.getDate();
+  const monthYear =
+    date
+    .toLocaleDateString(
+      "en-GB",
+      {
+        month: "long",
+        year: "numeric"
+      }
+    )
+    .replace(
+      " ",
+      ", "
+    );
+  return `${weekday} ${day}<br>${monthYear}`;
+}
+
+function formatRecordedTime(
+  value
+) {
+  if (!value) {
+    return "";
+  }
+  const date =
+    new Date(value);
+  if (
+    isNaN(date.getTime())
+  ) {
+    return "";
+  }
+  const day =
+    date.getDate();
+  const month =
+    date.toLocaleDateString(
+      "en-GB",
+      {
+        month: "short"
+      }
+    );
+  const year =
+    date.getFullYear();
+  return `${day} ${month}, ${year}`;
 }
 
 function renderEmptyFixtures(container, search) {
@@ -340,47 +630,90 @@ function formatRecordedTime(value) {
 
 
 function setCurrentRound(round) {
-  const tournament = getCurrentTournament();
+  const tournament =
+    getCurrentTournament();
+  
   if (!tournament) return;
   
-  tournament.currentRound = Number(round);
+  const maxRound =
+    getMaxRound();
   
-  setCurrentTournament(tournament);
+  const newRound =
+    Math.max(
+      1,
+      Math.min(
+        Number(round) || 1,
+        maxRound
+      )
+    );
   
   localStorage.setItem(
     `currentRound_${tournament.id}`,
-    String(round)
+    String(newRound)
   );
 }
+
 function getCurrentRound() {
-  const tournament = getCurrentTournament();
+  const tournament =
+    getCurrentTournament();
   
   if (!tournament) return 1;
   
-  return Number(
-    localStorage.getItem(`currentRound_${tournament.id}`) || 1
+  const savedRound =
+    localStorage.getItem(
+      `currentRound_${tournament.id}`
+    );
+  
+  const round =
+    Number(savedRound);
+  
+  const maxRound =
+    getMaxRound();
+  
+  if (
+    !Number.isFinite(round) ||
+    round < 1
+  ) {
+    return 1;
+  }
+  
+  return Math.min(
+    round,
+    maxRound
   );
 }
-
+async function prevRound() {
+  const current =
+    getCurrentRound();
+  
+  if (current <= 1) {
+    return;
+  }
+  
+  setCurrentRound(
+    current - 1
+  );
+  
+  await renderFixtures();
+}
 async function nextRound() {
-  const current = getCurrentRound();
-  const max = getMaxRound();
+  const current =
+    getCurrentRound();
   
-  if (current >= max) return;
+  const max =
+    getMaxRound();
   
-  setCurrentRound(current + 1);
-  renderFixtures();
+  if (current >= max) {
+    return;
+  }
+  
+  setCurrentRound(
+    current + 1
+  );
+  
+  await renderFixtures();
 }
 
-
-function prevRound() {
-  const current = getCurrentRound();
-  
-  if (current <= 1) return;
-  
-  setCurrentRound(current - 1);
-  renderFixtures();
-}
 
 function deleteTeam(index) {
   const tournament = getCurrentTournament();
@@ -839,12 +1172,12 @@ function enableKnockoutSwipe() {
       ...tournament.knockoutMatches.map(m => m.roundIndex || 1)
     );
     
-
+    
     if (diff > threshold && currentKnockoutRoundIndex < maxRounds) {
       renderKnockoutFixtures(currentKnockoutRoundIndex + 1);
     }
     
-
+    
     if (diff < -threshold && currentKnockoutRoundIndex > 1) {
       renderKnockoutFixtures(currentKnockoutRoundIndex - 1);
     }
@@ -853,7 +1186,7 @@ function enableKnockoutSwipe() {
 
 
 function shareKnockoutFixtures() {
-closeMenu();
+  closeMenu();
   const element = document.getElementById('knockOutFixtureList');
   const titleText = document.getElementById('roundLabel')?.textContent || 'Knockout Fixtures';
   const fileName = titleText.replace(/\s/g, '-');
@@ -1499,9 +1832,172 @@ async function sharePOTSTable() {
 }
 
 
+function renderTable(data) {
+  const tbody =
+    document.getElementById("tableBody");
+  
+  if (!tbody) {
+    return;
+  }
+  
+  tbody.innerHTML = "";
+  
+  if (
+    !Array.isArray(data) ||
+    data.length === 0
+  ) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="10" style="text-align:center;">
+          No table data
+        </td>
+      </tr>
+    `;
+    
+    return;
+  }
+  
+  data.forEach((team, index) => {
+    const tr =
+      document.createElement("tr");
+    
+    tr.setAttribute(
+      "data-row-index",
+      index
+    );
+    
+    const played =
+      Number(team.played) || 0;
+    
+    const wins =
+      Number(team.wins) || 0;
+    
+    const draws =
+      Number(team.draws) || 0;
+    
+    const losses =
+      Number(team.losses) || 0;
+    
+    const gf =
+      Number(team.gf) || 0;
+    
+    const ga =
+      Number(team.ga) || 0;
+    
+    const gd =
+      team.gd !== undefined &&
+      team.gd !== null ?
+      Number(team.gd) || 0 :
+      gf - ga;
+    
+    const pts =
+      team.pts !== undefined &&
+      team.pts !== null ?
+      Number(team.pts) || 0 :
+      Number(team.points) || 0;
+    
+    const gdClass =
+      gd < 0 ? "neg" : "";
+    
+    const indicator =
+      typeof getChangeIndicator ===
+      "function" ?
+      getChangeIndicator(
+        team.change
+      ) :
+      "";
+    
+    tr.innerHTML = `
+      <td>
+        <div class="rank-cell">
+          <span class="rank-num">
+            ${index + 1}
+          </span>
+          ${indicator}
+        </div>
+      </td>
 
+      <td>
+        <div class="table-team-cell">
+          <div class="team-logo-placeholder">
+            ?
+          </div>
 
+          <strong class="team-name"></strong>
+        </div>
+      </td>
 
+      <td>${played}</td>
+      <td>${wins}</td>
+      <td>${draws}</td>
+      <td>${losses}</td>
+      <td>${gf}</td>
+      <td>${ga}</td>
+
+      <td class="${gdClass}">
+        ${gd >= 0 ? "+" + gd : gd}
+      </td>
+
+      <td>
+        <strong>
+          ${pts}
+        </strong>
+      </td>
+    `;
+    
+    const teamName =
+      tr.querySelector(
+        ".team-name"
+      );
+    
+    if (teamName) {
+      teamName.textContent =
+        team.name || "";
+    }
+    
+    if (team.logo) {
+      const teamCell =
+        tr.querySelector(
+          ".table-team-cell"
+        );
+      
+      const placeholder =
+        teamCell?.querySelector(
+          ".team-logo-placeholder"
+        );
+      
+      if (
+        teamCell &&
+        placeholder
+      ) {
+        const img =
+          document.createElement("img");
+        
+        img.className =
+          "table-team-logo";
+        
+        img.src =
+          team.logo;
+        
+        img.alt =
+          team.name || "Logo";
+        
+        img.onerror = () => {
+          img.replaceWith(
+            placeholder
+          );
+        };
+        
+        teamCell.replaceChild(
+          img,
+          placeholder
+        );
+      }
+    }
+    
+    tbody.appendChild(tr);
+  });
+}
 
 function getChangeIndicator(change) {
   if (change === 'up') {
@@ -1511,70 +2007,6 @@ function getChangeIndicator(change) {
   }
   return `<span class="pos-change same" title="No change"></span>`;
 }
-async function renderTable(data = []) {
-  const tbody = document.getElementById("tableBody");
-  if (!tbody) return;
-  
-  tbody.innerHTML = "";
-  
-  if (!Array.isArray(data) || data.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="10" style="text-align:center;">No table data</td></tr>`;
-    return;
-  }
-  
-  const tournament = typeof getCurrentTournament === "function" ?
-    getCurrentTournament() :
-    null;
-  
-  data.forEach((team, index) => {
-    const tr = document.createElement("tr");
-    tr.setAttribute("data-row-index", index);
-    
-    const gd = team.gd ?? ((team.gf || 0) - (team.ga || 0));
-    const gdClass = gd < 0 ? "neg" : "";
-    const indicator = getChangeIndicator(team.change);
-    const logoUrl = getTeamLogo(tournament, team.name);
-    
-    tr.innerHTML = `
-      <td>
-        <div class="rank-cell">
-          <span class="rank-num">${index + 1}</span>
-          ${indicator}
-        </div>
-      </td>
-      <td>
-        <div class="table-team-cell">
-          <div class="team-logo-placeholder">?</div>
-          <strong class="team-name">${team.name || ""}</strong>
-        </div>
-      </td>
-      <td>${team.played || 0}</td>
-      <td>${team.wins || 0}</td>
-      <td>${team.draws || 0}</td>
-      <td>${team.losses || 0}</td>
-      <td>${team.gf || 0}</td>
-      <td>${team.ga || 0}</td>
-      <td class="${gdClass}">${gd >= 0 ? "+" + gd : gd}</td>
-      <td><strong>${team.pts || 0}</strong></td>
-    `;
-    
-    if (logoUrl) {
-      const teamCell = tr.querySelector(".table-team-cell");
-      const placeholder = teamCell?.querySelector(".team-logo-placeholder");
-      
-      if (teamCell && placeholder) {
-        const img = document.createElement("img");
-        img.className = "table-team-logo";
-        img.src = logoUrl;
-        img.alt = team.name || "Logo";
-        teamCell.replaceChild(img, placeholder);
-      }
-    }
-    
-    tbody.appendChild(tr);
-  });
-}
-
 
 function getTeamLogo(tournament, teamName) {
   if (!tournament || !teamName) return null;
@@ -1583,10 +2015,10 @@ function getTeamLogo(tournament, teamName) {
   
   if (!logo) return null;
   
-
+  
   if (typeof logo === "string") return logo;
   
-
+  
   if (typeof logo === "object" && logo.url) {
     return logo.url;
   }
@@ -1765,50 +2197,115 @@ function updateDropdownLabel(view) {
 }
 
 function getMaxRound() {
-  const tournament = getCurrentTournament();
-  if (!tournament || !tournament.matches?.length) return 1;
+  if (!Array.isArray(fixtures) || !fixtures.length) {
+    return 1;
+  }
   
-  const rounds = tournament.matches.map(m => m.round || 1);
-  return Math.max(...rounds);
+  return Math.max(
+    ...fixtures.map(
+      match =>
+      Number(match.round) || 1
+    ),
+    1
+  );
 }
 
 function getTournaments() {
   return myTournaments || [];
 }
 
-
 function renderRoundList() {
-  const container = document.getElementById("roundCarousel");
+  const container =
+    document.getElementById("roundCarousel");
+  
   if (!container) return;
   
-  const tournament = getCurrentTournament();
-  if (!tournament || !tournament.matches) return;
+  const tournament =
+    getCurrentTournament();
   
-  const current = getCurrentRound();
-  const max = Math.max(...tournament.matches.map(m => m.round || 1), 1);
+  if (!tournament) return;
   
-  let track = container.querySelector(".roundTrack");
+  const current =
+    getCurrentRound();
+  
+  const matches =
+    Array.isArray(fixtures) ?
+    fixtures :
+    Array.isArray(tournament.matches) ?
+    tournament.matches :
+    [];
+  
+  const max = Math.max(
+    ...matches.map(
+      match =>
+      Number(match.round) || 1
+    ),
+    1
+  );
+  
+  let track =
+    container.querySelector(
+      ".roundTrack"
+    );
+  
   if (!track) {
-    track = document.createElement("div");
-    track.className = "roundTrack";
+    track =
+      document.createElement("div");
+    
+    track.className =
+      "roundTrack";
+    
     container.appendChild(track);
   }
   
   track.innerHTML = "";
   
-  for (let i = 1; i <= max; i++) {
-    const el = document.createElement("h2");
-    el.className = "roundText";
-    if (i === current) el.classList.add("active");
-    else if (i === current - 1) el.classList.add("prev");
-    else if (i === current + 1) el.classList.add("next");
-    el.textContent = `Round ${i} / ${max}`;
-    el.onclick = () => goToRound(i);
+  for (
+    let i = 1; i <= max; i++
+  ) {
+    const el =
+      document.createElement("h2");
+    
+    el.className =
+      "roundText";
+    
+    if (i === current) {
+      el.classList.add("active");
+    }
+    else if (i === current - 1) {
+      el.classList.add("prev");
+    }
+    else if (i === current + 1) {
+      el.classList.add("next");
+    }
+    
+    el.textContent =
+      `Round ${i} / ${max}`;
+    
+    el.onclick = () =>
+      goToRound(i);
+    
     track.appendChild(el);
   }
   
-  requestAnimationFrame(centerActiveRound);
+  requestAnimationFrame(
+    centerActiveRound
+  );
 }
+
+async function goToRound(round) {
+  setCurrentRound(round);
+  
+  updateRoundClasses();
+  
+  await renderFixtures();
+  
+  requestAnimationFrame(
+    centerActiveRound
+  );
+}
+
+
 
 function centerActiveRound() {
   const container = document.getElementById("roundCarousel");
@@ -1828,12 +2325,7 @@ function centerActiveRound() {
   track.style.transform = `translateX(${currentTranslate - offset}px)`;
 }
 
-function goToRound(round) {
-  setCurrentRound(round);
-  
-  updateRoundClasses();
-  requestAnimationFrame(centerActiveRound);
-}
+
 
 function updateRoundClasses() {
   const track = document.querySelector(".roundTrack");
@@ -2012,106 +2504,223 @@ function previewTournamentImage(event) {
 
 
 
+async function renderTeams(
+  containerId = "teamList"
+) {
+  showLoader();
+  
+  try {
+    const container =
+      document.getElementById(
+        containerId
+      );
+    
+    if (!container) return;
+    
+    const tournament =
+      getCurrentTournament();
+    
+    if (!tournament) {
+      showAlert(
+        "No tournament selected"
+      );
+      return;
+    }
+    
+    const teams =
+      await loadTournamentTeams(
+        tournament.id
+      );
+    
+    container.className =
+      "CupTeamsContainer";
+    
+    container.innerHTML = "";
+    
+    const counterLabel =
+      document.getElementById(
+        "teamCount"
+      );
+    
+    const teamadded =
+      document.getElementById(
+        "teamsadded"
+      );
+    
+    if (counterLabel) {
+      counterLabel.textContent =
+        `Total Teams Register : ${teams.length}`;
+    }
+    
+    if (teamadded) {
+      teamadded.textContent =
+        teams.length;
+    }
+    
+    if (!teams.length) {
+      container.innerHTML =
+        "<p>No teams added yet</p>";
+      return;
+    }
+    
+    teams.forEach(team => {
+      const div =
+        document.createElement(
+          "div"
+        );
+      
+      div.className =
+        "team-card";
+      
+      div.innerHTML = `
+        <div class="team-swipe-wrapper">
+          <div class="team-actions">
+            <button
+              class="btn-edit data-admin"
+              onclick="openEditTeam('${team.id}')"
+            >
+              Edit
+            </button>
 
-async function renderTeams(containerId = "teamList") {
-  showLoader(); 
-  const container = document.getElementById(containerId);
-  if (!container) return;
-  
-  const current = getCurrentTournament();
-  if (!current) return;
-  
-  
-  const latestTournaments = await getMyTournaments();
-  const tournament = latestTournaments.find(t => String(t.id) === String(current.id));
-  
-  if (!tournament) {
-    hideLoader();
-    return showAlert("Tournament not found");
-  }
-  
-  currentTournament = tournament;
-  const index = myTournaments.findIndex(t => String(t.id) === String(tournament.id));
-  if (index !== -1) myTournaments[index] = tournament;
-  
-  container.className = "CupTeamsContainer";
-  container.innerHTML = "";
-  
-  const counterLabel = document.getElementById("teamCount");
-  const teamadded = document.getElementById("teamsadded");
-  
-  
-  let teamsObj = tournament.teams || {};
-  if (Array.isArray(teamsObj)) {
-    const converted = {};
-    teamsObj.forEach((oldName, i) => {
-      const id = `old_${i}`;
-      converted[id] = { id, name: oldName, logo: tournament.teamLogos?.[oldName] || null };
+            <button
+              class="btn-delete data-admin"
+              onclick="deleteTeam('${team.id}')"
+            >
+              Delete
+            </button>
+          </div>
+
+          <div class="team-content">
+            ${
+              team.logo
+                ? `
+                  <img
+                    class="team-logo"
+                    src="${team.logo}"
+                    alt="${team.name}"
+                  />
+                `
+                : `
+                  <div class="team-logo-placeholder">
+                    ?
+                  </div>
+                `
+            }
+
+            <span>${team.name}</span>
+          </div>
+        </div>
+      `;
+      
+      let startX = 0;
+      let currentX = 0;
+      let isSwiping = false;
+      
+      const content =
+        div.querySelector(
+          ".team-content"
+        );
+      
+      const start = x => {
+        startX = x;
+        currentX = x;
+        isSwiping = true;
+      };
+      
+      const move = x => {
+        if (!isSwiping) return;
+        
+        currentX = x;
+        
+        const diff =
+          currentX - startX;
+        
+        if (diff < 0) {
+          content.style.transform =
+            `translateX(${diff}px)`;
+        }
+      };
+      
+      const end = () => {
+        if (!isSwiping) return;
+        
+        isSwiping = false;
+        
+        const diff =
+          currentX - startX;
+        
+        content.style.transform =
+          diff < -80 ?
+          "translateX(-120px)" :
+          "translateX(0)";
+      };
+      
+      div.addEventListener(
+        "touchstart",
+        e =>
+        start(
+          e.touches[0].clientX
+        )
+      );
+      
+      div.addEventListener(
+        "mousedown",
+        e =>
+        start(
+          e.clientX
+        )
+      );
+      
+      div.addEventListener(
+        "touchmove",
+        e =>
+        move(
+          e.touches[0].clientX
+        )
+      );
+      
+      div.addEventListener(
+        "mousemove",
+        e =>
+        move(
+          e.clientX
+        )
+      );
+      
+      div.addEventListener(
+        "touchend",
+        end
+      );
+      
+      div.addEventListener(
+        "mouseup",
+        end
+      );
+      
+      div.addEventListener(
+        "mouseleave",
+        end
+      );
+      
+      container.appendChild(
+        div
+      );
     });
-    teamsObj = converted;
+    
+  } catch (err) {
+    console.error(
+      "[renderTeams]",
+      err
+    );
+    
+    showAlert(
+      err.message ||
+      "Failed to load teams."
+    );
+    
+  } finally {
+    hideLoader();
   }
-  
-  const teams = Object.values(teamsObj);
-  
-  if (counterLabel) counterLabel.textContent = `Total Teams Register : ${teams.length}`;
-  if (teamadded) teamadded.textContent = teams.length;
-  
-  if (teams.length === 0) {
-    container.innerHTML = "<p>No teams added yet</p>";
-  }
-  
-  teams.forEach((team) => {
-    const div = document.createElement("div");
-    div.className = "team-card";
-    
-    div.innerHTML = `
-      <div class="team-swipe-wrapper">
-        <div class="team-actions">
-          <button class="btn-edit data-admin" onclick="openEditTeam('${team.id}')">Edit</button>
-          <button class="btn-delete data-admin" onclick="deleteTeam('${team.id}')">Delete</button>
-        </div>
-
-        <div class="team-content">
-          ${team.logo? `<img class="team-logo" src="${team.logo}" alt="${team.name}" />` : `<div class="team-logo-placeholder">?</div>`}
-          <span>${team.name}</span>
-        </div>
-      </div>
-    `;
-    
-    
-    let startX = 0,
-      currentX = 0,
-      isSwiping = false;
-    const content = div.querySelector(".team-content");
-    const start = (x) => {
-      startX = x;
-      currentX = x;
-      isSwiping = true;
-    };
-    const move = (x) => {
-      if (!isSwiping) return;
-      currentX = x;
-      const diff = currentX - startX;
-      if (diff < 0) content.style.transform = `translateX(${diff}px)`;
-    };
-    const end = () => {
-      if (!isSwiping) return;
-      isSwiping = false;
-      const diff = currentX - startX;
-      content.style.transform = diff < -80 ? "translateX(-120px)" : "translateX(0)";
-    };
-    div.addEventListener("touchstart", e => start(e.touches[0].clientX));
-    div.addEventListener("mousedown", e => start(e.clientX));
-    div.addEventListener("touchmove", e => move(e.touches[0].clientX));
-    div.addEventListener("mousemove", e => move(e.clientX));
-    div.addEventListener("touchend", end);
-    div.addEventListener("mouseup", end);
-    div.addEventListener("mouseleave", end);
-    
-    container.appendChild(div);
-  });
-  
-  hideLoader();
 }
 
 function renderNotifications() {
@@ -2274,33 +2883,35 @@ async function renderCompetitionList() {
 }
 
 function getCompetitionTournamentCount(competition) {
-  return competition.tournamentCount ?? 0;
+  return competition.tournament_count ?? 0;
 }
+
 function getCompetitionActiveSeasons(competition) {
-  return competition.activeSeasons ?? 0;
+  return competition.active_seasons ?? 0;
 }
 
 function getActiveSeasonText(competition) {
-  const count = competition.activeSeasons ?? 0;
+  const count =
+    competition.active_seasons ?? 0;
   
   return count === 1 ?
     "1 Active Season" :
     `${count} Active Seasons`;
 }
 
-
 function createCompetitionCard(competition) {
   const div = document.createElement("div");
   div.className = "competition-card";
   div.dataset.id = competition.id;
-
-  const imgId = `competition-img-${competition.id}`;
-
+  
+  const imgId =
+    `competition-img-${competition.id}`;
+  
   div.innerHTML = `
     <div class="card-header">
       <div class="competition-meta">
-      
-          </div>
+      </div>
+
       <div class="competition-menu-btn data-admin">
         ☰
       </div>
@@ -2310,79 +2921,113 @@ function createCompetitionCard(competition) {
       <div class="competition-info">
         <h3>${competition.name}</h3>
       </div>
+
       <div class="competition-image">
-        <span id="${imgId}" class="competition-image-placeholder">
+        <span
+          id="${imgId}"
+          class="competition-image-placeholder"
+        >
           🏆
         </span>
       </div>
     </div>
 
-    <div class="menu-dropdown hidden" id="menu-${competition.id}">
+    <div
+      class="menu-dropdown hidden"
+      id="menu-${competition.id}"
+    >
       <div class="menu-itemList edit data-admin">
         Edit
       </div>
+
       <div class="menu-itemList delete data-admin">
         Delete
       </div>
     </div>
   `;
-
-  const menuBtn = div.querySelector(".competition-menu-btn");
-  const dropdown = div.querySelector(".menu-dropdown");
-  const editBtn = div.querySelector(".menu-itemList.edit");
-  const deleteBtn = div.querySelector(".menu-itemList.delete");
-
+  
+  const menuBtn =
+    div.querySelector(".competition-menu-btn");
+  
+  const dropdown =
+    div.querySelector(".menu-dropdown");
+  
+  const editBtn =
+    div.querySelector(".menu-itemList.edit");
+  
+  const deleteBtn =
+    div.querySelector(".menu-itemList.delete");
+  
   menuBtn?.addEventListener("click", e => {
     e.stopPropagation();
-    document.querySelectorAll(".menu-dropdown").forEach(el => {
-      if (el !== dropdown) {
-        el.classList.add("hidden");
-      }
-    });
+    
+    document
+      .querySelectorAll(".menu-dropdown")
+      .forEach(el => {
+        if (el !== dropdown) {
+          el.classList.add("hidden");
+        }
+      });
+    
     dropdown.classList.toggle("hidden");
   });
-
+  
   editBtn?.addEventListener("click", e => {
     e.stopPropagation();
+    
     editCompetition(competition.id);
+    
     dropdown.classList.add("hidden");
   });
-
+  
   deleteBtn?.addEventListener("click", e => {
     e.stopPropagation();
+    
     deleteCompetition(competition.id);
+    
     dropdown.classList.add("hidden");
   });
-
+  
   div.addEventListener("click", e => {
-    if (e.target.closest(".menu-dropdown")) return;
+    if (e.target.closest(".menu-dropdown")) {
+      return;
+    }
+    
     openCompetition(competition.id);
   });
-
-  // Extract URL safely whether competition.logo is an object or string
-  const rawLogo = competition.logo || competition.competitionImage;
-  const logoUrl = typeof rawLogo === "object" && rawLogo !== null
-    ? (rawLogo.url || rawLogo.src || rawLogo.href || "")
-    : rawLogo;
-
+  
+  const logoUrl =
+    competition.logo_url || "";
+  
   if (logoUrl) {
-    const placeholder = div.querySelector(`#${imgId}`);
+    const placeholder =
+      div.querySelector(`#${imgId}`);
     
     if (placeholder) {
-      const img = document.createElement("img");
-      img.src = logoUrl;
-      img.alt = competition.name || "";
-      img.className = "competition-image-img";
+      const img =
+        document.createElement("img");
       
-      // Error handling to log broken link instead of breaking silently
-      img.onerror = () => console.error(`Failed to load image for ${competition.name}:`, logoUrl);
+      img.src = logoUrl;
+      img.alt =
+        competition.name || "";
+      
+      img.className =
+        "competition-image-img";
+      
+      img.onerror = () => {
+        console.error(
+          "Failed to load competition logo:",
+          logoUrl
+        );
+      };
       
       placeholder.replaceWith(img);
     }
   }
-
+  
   return div;
 }
+
 
 
 
@@ -2393,17 +3038,20 @@ function loadTournamentImage(tournament, imgId, container) {
   
   if (
     !placeholder ||
-    !tournament.tournamentImage ||
-    !tournament.tournamentImage.url
+    !tournament.tournament_image
   ) {
     return;
   }
   
   const img = document.createElement("img");
   
-  img.src = tournament.tournamentImage.url;
-  img.alt = tournament.name;
+  img.src = tournament.tournament_image;
+  img.alt = tournament.name || "Tournament";
   img.className = "tournament-image-img";
+  
+  img.onerror = () => {
+    img.replaceWith(placeholder);
+  };
   
   placeholder.replaceWith(img);
 }
@@ -2414,7 +3062,7 @@ function getGroupedAndSortedTournaments(tournaments) {
     const timeB = new Date(b.createdAt || b.dateCreated || b.timestamp || 0).getTime();
     return timeB - timeA;
   });
-
+  
   return sorted.reduce((acc, tournament) => {
     const name = tournament.name || "Untitled Tournament";
     if (!acc[name]) {
@@ -2450,20 +3098,30 @@ function renderTournamentList(containerId = "tournamentList", tournaments = myTo
 
 function getGroupedAndSortedTournaments(tournaments) {
   const sorted = [...tournaments].sort((a, b) => {
-    const timeA = new Date(a.createdAt || a.dateCreated || a.timestamp || 0).getTime();
-    const timeB = new Date(b.createdAt || b.dateCreated || b.timestamp || 0).getTime();
+    const timeA =
+      Number(a.created_at || a.createdAt || 0);
+    
+    const timeB =
+      Number(b.created_at || b.createdAt || 0);
+    
     return timeB - timeA;
   });
-
+  
   return sorted.reduce((acc, tournament) => {
-    const name = tournament.name || "Untitled Tournament";
+    const name =
+      tournament.name ||
+      "Untitled Tournament";
+    
     if (!acc[name]) {
       acc[name] = [];
     }
+    
     acc[name].push(tournament);
+    
     return acc;
   }, {});
 }
+
 
 function renderTournamentsByGroup(tournaments, currentUser, container) {
   const grouped = getGroupedAndSortedTournaments(tournaments);
@@ -2500,43 +3158,43 @@ function setupTournamentMenu(div, tournament) {
   const dropdown = div.querySelector(`#menu-${tournament.id}`);
   const editBtn = div.querySelector(".menu-itemList.edit");
   const deleteBtn = div.querySelector(".menu-itemList.delete");
-
+  
   menuBtn?.addEventListener("click", (e) => {
     e.stopPropagation();
-
+    
     document.querySelectorAll(".menu-dropdown").forEach(el => {
       if (el !== dropdown) {
         el.classList.add("hidden");
       }
     });
-
+    
     dropdown?.classList.toggle("hidden");
   });
-
+  
   editBtn?.addEventListener("click", (e) => {
     e.stopPropagation();
-
+    
     if (typeof editTournament === "function") {
       editTournament(tournament.id);
     }
-
+    
     dropdown?.classList.add("hidden");
   });
-
+  
   deleteBtn?.addEventListener("click", (e) => {
     e.stopPropagation();
-
+    
     if (typeof deleteTournament === "function") {
       deleteTournament(tournament.id);
     }
-
+    
     dropdown?.classList.add("hidden");
   });
 }
 
 function setupPublicJoinAction(div, tournament) {
   const joinBtn = div.querySelector(".join-tournament-btn");
-
+  
   joinBtn?.addEventListener("click", async (e) => {
     e.stopPropagation();
     await joinTournament(tournament.id);
@@ -2546,18 +3204,18 @@ function setupPublicJoinAction(div, tournament) {
 function setupTournamentClick(div, tournament, disableCardClick = false) {
   div.addEventListener("click", (e) => {
     if (disableCardClick) return;
-
+    
     if (e.target.closest(".menu-dropdown")) {
       return;
     }
-
+    
     if (typeof exportMode !== "undefined" && exportMode) {
       if (typeof toggleSelect === "function") {
         toggleSelect(tournament.id);
       }
       return;
     }
-
+    
     openTournament(tournament.id);
   });
 }
@@ -2566,13 +3224,13 @@ function setupTournamentMenuListener() {
   if (window._tournamentMenuListener) {
     return;
   }
-
+  
   document.addEventListener("click", () => {
     document.querySelectorAll(".menu-dropdown").forEach(el => {
       el.classList.add("hidden");
     });
   });
-
+  
   window._tournamentMenuListener = true;
 }
 
@@ -2595,105 +3253,182 @@ function renderEmptyTournamentState(container) {
 
 function canJoinTournament(tournament, currentUser) {
   if (!currentUser) return false;
-if(currentUser.role==="admin") return
+  if (currentUser.role === "admin") return
   const playerInfo = tournament.players?.[currentUser.uid];
-
+  
   const isJoined = Boolean(
     playerInfo && (playerInfo.joined || playerInfo.status === "joined" || playerInfo.status === "accepted")
   );
-
+  
   const hasPendingInvite = playerInfo?.hasNewInvitation === true;
-
+  
   const isPrivate = tournament.isPrivate === true || tournament.type === "private" || tournament.visibility === "private";
-
+  
   return !isPrivate && !isJoined && !hasPendingInvite;
 }
 
 function createTournamentCard(tournament, currentUser) {
   const div = document.createElement("div");
+  
   div.className = "tournament-card";
+  
   div.dataset.id = tournament.id;
-
-  const imgId = `tournament-img-${tournament.id}`;
-  const playerInfo = tournament.players?.[currentUser?.uid];
-
+  
+  const imgId =
+    `tournament-img-${tournament.id}`;
+  
+  const playerInfo =
+    tournament.players?.[currentUser?.uid];
+  
   const pendingInvitation =
     currentUser?.role === "player" &&
     playerInfo?.hasNewInvitation === true;
-
-  const showPublicJoin = canJoinTournament(tournament, currentUser);
-  const status = (tournament.status || tournament.seasonStatus || "").toLowerCase();
-
-const statusClass =
-  status === "active" ?
-  "active" :
-  status === "upcoming" ?
-  "upcoming" :
-  status === "completed" ?
-  "completed" :
-  "";
-
+  
+  const showPublicJoin =
+    canJoinTournament(
+      tournament,
+      currentUser
+    );
+  
+  const status =
+    (
+      tournament.season_status ||
+      tournament.seasonStatus ||
+      tournament.status ||
+      ""
+    ).toLowerCase();
+  
+  const statusClass =
+    status === "active" ?
+    "active" :
+    status === "upcoming" ?
+    "upcoming" :
+    status === "completed" ?
+    "completed" :
+    "";
+  
   div.innerHTML = `
     <div class="card-header">
+
       <div class="tournament-meta">
-        <div class="tournament-format">${tournament.format || "League"}</div>
-        <div class="tournament-season">${tournament.season || "Season 1"}</div>
-    <div class="tournament-status ${statusClass}">
-  ${tournament.status || tournament.seasonStatus || ""}
-</div>
-</div>
+
+        <div class="tournament-format">
+          ${tournament.format || "League"}
+        </div>
+
+        <div class="tournament-season">
+          ${tournament.season || "Season 1"}
+        </div>
+
+        <div class="tournament-status ${statusClass}">
+          ${
+            tournament.season_status ||
+            tournament.seasonStatus ||
+            tournament.status ||
+            ""
+          }
+        </div>
+
+      </div>
+
       ${
         pendingInvitation || showPublicJoin
           ? ""
-          : `<div class="tournament-menu-btn data-admin">☰</div>`
+          : `
+            <div class="tournament-menu-btn data-admin">
+              ☰
+            </div>
+          `
       }
+
     </div>
 
     <div class="tournament-image">
-      <span id="${imgId}" class="tournament-image-placeholder">🏆</span>
+      <span
+        id="${imgId}"
+        class="tournament-image-placeholder"
+      >
+        🏆
+      </span>
     </div>
 
-   <h3 class="tournament-name">${tournament.name}</h3>
+    <h3 class="tournament-name">
+      ${tournament.name}
+    </h3>
+
     ${
       pendingInvitation
         ? `
-        <div class="invitation-actions">
-          <button class="accept-btn">Join</button>
-          <button class="decline-btn">Decline</button>
-        </div>
+          <div class="invitation-actions">
+            <button class="accept-btn">
+              Join
+            </button>
+
+            <button class="decline-btn">
+              Decline
+            </button>
+          </div>
         `
         : showPublicJoin
-        ? `
-        <div class="public-actions">
-          <button class="join-tournament-btn">Join </button>
-        </div>
-        `
-        : `
-        <div class="menu-dropdown hidden" id="menu-${tournament.id}">
-          <div class="menu-itemList edit data-admin">Edit</div>
-          <div class="menu-itemList delete data-admin">Delete</div>
-        </div>
-        `
+          ? `
+            <div class="public-actions">
+              <button class="join-tournament-btn">
+                Join
+              </button>
+            </div>
+          `
+          : `
+            <div
+              class="menu-dropdown hidden"
+              id="menu-${tournament.id}"
+            >
+              <div class="menu-itemList edit data-admin">
+                Edit
+              </div>
+
+              <div class="menu-itemList delete data-admin">
+                Delete
+              </div>
+            </div>
+          `
     }
   `;
-
+  
   if (pendingInvitation) {
-    setupInvitationActions(div, tournament);
+    setupInvitationActions(
+      div,
+      tournament
+    );
   } else if (showPublicJoin) {
-    setupPublicJoinAction(div, tournament);
+    setupPublicJoinAction(
+      div,
+      tournament
+    );
   } else {
-    setupTournamentMenu(div, tournament);
+    setupTournamentMenu(
+      div,
+      tournament
+    );
   }
-
-  setupTournamentClick(div, tournament, pendingInvitation || showPublicJoin);
-  loadTournamentImage(tournament, imgId, div);
-
+  
+  setupTournamentClick(
+    div,
+    tournament,
+    pendingInvitation || showPublicJoin
+  );
+  
+  loadTournamentImage(
+    tournament,
+    imgId,
+    div
+  );
+  
   return div;
 }
 
 function setupPublicJoinAction(div, tournament) {
   const joinBtn = div.querySelector(".join-tournament-btn");
-
+  
   joinBtn?.addEventListener("click", async (e) => {
     e.stopPropagation();
     await joinTournament(tournament.id);
@@ -2701,81 +3436,80 @@ function setupPublicJoinAction(div, tournament) {
 }
 
 function setupInvitationActions(div, tournament) {
-
+  
   const acceptBtn =
     div.querySelector(".accept-btn");
-
+  
   const declineBtn =
     div.querySelector(".decline-btn");
-
-
+  
+  
   acceptBtn?.addEventListener("click", (e) => {
-
+    
     e.stopPropagation();
-
-
+    
+    
     showInvitationModal({
-
+      
       title: "Tournament Invitation",
-
-      message:
-        `You are invited to join "${tournament.name}"?`,
-
+      
+      message: `You are invited to join "${tournament.name}"?`,
+      
       showInput: false,
-
+      
       confirmText: "Join",
-
+      
       cancelText: "Cancel",
-
-
+      
+      
       onConfirm: async () => {
-
+        
         await respondToInvitation(
           tournament.id,
           "accept"
         );
-
+        
       }
-
+      
     });
-
+    
   });
-
-
-
+  
+  
+  
   declineBtn?.addEventListener("click", (e) => {
-
+    
     e.stopPropagation();
-
-
+    
+    
     showInvitationModal({
-
+      
       title: "Tournament Invitation",
-
-      message:
-        `Decline invitation to "${tournament.name}"?`,
-
+      
+      message: `Decline invitation to "${tournament.name}"?`,
+      
       showInput: false,
-
+      
       confirmText: "Decline",
-
+      
       cancelText: "Cancel",
-
-
+      
+      
       onConfirm: async () => {
-
+        
         await respondToInvitation(
           tournament.id,
           "decline"
         );
-
+        
       }
-
+      
     });
-
+    
   });
-
+  
 }
+
 function setupTournamentClick(
   div,
   tournament,
@@ -2887,11 +3621,11 @@ function renderStreakCard(containerId, dataArray, title, suffix = "") {
     
     const [team] = data;
     const rawLogo = tournament?.teamLogos?.[team];
-
+    
     // Safely extract URL from nested structure
-    const logoUrl = typeof rawLogo === "object" && rawLogo !== null
-      ? (rawLogo.url || rawLogo.src || rawLogo.href || "")
-      : rawLogo;
+    const logoUrl = typeof rawLogo === "object" && rawLogo !== null ?
+      (rawLogo.url || rawLogo.src || rawLogo.href || "") :
+      rawLogo;
     
     if (logoUrl) {
       const rowNode = el.querySelector(`.streak-row-item-${index} .team-side`);
@@ -2994,10 +3728,10 @@ function renderTop5(containerId, dataArray, title, suffix = "") {
     
     const rawLogo = tournament?.teamLogos?.[teamName];
     
-    const logoUrl = typeof rawLogo === "object" && rawLogo !== null
-      ? (rawLogo.url || rawLogo.src || rawLogo.href || "")
-      : rawLogo;
-
+    const logoUrl = typeof rawLogo === "object" && rawLogo !== null ?
+      (rawLogo.url || rawLogo.src || rawLogo.href || "") :
+      rawLogo;
+    
     if (!logoUrl) return;
     
     const row = el.querySelector(
@@ -3034,14 +3768,14 @@ function renderChampionPodium() {
   if (!winner) return;
   
   const rawLogo = tournament.teamLogos?.[winner.team];
-  const logoUrl = typeof rawLogo === "object" && rawLogo !== null
-    ? (rawLogo.url || rawLogo.src || rawLogo.href || "")
-    : rawLogo;
-
+  const logoUrl = typeof rawLogo === "object" && rawLogo !== null ?
+    (rawLogo.url || rawLogo.src || rawLogo.href || "") :
+    rawLogo;
+  
   const rawTournamentLogo = tournament.tournamentImage || tournament.logo || "";
-  const tournamentLogoUrl = typeof rawTournamentLogo === "object" && rawTournamentLogo !== null
-    ? (rawTournamentLogo.url || rawTournamentLogo.src || rawTournamentLogo.href || "")
-    : rawTournamentLogo;
+  const tournamentLogoUrl = typeof rawTournamentLogo === "object" && rawTournamentLogo !== null ?
+    (rawTournamentLogo.url || rawTournamentLogo.src || rawTournamentLogo.href || "") :
+    rawTournamentLogo;
   
   const isDecided = winner.decided && winner.team !== "TBD";
   
@@ -3115,14 +3849,14 @@ function renderMatchCard(containerId, match, title, extraLabel = "") {
   const tournament = getCurrentTournament();
   
   const rawHomeLogo = tournament?.teamLogos?.[match.home];
-  const homeLogoUrl = typeof rawHomeLogo === "object" && rawHomeLogo !== null
-    ? (rawHomeLogo.url || rawHomeLogo.src || rawHomeLogo.href || "")
-    : rawHomeLogo;
-
+  const homeLogoUrl = typeof rawHomeLogo === "object" && rawHomeLogo !== null ?
+    (rawHomeLogo.url || rawHomeLogo.src || rawHomeLogo.href || "") :
+    rawHomeLogo;
+  
   const rawAwayLogo = tournament?.teamLogos?.[match.away];
-  const awayLogoUrl = typeof rawAwayLogo === "object" && rawAwayLogo !== null
-    ? (rawAwayLogo.url || rawAwayLogo.src || rawAwayLogo.href || "")
-    : rawAwayLogo;
+  const awayLogoUrl = typeof rawAwayLogo === "object" && rawAwayLogo !== null ?
+    (rawAwayLogo.url || rawAwayLogo.src || rawAwayLogo.href || "") :
+    rawAwayLogo;
   
   el.innerHTML = `
     <div class="record-card hero">
@@ -3203,12 +3937,143 @@ function renderMatchCard(containerId, match, title, extraLabel = "") {
 
 
 
+function createTournamentCard(tournament, currentUser) {
+  const div = document.createElement("div");
+  
+  div.className = "tournament-card";
+  
+  div.dataset.id = tournament.id;
+  
+  const imgId =
+    `tournament-img-${tournament.id}`;
+  
+  const status =
+    (
+      tournament.season_status ||
+      tournament.seasonStatus ||
+      tournament.status ||
+      ""
+    ).toLowerCase();
+  
+  const statusClass =
+    status === "active" ?
+    "active" :
+    status === "upcoming" ?
+    "upcoming" :
+    status === "completed" ?
+    "completed" :
+    "";
+  
+  div.innerHTML = `
+    <div class="card-header">
+
+      <div class="tournament-meta">
+
+        <div class="tournament-format">
+          ${tournament.format || "League"}
+        </div>
+
+        <div class="tournament-season">
+          ${tournament.season || "Season 1"}
+        </div>
+
+        <div class="tournament-status ${statusClass}">
+          ${
+            tournament.season_status ||
+            tournament.seasonStatus ||
+            tournament.status ||
+            ""
+          }
+        </div>
+
+      </div>
+
+      <div class="tournament-menu-btn data-admin">
+        ☰
+      </div>
+
+    </div>
+
+    <div class="tournament-image">
+      <span
+        id="${imgId}"
+        class="tournament-image-placeholder"
+      >
+        🏆
+      </span>
+    </div>
+
+    <h3 class="tournament-name">
+      ${tournament.name}
+    </h3>
+
+    <div
+      class="menu-dropdown hidden"
+      id="menu-${tournament.id}"
+    >
+      <div class="menu-itemList edit data-admin">
+        Edit
+      </div>
+
+      <div class="menu-itemList delete data-admin">
+        Delete
+      </div>
+    </div>
+  `;
+  
+  setupTournamentMenu(
+    div,
+    tournament
+  );
+  
+  setupTournamentClick(
+    div,
+    tournament
+  );
+  
+  loadTournamentImage(
+    tournament,
+    imgId,
+    div
+  );
+  
+  return div;
+}
+
+function setupTournamentClick(
+  div,
+  tournament
+) {
+  div.addEventListener("click", (e) => {
+    
+    if (
+      e.target.closest(".menu-dropdown")
+    ) {
+      return;
+    }
+    
+    if (
+      typeof exportMode !== "undefined" &&
+      exportMode
+    ) {
+      if (
+        typeof toggleSelect === "function"
+      ) {
+        toggleSelect(tournament.id);
+      }
+      
+      return;
+    }
+    
+    openTournament(
+      tournament.id
+    );
+  });
+}
 
 
 
-
-
-function importTeams(){
+function importTeams() {
   
 }
 
@@ -3242,26 +4107,26 @@ async function deleteCompetition(competitionId) {
     showAlert("No competition selected for deletion.");
     return;
   }
-
+  
   showConfirmModal(
     "Are you sure you want to delete this competition? All associated tournament seasons will be removed.",
     "Delete Competition",
     "Cancel"
   );
-
+  
   confirmYes = async () => {
     closeConfirmModal();
     showLoader();
-
+    
     try {
       await removeCompetition(competitionId);
       
       showAlert("Competition deleted successfully.");
-
+      
       if (typeof selectedCompetitionId !== "undefined" && selectedCompetitionId === competitionId) {
         selectedCompetitionId = null;
       }
-
+      
       if (typeof loadMyCompetitions === "function") {
         await loadMyCompetitions();
       }
@@ -3271,7 +4136,7 @@ async function deleteCompetition(competitionId) {
       hideLoader();
     }
   };
-
+  
   confirmNo = () => {
     closeConfirmModal();
   };
@@ -3279,137 +4144,8 @@ async function deleteCompetition(competitionId) {
 
 
 
-function openEditTeam(teamId) {
-  const tournament = getCurrentTournament();
-  if (!tournament) return;
-  
-  editingTeamId = teamId;
-  let teamName = "";
-
-  if (tournament.teams && tournament.teams[teamId]) {
-    const team = tournament.teams[teamId];
-    teamName = typeof team === "object" ? team.name : team;
-  } else if (Array.isArray(tournament.teams)) {
-    const foundTeam = tournament.teams.find((t, i) => 
-      (typeof t === "object" && t.id === teamId) || `old_${i}` === teamId
-    );
-    teamName = typeof foundTeam === "object" ? foundTeam.name : (foundTeam || "");
-  }
-
-  if (!teamName) {
-    showAlert("Team not found");
-    return;
-  }
-
-  document.getElementById("editTitle").textContent = "Edit Team";
-  document.getElementById("editNameInput").value = teamName;
-  
-  const fileInput = document.getElementById("editLogoInput");
-  if (fileInput) fileInput.value = "";
-  
-  document.getElementById("editModal").classList.add("show");
-}
-
-async function saveEdit() {
-  const tournament = getCurrentTournament();
-  
-  if (!tournament || !editingTeamId) {
-    showAlert("Something went wrong. Please try again");
-    return;
-  }
-  
-  const newName = document
-    .getElementById("editNameInput")
-    .value.trim();
-  
-  const fileInput = document.getElementById("editLogoInput");
-  
-  let team = null;
-  if (tournament.teams) {
-    team = tournament.teams[editingTeamId];
-  }
-  
-  if (!team && Array.isArray(tournament.teams)) {
-    team = tournament.teams.find((t, i) => 
-      (typeof t === "object" && t.id === editingTeamId) || `old_${i}` === editingTeamId
-    );
-  }
-
-  if (!team) {
-    showAlert("Team not found");
-    return;
-  }
-  
-  if (!newName) {
-    showAlert("Team name cannot be empty");
-    return;
-  }
-  
-  const teams = Object.values(tournament.teams || {});
-  const duplicate = teams.some(
-    t => {
-      const currentId = typeof t === "object" ? t.id : null;
-      const currentName = typeof t === "object" ? t.name : t;
-      return currentId !== editingTeamId && currentName.trim().toLowerCase() === newName.toLowerCase();
-    }
-  );
-  
-  if (duplicate) {
-    showAlert("A team with this name already exists");
-    return;
-  }
-  
-  let logo = null;
-  
-  if (fileInput?.files?.length) {
-    const file = fileInput.files[0];
-    
-    if (!file.type.startsWith("image/")) {
-      showAlert("Please select an image file");
-      return;
-    }
-    
-    if (file.size > 500 * 1024) {
-      showAlert("Logo size must not exceed 500KB");
-      return;
-    }
-    
-    logo = await fileToBase64(file);
-  }
-  
-  try {
-    showLoader();
-    
-    await updateTeam(
-      tournament.id,
-      editingTeamId,
-      {
-        name: newName,
-        logo
-      }
-    );
-    
-    await refreshCurrentTournament();
-    
-    closeEditModal();
-    
-    renderTeams();
-    
-    showActionModal(
-      "✅ Team updated",
-      "success"
-    );
-    
-  } catch (err) {
-    console.error("[saveEdit]", err);
-    showAlert(err.message || "Failed to update team");
-  } finally {
-    hideLoader();
-  }
-}
-
 async function renderTeams(containerId = "teamList") {
-  showLoader(); 
+  showLoader();
   const container = document.getElementById(containerId);
   if (!container) return;
   
@@ -3509,134 +4245,8 @@ async function renderTeams(containerId = "teamList") {
 
 
 
-function openEditTeam(teamId) {
-  const tournament = getCurrentTournament();
-  if (!tournament) return;
-  
-  editingTeamId = teamId;
-  let teamName = "";
 
-  if (tournament.teams && tournament.teams[teamId]) {
-    const team = tournament.teams[teamId];
-    teamName = typeof team === "object" ? team.name : team;
-  } else if (Array.isArray(tournament.teams)) {
-    const foundTeam = tournament.teams.find((t, i) => 
-      (typeof t === "object" && t.id === teamId) || `old_${i}` === teamId
-    );
-    teamName = typeof foundTeam === "object" ? foundTeam.name : (foundTeam || "");
-  }
 
-  if (!teamName) {
-    showAlert("Team not found");
-    return;
-  }
-
-  document.getElementById("editTitle").textContent = "Edit Team";
-  document.getElementById("editNameInput").value = teamName;
-  
-  const fileInput = document.getElementById("editLogoInput");
-  if (fileInput) fileInput.value = "";
-  
-  document.getElementById("editModal").classList.add("show");
-}
-
-async function saveEdit() {
-  const tournament = getCurrentTournament();
-  
-  if (!tournament || !editingTeamId) {
-    showAlert("Something went wrong. Please try again");
-    return;
-  }
-  
-  const newName = document
-    .getElementById("editNameInput")
-    .value.trim();
-  
-  const fileInput = document.getElementById("editLogoInput");
-  
-  let team = null;
-  if (tournament.teams) {
-    team = tournament.teams[editingTeamId];
-  }
-  
-  if (!team && Array.isArray(tournament.teams)) {
-    team = tournament.teams.find((t, i) => 
-      (typeof t === "object" && t.id === editingTeamId) || `old_${i}` === editingTeamId
-    );
-  }
-
-  if (!team) {
-    showAlert("Team not found");
-    return;
-  }
-  
-  if (!newName) {
-    showAlert("Team name cannot be empty");
-    return;
-  }
-  
-  const teams = Object.values(tournament.teams || {});
-  const duplicate = teams.some(
-    t => {
-      const currentId = typeof t === "object" ? t.id : null;
-      const currentName = typeof t === "object" ? t.name : t;
-      return currentId !== editingTeamId && currentName.trim().toLowerCase() === newName.toLowerCase();
-    }
-  );
-  
-  if (duplicate) {
-    showAlert("A team with this name already exists");
-    return;
-  }
-  
-  let logo = null;
-  
-  if (fileInput?.files?.length) {
-    const file = fileInput.files[0];
-    
-    if (!file.type.startsWith("image/")) {
-      showAlert("Please select an image file");
-      return;
-    }
-    
-    if (file.size > 500 * 1024) {
-      showAlert("Logo size must not exceed 500KB");
-      return;
-    }
-    
-    logo = await fileToBase64(file);
-  }
-  
-  try {
-    showLoader();
-    
-    await updateTeam(
-      tournament.id,
-      editingTeamId,
-      {
-        name: newName,
-        logo
-      }
-    );
-    
-    await refreshCurrentTournament();
-    
-    closeEditModal();
-    
-    renderTeams();
-    
-    showActionModal(
-      "✅ Team updated",
-      "success"
-    );
-    
-  } catch (err) {
-    console.error("[saveEdit]", err);
-    showAlert(err.message || "Failed to update team");
-  } finally {
-    hideLoader();
-  }
-}
 
 function renderTeams(containerId = "teamList") {
   const container = document.getElementById(containerId);
@@ -3731,6 +4341,7 @@ function escapeHtml(value) {
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#039;");
 }
+
 function renderHallOfFame(hallOfFame) {
   const container =
     document.getElementById("hallOfFameList");
@@ -3754,8 +4365,7 @@ function renderHallOfFame(hallOfFame) {
     
     const winners =
       Array.isArray(category.winners) ?
-      category.winners :
-      [];
+      category.winners : [];
     
     return `
       <div class="hallOfFameCategory">
@@ -3874,8 +4484,8 @@ function renderNotices(notices) {
   `;
   
   setupNoticeInteraction();
-setupNoticeScrollTracking();
-startNoticeAutoScroll();
+  setupNoticeScrollTracking();
+  startNoticeAutoScroll();
 }
 
 function formatNoticeDate(timestamp) {
@@ -3897,84 +4507,81 @@ function formatNoticeDate(timestamp) {
 function startNoticeAutoScroll() {
   const slider =
     document.querySelector(".notice-slider");
-
+  
   if (!slider) return;
-
+  
   const cards =
     slider.querySelectorAll(".notice-card");
-
+  
   if (cards.length <= 1) return;
-
+  
   if (noticeScrollTimer) {
     clearInterval(noticeScrollTimer);
   }
-
+  
   noticeScrollIndex = 0;
-
+  
   noticeScrollTimer = setInterval(() => {
     if (slider.dataset.interacting === "true") {
       return;
     }
-
+    
     noticeScrollIndex++;
-
+    
     if (noticeScrollIndex >= cards.length) {
       noticeScrollIndex = 0;
     }
-
+    
     slider.scrollTo({
-      left:
-        slider.clientWidth * noticeScrollIndex,
+      left: slider.clientWidth * noticeScrollIndex,
       behavior: "smooth"
     });
-
+    
   }, 5000);
 }
+
 function setupNoticeInteraction() {
   const slider =
     document.querySelector(".notice-slider");
-
+  
   if (!slider) return;
-
+  
   slider.addEventListener(
     "touchstart",
     () => {
       slider.dataset.interacting = "true";
-
+      
       if (noticeInteractionTimeout) {
         clearTimeout(noticeInteractionTimeout);
       }
-    },
-    { passive: true }
+    }, { passive: true }
   );
-
+  
   slider.addEventListener(
     "touchend",
     () => {
       resumeNoticeAutoScroll(slider);
-    },
-    { passive: true }
+    }, { passive: true }
   );
-
+  
   slider.addEventListener(
     "touchcancel",
     () => {
       resumeNoticeAutoScroll(slider);
-    },
-    { passive: true }
+    }, { passive: true }
   );
-
+  
   slider.addEventListener(
     "mousedown",
     () => {
       slider.dataset.interacting = "true";
-
+      
       if (noticeInteractionTimeout) {
         clearTimeout(noticeInteractionTimeout);
       }
     }
   );
-
+  
   slider.addEventListener(
     "mouseup",
     () => {
@@ -3982,6 +4589,7 @@ function setupNoticeInteraction() {
     }
   );
 }
+
 function resumeNoticeAutoScroll(slider) {
   if (!slider) return;
   
@@ -4014,3 +4622,577 @@ function setupNoticeScrollTracking() {
   }, { passive: true });
 }
 
+
+
+
+let teamSelectionResolver = null;
+let teamSelectionTeams = [];
+let selectedTeamIds = new Set();
+
+
+function showTeamSelectionModal(
+  teams
+) {
+  return new Promise(
+    resolve => {
+      teamSelectionResolver =
+        resolve;
+      
+      teamSelectionTeams =
+        Array.isArray(teams) ?
+        teams :
+        [];
+      
+      selectedTeamIds =
+        new Set();
+      
+      const modal =
+        document.getElementById(
+          "teamSelectionModal"
+        );
+      
+      const list =
+        document.getElementById(
+          "teamSelectionList"
+        );
+      
+      const message =
+        document.getElementById(
+          "teamSelectionMessage"
+        );
+      
+      if (!modal || !list) {
+        resolve([]);
+        return;
+      }
+      
+      const isAdmin =
+        typeof currentUser !==
+        "undefined" &&
+        currentUser?.role ===
+        "admin";
+      
+      const maxTeams =
+        isAdmin ? 20 : 1;
+      
+      message.textContent =
+        isAdmin ?
+        "Select the teams you want to use in this tournament. You can select up to 20 teams." :
+        "Select the team you want to use in this tournament.";
+      
+      list.innerHTML = "";
+      
+      teamSelectionTeams.forEach(
+        team => {
+          const teamId =
+            String(team.id);
+          
+          const item =
+            document.createElement(
+              "div"
+            );
+          
+          item.className =
+            "team-selection-item";
+          
+          item.dataset.teamId =
+            teamId;
+          
+          const logo =
+            team.logo ||
+            team.team_logo ||
+            "";
+          
+          item.innerHTML = `
+            <div class="team-selection-left">
+
+              <div class="team-selection-logo">
+                ${
+                  logo
+                    ? `<img src="${escapeHtml(logo)}" alt="">`
+                    : `<span>⚽</span>`
+                }
+              </div>
+
+              <div class="team-selection-name">
+                ${escapeHtml(
+                  team.name || "Unnamed Team"
+                )}
+              </div>
+
+            </div>
+
+            <div class="team-selection-check">
+              <input
+                type="checkbox"
+                value="${escapeHtml(teamId)}"
+              >
+            </div>
+          `;
+          
+          const checkbox =
+            item.querySelector(
+              "input"
+            );
+          
+          checkbox.addEventListener(
+            "change",
+            () => {
+              if (
+                checkbox.checked
+              ) {
+                if (
+                  selectedTeamIds.size >=
+                  maxTeams
+                ) {
+                  checkbox.checked =
+                    false;
+                  
+                  showAlert(
+                    isAdmin ?
+                    "You can select a maximum of 20 teams." :
+                    "You can select only one team."
+                  );
+                  
+                  return;
+                }
+                
+                selectedTeamIds.add(
+                  teamId
+                );
+                
+                item.classList.add(
+                  "selected"
+                );
+                
+              } else {
+                selectedTeamIds.delete(
+                  teamId
+                );
+                
+                item.classList.remove(
+                  "selected"
+                );
+              }
+            }
+          );
+          
+          item.addEventListener(
+            "click",
+            event => {
+              if (
+                event.target ===
+                checkbox
+              ) {
+                return;
+              }
+              
+              checkbox.checked = !checkbox.checked;
+              
+              checkbox.dispatchEvent(
+                new Event(
+                  "change"
+                )
+              );
+            }
+          );
+          
+          list.appendChild(
+            item
+          );
+        }
+      );
+      
+      modal.style.display =
+        "flex";
+      
+      requestAnimationFrame(
+        () => {
+          modal.classList.add(
+            "active"
+          );
+        }
+      );
+    }
+  );
+}
+
+
+function confirmTeamSelection() {
+  if (
+    !selectedTeamIds.size
+  ) {
+    showAlert(
+      "Select at least one team."
+    );
+    
+    return;
+  }
+  
+  const selected =
+    Array.from(
+      selectedTeamIds
+    );
+  
+  closeTeamSelectionModal(
+    selected
+  );
+}
+
+
+function closeTeamSelectionModal(
+  selected = []
+) {
+  const modal =
+    document.getElementById(
+      "teamSelectionModal"
+    );
+  
+  if (modal) {
+    modal.classList.remove(
+      "active"
+    );
+    
+    setTimeout(
+      () => {
+        modal.style.display =
+          "none";
+      },
+      150
+    );
+  }
+  
+  if (
+    teamSelectionResolver
+  ) {
+    const resolve =
+      teamSelectionResolver;
+    
+    teamSelectionResolver =
+      null;
+    
+    teamSelectionTeams = [];
+    
+    selectedTeamIds =
+      new Set();
+    
+    resolve(
+      selected
+    );
+  }
+}
+
+async function onFixtureClick(match) {
+  if (APP_MODE === "view") {
+    return;
+  }
+  
+  const status =
+    String(
+      match.submission_status || ""
+    ).toLowerCase();
+  
+  const user =
+    getCurrentUser();
+  
+  const isAdmin =
+    user?.role === "admin";
+  
+  if (
+    !isAdmin &&
+    status === "approved"
+  ) {
+    return;
+  }
+  
+  if (
+    !isAdmin &&
+    status !== "pending" &&
+    status !== "rejected"
+  ) {
+    return openLeagueRecorder(match);
+  }
+  
+  if (
+    isAdmin &&
+    status !== "pending" &&
+    status !== "rejected" &&
+    status !== "approved"
+  ) {
+    return openLeagueRecorder(match);
+  }
+  
+  try {
+    showLoader();
+    
+    const tournament =
+      getCurrentTournament();
+    
+    if (!tournament) return;
+    
+    let submission;
+    
+    if (isAdmin) {
+      const submissions =
+        await getMatchSubmissions(
+          tournament.id,
+          match.id
+        );
+      
+      submission =
+        Array.isArray(submissions) ?
+        submissions[0] :
+        null;
+    } else {
+      submission =
+        await getMatchSubmission(
+          tournament.id,
+          match.id
+        );
+    }
+    
+    if (!submission) {
+      showAlert(
+        "Submission not found."
+      );
+      return;
+    }
+    
+    openSubmissionReview(
+      match,
+      submission
+    );
+    
+  } catch (err) {
+    console.error(
+      "[onFixtureClick]",
+      err
+    );
+    
+    showAlert(
+      err.message ||
+      "Failed to load submission."
+    );
+    
+  } finally {
+    hideLoader();
+  }
+}
+
+
+function getMatchSubmissionStatus(match) {
+  return String(
+    match.submission_status || ""
+  ).toLowerCase();
+}
+
+
+function getSubmissionBadge(match) {
+  const status =
+    getMatchSubmissionStatus(match);
+  
+  if (
+    !status ||
+    status === "approved"
+  ) {
+    return "";
+  }
+  
+  return `
+    <span class="submission-badge ${status}">
+      ${status}
+    </span>
+  `;
+}
+
+function createFixtureCard(
+  tournament,
+  match
+) {
+  const div =
+    document.createElement("div");
+  
+  const played =
+    Boolean(match.played);
+  
+  const round =
+    Number(match.round) || 1;
+  
+  const homeName =
+    match.home || "Home";
+  
+  const awayName =
+    match.away || "Away";
+  
+  div.className =
+    `fixture-row ${
+      played
+        ? "played"
+        : "not-played"
+    }`;
+  
+  div.innerHTML = `
+    <div class="fixture-label">
+      ${tournament.name || "Tournament"} •
+      R${String(round).padStart(2, "0")}
+      ${getSubmissionBadge(match)}
+    </div>
+
+    <div class="fixture-row-content">
+      <div class="fixture-teams-stack">
+
+        <div class="team-row-item team-home-container">
+          <div class="fixture-team-logo-placeholder">
+            ?
+          </div>
+
+          <span class="fixture-team-name">
+            ${homeName}
+          </span>
+        </div>
+
+        <div class="team-row-item team-away-container">
+          <div class="fixture-team-logo-placeholder">
+            ?
+          </div>
+
+          <span class="fixture-team-name">
+            ${awayName}
+          </span>
+        </div>
+
+      </div>
+
+      <div class="fixture-status-pane">
+        ${
+          played
+            ? `
+              <div class="score-stack">
+                <span class="score-badge played">
+                  ${match.homeGoals ?? 0}
+                </span>
+
+                <span class="ft-badge">
+                  Full Time
+                </span>
+
+                <span class="score-badge played">
+                  ${match.awayGoals ?? 0}
+                </span>
+              </div>
+            `
+            : `
+              <span class="vs-text-alt">
+                ${formatMatchDay(
+                  match.scheduledAt
+                )}
+              </span>
+            `
+        }
+      </div>
+    </div>
+
+    ${
+      played
+        ? `
+          <div class="match-playedTime">
+            ${formatRecordedTime(
+              match.playedAt
+            )}
+          </div>
+        `
+        : ""
+    }
+  `;
+  
+  replaceTeamLogo(
+    div,
+    ".team-home-container",
+    match.homeLogo,
+    homeName
+  );
+  
+  replaceTeamLogo(
+    div,
+    ".team-away-container",
+    match.awayLogo,
+    awayName
+  );
+  
+  div.style.cursor =
+    "pointer";
+  
+  div.onclick = () =>
+    onFixtureClick(match);
+  
+  return div;
+}
+function renderUserProfile(profile) {
+  const usernameElement =
+    document.getElementById(
+      "profileUsername"
+    );
+  
+  const teamsElement =
+    document.getElementById(
+      "profileTeams"
+    );
+  
+  const emptyElement =
+    document.getElementById(
+      "profileTeamsEmpty"
+    );
+  
+  if (!usernameElement ||
+    !teamsElement ||
+    !emptyElement) {
+    return;
+  }
+  
+  usernameElement.textContent =
+    profile?.username || "Username";
+  
+  teamsElement.innerHTML = "";
+  
+  const teams =
+    Array.isArray(profile?.teams) ?
+    profile.teams :
+    [];
+  
+  if (!teams.length) {
+    emptyElement.hidden = false;
+    return;
+  }
+  
+  emptyElement.hidden = true;
+  
+  teams.forEach(team => {
+    const teamElement =
+      document.createElement("div");
+    
+    teamElement.className =
+      "profile-page-team-card";
+    
+    teamElement.innerHTML = `
+      <div class="profile-page-team-logo">
+        ${
+          team.logo
+            ? `<img
+                src="${team.logo}"
+                alt=""
+                loading="lazy"
+              >`
+            : `<div class="profile-page-team-logo-placeholder"></div>`
+        }
+      </div>
+
+      <div class="profile-page-team-name">
+        ${escapeHtml(team.name || "Unnamed Team")}
+      </div>
+    `;
+    
+    teamsElement.appendChild(
+      teamElement
+    );
+  });
+}

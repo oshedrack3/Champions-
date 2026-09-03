@@ -456,7 +456,9 @@ function handleMenuAction(action) {
   closeMenu();
   
   const actions = {
-    newNotice:openNoticeBoardModal,
+    openProfile:openProfileModal,
+    joinTour:handleJoinTournament,
+    newNotice: openNoticeBoardModal,
     deadlineEdit: openSubmissionDeadlineModal,
     editHallofFame: showHallOfFameEditor,
     addTeam: openAddTeam,
@@ -491,6 +493,11 @@ function handleMenuAction(action) {
 
 const menuConfig = {
   competition: [
+        {
+      label: "👤 My Profile",
+      action: "openProfile",
+      roles: ["admin", "player"]
+    },
     
     {
       label: "Create New Competition",
@@ -502,6 +509,7 @@ const menuConfig = {
       action: "deleteAcc",
       roles: ["admin", "player"]
     },
+
     {
       label: "Delete User Account",
       action: "managerDeleteUser",
@@ -519,31 +527,31 @@ const menuConfig = {
       action: "newNotice",
       roles: ["admin"]
     },
-   /* 
-    {
-      label: "Export Tournament",
-      action: "enableExportMode",
-      roles: ["admin"]
-    },
-    
-    {
-      label: "Delete Tournament",
-      action: "deleteTournament",
-      roles: ["admin"]
-    },
-    
-    {
-      label: "Setup POTS Tournaments",
-      action: "openPOTS",
-      roles: ["admin"]
-    },
-    
-    {
-      label: "Share POTS Ranking",
-      action: "sharePOTS",
-      roles: ["admin", "player"]
-    }
-    */
+    /* 
+     {
+       label: "Export Tournament",
+       action: "enableExportMode",
+       roles: ["admin"]
+     },
+     
+     {
+       label: "Delete Tournament",
+       action: "deleteTournament",
+       roles: ["admin"]
+     },
+     
+     {
+       label: "Setup POTS Tournaments",
+       action: "openPOTS",
+       roles: ["admin"]
+     },
+     
+     {
+       label: "Share POTS Ranking",
+       action: "sharePOTS",
+       roles: ["admin", "player"]
+     }
+     */
   ],
   
   tournaments: [
@@ -601,8 +609,8 @@ const menuConfig = {
     },
     
     {
-      label: "Register Your Teams",
-      action: "addTeam",
+      label: "Join Tournament",
+      action: "joinTour",
       roles: ["admin", "player"]
     },
     
@@ -701,13 +709,13 @@ const menuConfig = {
       action: "newCup",
       roles: ["admin"]
     },
-    
-    {
-      label: "Register New Teams",
-      action: "addTeam",
+        {
+      label: "Join Tournament",
+      action: "joinTour",
       roles: ["admin", "player"]
     },
-    
+
+      
     {
       label: "Import Teams",
       action: "importTeams",
@@ -779,7 +787,7 @@ function renderMenu() {
 }
 
 function openAddTeam() {
-  closeMenu();
+  closeProfileModal();
   
   document.getElementById("addNewTeam").style.display = "block";
   
@@ -838,7 +846,7 @@ function goBackFromTournament() {
 
 function closeAddTeam() {
   document.getElementById("addNewTeam").style.display = "none";
-  toggleView('team');
+ openProfileModal();
 }
 
 
@@ -1121,6 +1129,7 @@ function closeEditModal() {
   preview.src = "";
   renderTeams("cupTeamsContainer");
   preview.style.display = "none";
+  openProfileModal();
 }
 
 
@@ -1661,38 +1670,61 @@ function getReviewTeamName(team) {
 }
 
 function openSubmissionReview(match, submission) {
-  
   currentReviewMatch = match;
   currentReviewSubmission = submission;
   
-  document.getElementById("reviewModalFixture").textContent =
+  document.getElementById(
+      "reviewModalFixture"
+    ).textContent =
     `${getReviewTeamName(match.home)} vs ${getReviewTeamName(match.away)}`;
   
-  document.getElementById("reviewModalScore").textContent =
-    `${submission.homeGoals} - ${submission.awayGoals}`;
+  document.getElementById(
+      "reviewModalScore"
+    ).textContent =
+    `${submission.home_goals} - ${submission.away_goals}`;
   
-  document.getElementById("reviewModalImage").src =
-    submission.screenshot;
+  document.getElementById(
+      "reviewModalImage"
+    ).src =
+    submission.screenshot || "";
   
-  document.getElementById("reviewModalPlayer").textContent =
-    submission.username || submission.submittedBy;
+  document.getElementById(
+      "reviewModalPlayer"
+    ).textContent =
+    submission.username ||
+    "unknown player";
   
-  document.getElementById("reviewModalTime").textContent =
-    formatRecordedTime(submission.createdAt);
+  document.getElementById(
+      "reviewModalTime"
+    ).textContent =
+    formatRecordedTime(
+      submission.created_at
+    );
   
   const statusEl =
-    document.getElementById("reviewModalStatus");
+    document.getElementById(
+      "reviewModalStatus"
+    );
+  
+  const status =
+    String(
+      submission.status || ""
+    ).toLowerCase();
   
   statusEl.textContent =
-    submission.status;
+    submission.status || "";
   
   statusEl.className =
-    submission.status.toLowerCase();
+    status;
   
-  document.getElementById("reviewModalReasonRow").style.display =
+  document.getElementById(
+      "reviewModalReasonRow"
+    ).style.display =
     "none";
   
-  document.getElementById("reviewModalRejectInputRow").style.display =
+  document.getElementById(
+      "reviewModalRejectInputRow"
+    ).style.display =
     "none";
   
   buildReviewActions(
@@ -1700,7 +1732,9 @@ function openSubmissionReview(match, submission) {
     submission
   );
   
-  document.getElementById("reviewModal").style.display =
+  document.getElementById(
+      "reviewModal"
+    ).style.display =
     "flex";
 }
 
@@ -1715,7 +1749,10 @@ function closeReviewModal() {
 
 function buildReviewActions(match, submission) {
   
-  const actions = document.getElementById("reviewModalActions");
+  const actions =
+    document.getElementById(
+      "reviewModalActions"
+    );
   
   actions.innerHTML = "";
   
@@ -1740,47 +1777,69 @@ function buildReviewActions(match, submission) {
         document.getElementById(
             "reviewModalReason"
           ).textContent =
-          submission.rejectionReason || "No reason provided.";
-        
+          submission.rejection_reason ||
+          "No reason provided.";
       }
       
       return;
     }
     
-    const approveBtn = document.createElement("button");
+    const approveBtn =
+      document.createElement("button");
     
-    approveBtn.className = "btn-save";
-    approveBtn.textContent = "✅ Approve";
-    approveBtn.onclick = approveSubmission;
+    approveBtn.className =
+      "btn-save";
     
-    const rejectBtn = document.createElement("button");
+    approveBtn.textContent =
+      "✅ Approve";
     
-    rejectBtn.className = "btn-clear";
-    rejectBtn.textContent = "❌ Reject";
+    approveBtn.onclick =
+      approveSubmission;
+    
+    const rejectBtn =
+      document.createElement("button");
+    
+    rejectBtn.className =
+      "btn-clear";
+    
+    rejectBtn.textContent =
+      "❌ Reject";
     
     rejectBtn.onclick = () => {
       
       document.getElementById(
-        "reviewModalRejectInputRow"
-      ).style.display = "block";
+          "reviewModalRejectInputRow"
+        ).style.display =
+        "block";
       
       rejectBtn.remove();
       
-      const confirmBtn = document.createElement("button");
+      const confirmBtn =
+        document.createElement("button");
       
-      confirmBtn.className = "btn-clear";
-      confirmBtn.textContent = "Confirm Reject";
-      confirmBtn.onclick = rejectSubmission;
+      confirmBtn.className =
+        "btn-clear";
       
-      actions.appendChild(confirmBtn);
+      confirmBtn.textContent =
+        "Confirm Reject";
       
+      confirmBtn.onclick =
+        rejectSubmission;
+      
+      actions.appendChild(
+        confirmBtn
+      );
     };
     
-    actions.appendChild(approveBtn);
-    actions.appendChild(rejectBtn);
+    actions.appendChild(
+      approveBtn
+    );
+    
+    actions.appendChild(
+      rejectBtn
+    );
     
     return;
-    
   }
   
   if (submission.status === "pending") {
@@ -1792,29 +1851,35 @@ function buildReviewActions(match, submission) {
   }
   
   document.getElementById(
-    "reviewModalReasonRow"
-  ).style.display = "block";
+      "reviewModalReasonRow"
+    ).style.display =
+    "block";
   
   document.getElementById(
       "reviewModalReason"
     ).textContent =
-    submission.rejectionReason || "No reason provided.";
+    submission.rejection_reason ||
+    "No reason provided.";
   
-  const resubmitBtn = document.createElement("button");
+  const resubmitBtn =
+    document.createElement("button");
   
-  resubmitBtn.className = "btn-resubmit";
-  resubmitBtn.textContent = "Resubmit";
+  resubmitBtn.className =
+    "btn-resubmit";
+  
+  resubmitBtn.textContent =
+    "Resubmit";
   
   resubmitBtn.onclick = () => {
-    
     closeReviewModal();
     openLeagueRecorder(match);
-    
   };
   
-  actions.appendChild(resubmitBtn);
-  
+  actions.appendChild(
+    resubmitBtn
+  );
 }
+
 
 function startLoadRegulator(
   retryCallback,
@@ -1943,77 +2008,77 @@ function closeDeleteAccountModal() {
 }
 
 function setupCompetitionToggle() {
-  const btnMy = document.getElementById("btnMy");
-  const btnPublic = document.getElementById("btnPublic");
-  const noticeBoard = 
-  document.getElementById("noticeSection");
-  const btnHallOfFame = document.getElementById("btnHallOfFame");
+  const btnMy =
+    document.getElementById("btnMy");
   
-  const mySection = document.getElementById("mySection");
-  const publicSection = document.getElementById("publicSection");
+  const noticeBoard =
+    document.getElementById(
+      "noticeSection"
+    );
+  
+  const btnHallOfFame =
+    document.getElementById(
+      "btnHallOfFame"
+    );
+  
+  const mySection =
+    document.getElementById(
+      "mySection"
+    );
+  
   const hallOfFameSection =
-    document.getElementById("hallOfFameSection");
+    document.getElementById(
+      "hallOfFameSection"
+    );
   
   if (
     !btnMy ||
-    !btnPublic ||
     !btnHallOfFame ||
     !mySection ||
-    !publicSection ||
-    !hallOfFameSection||
+    !hallOfFameSection ||
     !noticeBoard
-  ) return;
-  
+  ) {
+    return;
+  }
   
   btnMy.onclick = () => {
+    mySection.style.display =
+      "block";
     
-    mySection.style.display = "block";
-    noticeBoard.style.display = "block";
-    publicSection.style.display = "none";
-    hallOfFameSection.style.display = "none";
+    noticeBoard.style.display =
+      "block";
+    
+    hallOfFameSection.style.display =
+      "none";
     
     btnMy.classList.add("active");
-    btnPublic.classList.remove("active");
-    btnHallOfFame.classList.remove("active");
     
+    btnHallOfFame.classList.remove(
+      "active"
+    );
   };
   
-  
-  btnPublic.onclick = () => {
-    
-    TournamentListStyle = "row";
-    
-    mySection.style.display = "none";
-    noticeBoard.style.display = "none";
-    publicSection.style.display = "block";
-    hallOfFameSection.style.display = "none";
-    
-    btnPublic.classList.add("active");
-    btnMy.classList.remove("active");
-    btnHallOfFame.classList.remove("active");
-    
-    
-    loadPublicTournaments();
-    loadMyTournaments();
-    
-  };
-  
-  
-  btnHallOfFame.onclick = async () => {
-    
-    
-    mySection.style.display = "none";
-    noticeBoard.style.display = "none";
-    publicSection.style.display = "none";
-    hallOfFameSection.style.display = "block";
-    
-    btnHallOfFame.classList.add("active");
-    btnMy.classList.remove("active");
-    btnPublic.classList.remove("active");
-    
-    await loadHallOfFame();
-    
-  };
+  btnHallOfFame.onclick =
+    async () => {
+      mySection.style.display =
+        "none";
+      
+      noticeBoard.style.display =
+        "none";
+      
+      hallOfFameSection.style.display =
+        "block";
+      
+      btnHallOfFame.classList.add(
+        "active"
+      );
+      
+      btnMy.classList.remove(
+        "active"
+      );
+      
+      await loadHallOfFame();
+    };
 }
 
 function toggleCupSetUpView() {
@@ -2217,4 +2282,114 @@ document
       reader.readAsDataURL(file);
     });
   });
+  
+  
+  
+async function openProfileModal() {
+  const modal =
+    document.getElementById(
+      "profileModal"
+    );
+  
+  if (!modal) return;
+  
+  modal.classList.add("active");
+  modal.setAttribute(
+    "aria-hidden",
+    "false"
+  );
+  
+  try {
+    const profile =
+      await getUserProfile();
+    
+    renderUserProfile(profile);
+  } catch (error) {
+    console.error(
+      "Failed to load profile:",
+      error
+    );
+  }
+}
+function closeProfileModal() {
+  const modal =
+    document.getElementById(
+      "profileModal"
+    );
+  
+  if (!modal) return;
+  
+  modal.classList.remove("active");
+  modal.setAttribute(
+    "aria-hidden",
+    "true"
+  );
+}
 
+
+async function openEditTeam() {
+  closeProfileModal();
+  try {
+    const profile =
+      await getUserProfile();
+    
+    const teams =
+      Array.isArray(profile?.teams) ?
+      profile.teams :
+      [];
+    
+    if (!teams.length) {
+      showAlert(
+        "You don't have any team to edit"
+      );
+      return;
+    }
+    
+    if (teams.length > 1) {
+      showAlert(
+        "Please select a team to edit"
+      );
+      return;
+    }
+    
+    const team = teams[0];
+    
+    editingIndex = 0;
+    
+    document.getElementById(
+      "editTitle"
+    ).textContent = "Edit Team";
+    
+    document.getElementById(
+        "editNameInput"
+      ).value =
+      team.name || "";
+    
+    const fileInput =
+      document.getElementById(
+        "editLogoInput"
+      );
+    
+    if (fileInput) {
+      fileInput.value = "";
+    }
+    
+    document
+      .getElementById("editModal")
+      .classList.add("show");
+    
+  } catch (error) {
+    console.error(
+      "Failed to open edit team:",
+      error
+    );
+    
+    showAlert(
+      error.message ||
+      "Failed to load team."
+    );
+  }
+}
+
+window.openEditTeam =
+  openEditTeam;

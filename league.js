@@ -1,144 +1,134 @@
 function toggleScreenshotMode() {
   document.querySelector('.table-wrapper').classList.toggle('screenshot-mode');
 }
-
 async function generateFixtures(rounds) {
+  const tournament =
+    getCurrentTournament();
+
+  if (!tournament) {
+    showAlert(
+      "No tournament selected"
+    );
+    return;
+  }
+
+  const user =
+    getCurrentUser();
+
+  if (
+    !user ||
+    user.role !== "admin"
+  ) {
+    showAlert(
+      "Access denied"
+    );
+    return;
+  }
+
+  const confirmed =
+    await showConfirmModal(
+      "Existing fixtures will be replaced. Continue?",
+      "Generate",
+      "Cancel"
+    );
+
+  if (!confirmed) return;
+
   showLoader();
+
   try {
-    
-    const latest = await getMyTournaments();
-    const tournament = latest.find(t => String(t.id) === String(getCurrentTournament()?.id));
-    if (!tournament) return showAlert("No tournament selected");
-    
-    let teamsObj = tournament.teams || {};
-    
-    if (Array.isArray(teamsObj)) {
-      const converted = {};
-      teamsObj.forEach(name => {
-        const id = crypto.randomUUID();
-        converted[id] = { id, name, logo: tournament.teamLogos?.[name] || null };
-      });
-      teamsObj = converted;
-    }
-    
-    const teamArray = Object.values(teamsObj);
-    if (teamArray.length < 2) {
-      return showAlert("Add at least 2 teams first");
-    }
-    
-    
-    let teamNames = teamArray.map(t => t.name);
-    
-    let matches = [];
-    let teamList = [...teamNames];
-    
-    const hasBye = teamList.length % 2 !== 0;
-    if (hasBye) teamList.push("__BYE__");
-    
-    const numTeams = teamList.length;
-    const numRounds = numTeams - 1;
-    const halfSize = numTeams / 2;
-    
-    for (let round = 0; round < numRounds; round++) {
-      for (let i = 0; i < halfSize; i++) {
-        const home = teamList[i];
-        const away = teamList[numTeams - 1 - i];
-        
-        if (home !== "__BYE__" && away !== "__BYE__") {
-          matches.push({
-            id: crypto.randomUUID(),
-            home,
-            away,
-            homeGoals: null,
-            awayGoals: null,
-            played: false,
-            round: round + 1,
-            date: null,
-            time: null
-          });
+    const token =
+      getToken();
+
+    const res =
+      await fetch(
+        `${API}/tournaments/${tournament.id}/generate-fixtures`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type":
+              "application/json",
+            Authorization:
+              token
+          },
+          body: JSON.stringify({
+            rounds:
+              Number(rounds || 1)
+          })
         }
-      }
-      
-      const fixed = teamList[0];
-      const rest = teamList.slice(1);
-      rest.unshift(rest.pop());
-      teamList = [fixed, ...rest];
+      );
+
+    const result =
+      await res.json();
+
+    if (
+      !res.ok ||
+      !result.success
+    ) {
+      throw new Error(
+        result.message ||
+        "Failed to generate fixtures"
+      );
     }
-    
-    if (rounds === 2) {
-      const returnLegs = matches.map(m => ({
-        ...m,
-        id: crypto.randomUUID(),
-        home: m.away,
-        away: m.home,
-        round: m.round + numRounds
-      }));
-      matches = [...matches, ...returnLegs];
-    }
-    
-    matches = assignRoundDatesSmart(matches, tournament);
-    
-    tournament.matches = matches;
-    
-    tournament.records = {
-      bestAttack: [],
-      bestDefense: [],
-      goalDifference: [],
-      mostWins: [],
-      biggestWins: [],
-      highestScoringMatches: [],
-      longestWinningRuns: [],
-      longestUnbeatenRuns: []
+
+    const newMatches =
+      result.matches || [];
+
+    fixtures =
+      await buildFixturesFromMatches(
+        newMatches,
+        tournament.id
+      );
+
+    fixturesLoaded =
+      true;
+
+    fixturesTournamentId =
+      tournament.id;
+
+    currentTournament = {
+      ...tournament,
+      matches:
+        newMatches
     };
-    
-    
-    tournament.table = teamArray.map(t => ({
-      id: t.id,
-      name: t.name,
-      logo: t.logo || tournament.teamLogos?.[t.name] || null,
-      played: 0,
-      wins: 0,
-      draws: 0,
-      losses: 0,
-      gf: 0,
-      ga: 0,
-      gd: 0,
-      pts: 0
-    }));
-    
-    setCurrentRound(1);
-    
-    
-    await updateTournament(tournament.id, {
-      updates: {
-        matches: tournament.matches,
-        table: tournament.table,
-        records: tournament.records
-      }
-    });
-    
-    
-    const cached = myTournaments.find(t => String(t.id) === String(tournament.id));
+
+    const cached =
+      myTournaments.find(
+        t =>
+          String(t.id) ===
+          String(tournament.id)
+      );
+
     if (cached) {
-      cached.matches = tournament.matches;
-      cached.table = tournament.table;
-      cached.records = tournament.records;
+      cached.matches =
+        newMatches;
     }
-    currentTournament = tournament;
-    
-    renderFixtures();
-    renderTable(tournament.table);
-    renderRecords();
-    
+
+    setCurrentTournament(
+      currentTournament
+    );
+
+    setCurrentRound(1);
+
+    await renderFixtures();
+
+    await rebuildTableFromMatches();
+
   } catch (err) {
-    console.error("[generateFixtures]", err);
-    showAlert(err.message || "Failed to generate fixtures");
+    console.error(
+      "[generateFixtures]",
+      err
+    );
+
+    showAlert(
+      err.message ||
+      "Failed to generate fixtures"
+    );
+
   } finally {
     hideLoader();
   }
 }
-
-
 
 function shareFixtures() {
   const element = document.getElementById('fixtureScreenshotArea');
@@ -280,11 +270,7 @@ function goToTablePage() {
   document.getElementById("customDropdown").style.display = "block";
   
   
-  
-  const tournament = getCurrentTournament();
-  if (tournament) {
-    renderTable(getSortedTable(tournament.table || []));
-  }
+
 }
 
 

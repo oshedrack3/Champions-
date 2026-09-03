@@ -206,8 +206,6 @@
     </div>
   </div>
 </section>
-      
-      
       <div id="mySection">
         
         <div id="competitionList"></div>
@@ -385,8 +383,7 @@
       <section id="tablePage" style="display:none">
         
         <div id="tableView">
-          
-          <div class="table-wrapper">
+           <div class="table-wrapper">
             <table id="leagueTable">
               <thead>
                 <tr>
@@ -532,7 +529,7 @@
         
         <select id="registerRole">
           <option value="player">Player</option>
-          
+          <option value="admin">admin</option>
         </select>
         
         <button onclick="handleRegister()">
@@ -954,7 +951,7 @@
       <input id="teamLogoInput" type="file" accept="image/*" hidden>
       
       <div class="btn-row">
-        <button class="btn-add" onclick="handleAddTeam()">Register Team</button>
+        <button class="btn-add" onclick="handleAddTeam()">Create Team</button>
         <button class="btn-close" onclick="closeAddTeam()">Close X</button>
       </div>
     </div>
@@ -1186,9 +1183,7 @@
           Competitions
         </button>
         
-        <button id="btnPublic">
-          Tournaments
-        </button>
+    
         <button id="btnHallOfFame">
           Hall of Fame
         </button>
@@ -1601,9 +1596,144 @@
   </div>
 </div>
   
+  <div
+  id="teamSelectionModal"
+  class="modal-overlay"
+  style="display: none;"
+>
+  <div class="modal-box team-selection-modal">
+
+    <div class="modal-header">
+      <h3>Select Team</h3>
+
+      <button
+        type="button"
+        class="modal-close"
+        onclick="closeTeamSelectionModal()"
+      >
+        ×
+      </button>
+    </div>
+
+    <div class="modal-body">
+
+      <p
+        id="teamSelectionMessage"
+        class="team-selection-message"
+      >
+        Select the team you want to use in this tournament.
+      </p>
+
+      <div
+        id="teamSelectionList"
+        class="team-selection-list"
+      ></div>
+
+    </div>
+
+    <div class="modal-footer">
+
+      <button
+        type="button"
+        class="modal-cancel-btn"
+        onclick="closeTeamSelectionModal()"
+      >
+        Cancel
+      </button>
+
+      <button
+        type="button"
+        id="confirmTeamSelectionBtn"
+        class="modal-confirm-btn"
+        onclick="confirmTeamSelection()"
+      >
+        Join Tournament
+      </button>
+
+    </div>
+
+  </div>
+</div>
   
-  
-  
+ 
+<div
+  id="profileModal"
+  class="profile-modal-page"
+  aria-hidden="true"
+>
+  <div class="profile-modal-page-header">
+    <button
+      onclick="closeProfileModal()"
+      id="closeProfileModal"
+      class="profile-modal-page-back"
+      aria-label="Close profile"
+    >
+      <span>←</span>
+    </button>
+
+    <h2 class="profile-modal-page-title">
+      My Profile
+    </h2>
+
+    <div class="profile-modal-page-header-spacer"></div>
+  </div>
+
+  <div class="profile-page-content">
+
+    <div class="profile-page-user-section">
+      <div
+        id="profileUsername"
+        class="profile-page-username"
+      >
+        Username
+      </div>
+    </div>
+
+    <section class="profile-page-teams-section">
+
+      <div class="profile-page-section-header">
+        <h3 class="profile-page-section-title">
+          My Teams
+        </h3>
+      </div>
+
+      <div
+        id="profileTeams"
+        class="profile-page-teams-list"
+      ></div>
+
+      <div
+        id="profileTeamsEmpty"
+        class="profile-page-empty"
+        hidden
+      >
+        You don't own any teams yet.
+      </div>
+
+    </section>
+
+    <div class="profile-page-team-actions">
+
+      <button
+        type="button"
+        onclick="openAddTeam()"
+        class="profile-page-add-team-btn"
+      >
+        Add Team
+      </button>
+
+      <button
+        type="button"
+        onclick="openEditTeam()"
+        class="profile-page-edit-team-btn"
+      >
+        Edit Team
+      </button>
+
+    </div>
+
+  </div>
+</div>  
   <script src="storage.js"></script>
   <script src="league.js"></script>
   <script src="helper.js"></script>
