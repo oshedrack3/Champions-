@@ -293,28 +293,6 @@ function resetLogoUI() {
 
 
 
-function getTeamForm(teamName) {
-  const tournament = getCurrentTournament();
-  if (!tournament?.matches) return [];
-  
-  const teamMatches = tournament.matches
-    .filter(m => m.played && (m.home === teamName || m.away === teamName))
-    .filter(m => m.playedAt)
-    .sort((a, b) => b.playedAt - a.playedAt)
-    .slice(0, 5);
-  
-  console.log(teamName, "matches found:", teamMatches.length, teamMatches);
-  
-  return teamMatches.map(m => {
-    const isHome = m.home === teamName;
-    const goalsFor = isHome ? m.homeGoals : m.awayGoals;
-    const goalsAgainst = isHome ? m.awayGoals : m.homeGoals;
-    
-    if (goalsFor > goalsAgainst) return '✓';
-    if (goalsFor < goalsAgainst) return '✕';
-    return '–';
-  });
-}
 
 
 function getSortedTable(table) {
@@ -484,290 +462,276 @@ function getLongestWinningRuns(matches) {
     .sort((a, b) => b[1] - a[1]);
 }
 
-function renderRecords() {
-  const tournament = getCurrentTournament();
-  if (!tournament || !tournament.matches) return;
-  
-  renderChampionPodium();
-  const records = getRecords(tournament.matches);
-  
-  renderTop5("bestAttack", records.bestAttack, "⚽ Top Scorers", "goals");
-  
-  renderTop5(
-    "bestDefense",
-    records.bestDefense,
-    "🛡 Best Defensive Teams",
-    "conceded"
-  );
-  
-  renderTop5(
-    "goalDifference",
-    records.goalDifference,
-    "📈 Best Goal Difference"
-  );
-  
-  renderTop5(
-    "mostWins",
-    records.mostWins,
-    "👑 Most Wins",
-    "wins"
-  );
-  
-  renderMatchCard(
-    "biggestWin",
-    records.biggestWins[0],
-    "💥 Biggest Win",
-    `Margin: +${records.biggestWins[0]?.margin || 0}`
-  );
-  
-  renderMatchCard(
-    "highestScoringMatch",
-    records.highestScoringMatches[0],
-    "🔥 Highest Scoring Match",
-    `Total Goals: ${records.highestScoringMatches[0]?.totalGoals || 0}`
-  );
-  
-  renderStreakCard(
-    "longestWinningRun",
-    records.longestWinningRuns,
-    "👑 Longest Winning Run",
-    "wins"
-  );
-  
-  renderStreakCard(
-    "longestUnbeatenRun",
-    records.longestUnbeatenRuns,
-    "🚧 Longest Unbeaten Run",
-    "matches"
-  );
-}
+async function renderRecords() {
+  const tournament =
+    getCurrentTournament();
 
+  if (!tournament) return;
 
+  try {
+    showLoader();
 
+    await loadTournamentFixtures(
+      tournament.id
+    );
 
-function renderChampionPodium() {
-  const el = document.getElementById("championPodium");
-  const tournament = getCurrentTournament();
-  if (!el || !tournament) return;
-  
-  const winner = getLeagueWinnerFinal();
-  if (!winner) return;
-  
-  const winnerTeamKey = winner.id || winner.team;
-  const rawLogo = tournament.teamLogos?.[winnerTeamKey] || tournament.teamLogos?.[winner.team];
-  const logoUrl = typeof rawLogo === "object" && rawLogo !== null
-    ? (rawLogo.url || rawLogo.src || rawLogo.href || "")
-    : (rawLogo || "");
+    await rebuildTableFromMatches(
+      false
+    );
 
-  const rawTournamentLogo = tournament.tournamentImage || tournament.logo || "";
-  const tournamentLogoUrl = typeof rawTournamentLogo === "object" && rawTournamentLogo !== null
-    ? (rawTournamentLogo.url || rawTournamentLogo.src || rawTournamentLogo.href || "")
-    : (rawTournamentLogo || "");
-  
-  const isDecided = winner.decided && winner.team !== "TBD";
-  
-  el.innerHTML = `
-    <div class="champion-card">
+    const records =
+      getRecords(fixtures);
 
-      <div class="champion-tournament-logo">
-        ${
-          tournamentLogoUrl
-            ? `<img src="${tournamentLogoUrl}" class="tournament-logo" style="max-width:48px;max-height:48px;display:inline-block;object-fit:contain;">`
-            : ""
-        }
-      </div>
+    renderChampionPodium();
 
-      <div class="champion-title">
-        🏆 ${isDecided ? "CHAMPION" : "WINNER TBD"}
-      </div>
+    renderTop5(
+      "bestAttack",
+      records.bestAttack,
+      "⚽ Top Scorers",
+      "goals"
+    );
 
-      ${
-        isDecided
-          ? `
-          <div class="champion-team-logo-wrap">
-            <div class="team-logo-placeholder">?</div>
-          </div>
-        `
-          : ""
-      }
+    renderTop5(
+      "bestDefense",
+      records.bestDefense,
+      "🛡 Best Defensive Teams",
+      "conceded"
+    );
 
-      <div class="champion-name">
-        ${winner.team || "TBD"}
-      </div>
+    renderTop5(
+      "goalDifference",
+      records.goalDifference,
+      "📈 Best Goal Difference"
+    );
 
-      ${
-        isDecided
-          ? `<div class="champion-stats">${winner.pts ?? 0} pts • GD ${winner.gd ?? 0}</div>`
-          : `<div class="champion-stats">League in progress</div>`
-      }
+    renderTop5(
+      "mostWins",
+      records.mostWins,
+      "👑 Most Wins",
+      "wins"
+    );
 
-    </div>
-  `;
-  
-  if (isDecided && logoUrl) {
-    const wrap = el.querySelector(".champion-team-logo-wrap");
-    const placeholder = wrap?.querySelector(".team-logo-placeholder");
-    
-    if (wrap && placeholder) {
-      const img = document.createElement("img");
-      img.className = "champion-team-logo";
-      img.src = logoUrl;
-      img.alt = winner.team || "";
-      img.style.width = "48px";
-      img.style.height = "48px";
-      img.style.minWidth = "48px";
-      img.style.minHeight = "48px";
-      img.style.display = "inline-block";
-      img.style.objectFit = "contain";
-      
-      img.onerror = () => {
-        console.warn("Failed to load champion logo:", logoUrl);
-      };
-      
-      wrap.replaceChild(img, placeholder);
-    }
+    renderMatchCard(
+      "biggestWin",
+      records.biggestWins[0],
+      "💥 Biggest Win",
+      `Margin: +${
+        records.biggestWins[0]?.margin || 0
+      }`
+    );
+
+    renderMatchCard(
+      "highestScoringMatch",
+      records.highestScoringMatches[0],
+      "🔥 Highest Scoring Match",
+      `Total Goals: ${
+        records
+          .highestScoringMatches[0]
+          ?.totalGoals || 0
+      }`
+    );
+
+    renderStreakCard(
+      "longestWinningRun",
+      records.longestWinningRuns,
+      "👑 Longest Winning Run",
+      "wins"
+    );
+
+    renderStreakCard(
+      "longestUnbeatenRun",
+      records.longestUnbeatenRuns,
+      "🚧 Longest Unbeaten Run",
+      "matches"
+    );
+
+  } catch (err) {
+    console.error(
+      "[renderRecords]",
+      err
+    );
+
+    showAlert(
+      err.message ||
+      "Failed to load records."
+    );
+
+  } finally {
+    hideLoader();
   }
 }
 
+
+
 function getLeagueWinnerFinal() {
-  const tournament = getCurrentTournament();
+  const tournament =
+    getCurrentTournament();
+
   if (!tournament) return null;
-  
-  const matches = tournament.matches || [];
-  const rawTeams = tournament.teams || {};
-  
-  const teamList = Array.isArray(rawTeams) ? rawTeams : Object.values(rawTeams);
-  const table = {};
-  const teamLookup = {};
-  
-  teamList.forEach((team) => {
-    if (!team) return;
 
-    const name = typeof team === "object" ? (team.name || team.id) : String(team);
-    const id = typeof team === "object" ? (team.id || team.name) : String(team);
+  const table =
+    tableCache || [];
 
-    if (!name && !id) return;
+  if (!Array.isArray(table) ||
+      !table.length) {
+    return null;
+  }
 
-    const teamObj = {
-      id: id || name,
-      name: name || id,
-      p: 0,
-      w: 0,
-      d: 0,
-      l: 0,
-      gf: 0,
-      ga: 0,
-      pts: 0,
-      remaining: 0
-    };
+  const matches =
+    fixtures || [];
 
-    table[teamObj.id] = teamObj;
-    teamLookup[teamObj.id] = teamObj.id;
-    teamLookup[teamObj.name] = teamObj.id;
+  const sorted =
+    getSortedTable(
+      [...table]
+    );
+
+  if (!sorted.length) {
+    return null;
+  }
+
+  const remaining = {};
+
+  sorted.forEach(team => {
+    remaining[
+      String(team.id)
+    ] = 0;
   });
 
-  let allPlayed = true;
-  
   matches.forEach(match => {
     if (!match) return;
 
-    const rawHome = typeof match.home === "object" ? (match.home.id || match.home.name) : match.home;
-    const rawAway = typeof match.away === "object" ? (match.away.id || match.away.name) : match.away;
-    
-    const homeId = teamLookup[rawHome];
-    const awayId = teamLookup[rawAway];
+    const homeId =
+      String(
+        match.home_team_id || ""
+      );
 
-    if (!homeId || !awayId || !table[homeId] || !table[awayId]) return;
-    
-    if (!match.played) {
-      allPlayed = false;
-      table[homeId].remaining++;
-      table[awayId].remaining++;
+    const awayId =
+      String(
+        match.away_team_id || ""
+      );
+
+    if (
+      !remaining.hasOwnProperty(
+        homeId
+      ) ||
+      !remaining.hasOwnProperty(
+        awayId
+      )
+    ) {
       return;
     }
-    
-    const hg = Number(match.homeGoals ?? match.homeScore ?? 0);
-    const ag = Number(match.awayGoals ?? match.awayScore ?? 0);
-    
-    const home = table[homeId];
-    const away = table[awayId];
-    
-    home.p++;
-    away.p++;
-    home.gf += hg;
-    home.ga += ag;
-    away.gf += ag;
-    away.ga += hg;
-    
-    if (hg > ag) {
-      home.w++;
-      home.pts += 3;
-      away.l++;
-    } else if (ag > hg) {
-      away.w++;
-      away.pts += 3;
-      home.l++;
-    } else {
-      home.d++;
-      away.d++;
-      home.pts++;
-      away.pts++;
+
+    if (
+      Number(match.played) !== 1
+    ) {
+      remaining[homeId]++;
+      remaining[awayId]++;
     }
   });
-  
-  const sorted = Object.values(table).sort((a, b) => {
-    if (b.pts !== a.pts) return b.pts - a.pts;
-    const gdA = a.gf - a.ga;
-    const gdB = b.gf - b.ga;
-    if (gdB !== gdA) return gdB - gdA;
-    return b.gf - a.gf;
-  });
-  
-  if (!sorted.length) return null;
-  
-  const leader = sorted[0];
-  const second = sorted[1];
-  const third = sorted[2];
-  
-  const allGamesPlayed = sorted.every(t => t.remaining === 0);
-  
+
+  const leader =
+    sorted[0];
+
+  const second =
+    sorted[1];
+
+  const third =
+    sorted[2];
+
+  const leaderRemaining =
+    remaining[
+      String(leader.id)
+    ] || 0;
+
+  const allGamesPlayed =
+    sorted.every(
+      team =>
+        (
+          remaining[
+            String(team.id)
+          ] || 0
+        ) === 0
+    );
+
   if (allGamesPlayed) {
     return {
       id: leader.id,
       team: leader.name,
-      pts: leader.pts ?? 0,
-      gd: (leader.gf ?? 0) - (leader.ga ?? 0),
+      pts: leader.pts || 0,
+      gd:
+        Number(leader.gf || 0) -
+        Number(leader.ga || 0),
       finished: true,
       decided: true
     };
   }
-  
+
   if (
     second &&
     third &&
-    leader.remaining === 0 &&
-    second.remaining === 0
+    leaderRemaining === 0 &&
+    (
+      remaining[
+        String(second.id)
+      ] || 0
+    ) === 0
   ) {
-    const thirdMax = third.pts + third.remaining * 3;
-    const top2Min = Math.min(leader.pts, second.pts);
-    
-    if (thirdMax < top2Min) {
+    const thirdRemaining =
+      remaining[
+        String(third.id)
+      ] || 0;
+
+    const thirdMax =
+      Number(third.pts || 0) +
+      thirdRemaining * 3;
+
+    const topTwoMinimum =
+      Math.min(
+        Number(leader.pts || 0),
+        Number(second.pts || 0)
+      );
+
+    if (
+      thirdMax <
+      topTwoMinimum
+    ) {
       return {
         id: leader.id,
         team: leader.name,
-        pts: leader.pts ?? 0,
-        gd: (leader.gf ?? 0) - (leader.ga ?? 0),
+        pts: leader.pts || 0,
+        gd:
+          Number(leader.gf || 0) -
+          Number(leader.ga || 0),
         finished: false,
         decided: true
       };
     }
   }
-  
-  const decided = sorted.every(team => {
-    if (team.id === leader.id) return true;
-    return team.pts + team.remaining * 3 < leader.pts;
-  });
-  
+
+  const decided =
+    sorted.every(team => {
+      if (
+        String(team.id) ===
+        String(leader.id)
+      ) {
+        return true;
+      }
+
+      const teamRemaining =
+        remaining[
+          String(team.id)
+        ] || 0;
+
+      const maximumPossible =
+        Number(team.pts || 0) +
+        teamRemaining * 3;
+
+      return (
+        maximumPossible <
+        Number(leader.pts || 0)
+      );
+    });
+
   if (!decided) {
     return {
       id: null,
@@ -778,23 +742,677 @@ function getLeagueWinnerFinal() {
       decided: false
     };
   }
-  
+
   return {
     id: leader.id,
     team: leader.name,
-    pts: leader.pts ?? 0,
-    gd: (leader.gf ?? 0) - (leader.ga ?? 0),
+    pts: leader.pts || 0,
+    gd:
+      Number(leader.gf || 0) -
+      Number(leader.ga || 0),
     finished: false,
     decided: true
   };
 }
 
+function getRecordTeamLogo(teamName) {
+  if (!teamName) return null;
 
+  const table =
+    Array.isArray(tableCache)
+      ? tableCache
+      : [];
 
+  const tableTeam =
+    table.find(
+      team =>
+        String(team.name || "")
+          .toLowerCase() ===
+        String(teamName)
+          .toLowerCase()
+    );
 
+  if (tableTeam?.logo) {
+    return tableTeam.logo;
+  }
 
+  const loadedFixtures =
+    Array.isArray(fixtures)
+      ? fixtures
+      : [];
 
+  for (const match of loadedFixtures) {
+    if (
+      String(match.home || "")
+        .toLowerCase() ===
+      String(teamName)
+        .toLowerCase()
+    ) {
+      if (match.homeLogo) {
+        return match.homeLogo;
+      }
+    }
 
+    if (
+      String(match.away || "")
+        .toLowerCase() ===
+      String(teamName)
+        .toLowerCase()
+    ) {
+      if (match.awayLogo) {
+        return match.awayLogo;
+      }
+    }
+  }
+
+  return null;
+}
+
+function renderStreakCard(
+  containerId,
+  dataArray,
+  title,
+  suffix = ""
+) {
+  const el =
+    document.getElementById(
+      containerId
+    );
+
+  if (
+    !el ||
+    !Array.isArray(dataArray)
+  ) {
+    return;
+  }
+
+  const normalizedData =
+    Array.isArray(dataArray[0])
+      ? dataArray
+      : [dataArray];
+
+  const top3 =
+    normalizedData.slice(0, 3);
+
+  let rowsHtml = "";
+
+  top3.forEach(
+    (data, index) => {
+      if (
+        !data ||
+        data.length < 2
+      ) {
+        return;
+      }
+
+      const team =
+        data[0];
+
+      const value =
+        data[1];
+
+      const medal =
+        index === 0
+          ? "🥇"
+          : index === 1
+          ? "🥈"
+          : "🥉";
+
+      const logo =
+        getRecordTeamLogo(team);
+
+      rowsHtml += `
+        <div
+          class="streak-row streak-row-item-${index}"
+          style="
+            display:flex;
+            align-items:center;
+            justify-content:space-between;
+            margin-bottom:8px;
+          "
+        >
+
+          <div
+            class="team-side"
+            style="
+              display:flex;
+              align-items:center;
+              gap:8px;
+            "
+          >
+
+            <span class="medal">
+              ${medal}
+            </span>
+
+            ${
+              logo
+                ? `
+                  <img
+                    src="${logo}"
+                    class="team-logo"
+                    alt=""
+                    style="
+                      width:24px;
+                      height:24px;
+                      min-width:24px;
+                      min-height:24px;
+                      display:inline-block;
+                      object-fit:contain;
+                    "
+                  >
+                `
+                : `
+                  <div
+                    class="team-logo-placeholder"
+                    style="
+                      width:24px;
+                      height:24px;
+                      display:flex;
+                      align-items:center;
+                      justify-content:center;
+                      background:#eee;
+                      border-radius:50%;
+                    "
+                  >
+                    ?
+                  </div>
+                `
+            }
+
+            <span>
+              ${escapeHtml(
+                String(team)
+              )}
+            </span>
+
+          </div>
+
+          <div class="record-sub">
+            <b>${value}</b>
+            ${suffix}
+          </div>
+
+        </div>
+      `;
+    }
+  );
+
+  el.innerHTML = `
+    <div class="record-card hero streak-card">
+
+      <div
+        class="record-title"
+        style="
+          margin-bottom:12px;
+          font-weight:bold;
+        "
+      >
+        ${title}
+      </div>
+
+      <div class="streak-list">
+        ${rowsHtml}
+      </div>
+
+    </div>
+  `;
+}
+
+function renderTop5(
+  containerId,
+  dataArray,
+  title,
+  suffix = ""
+) {
+  const el =
+    document.getElementById(
+      containerId
+    );
+
+  if (
+    !el ||
+    !Array.isArray(dataArray)
+  ) {
+    return;
+  }
+
+  const top5 =
+    dataArray.slice(0, 5);
+
+  let rowsHtml = "";
+
+  top5.forEach(
+    (item, index) => {
+      let teamName = "";
+      let value = "";
+
+      if (Array.isArray(item)) {
+        teamName =
+          item[0];
+
+        value =
+          item[1];
+
+      } else if (
+        item &&
+        typeof item === "object"
+      ) {
+        teamName =
+          item.team ||
+          item.name ||
+          "";
+
+        if (
+          "value" in item
+        ) {
+          value =
+            item.value;
+
+        } else if (
+          suffix &&
+          item[suffix] !==
+            undefined
+        ) {
+          value =
+            item[suffix];
+
+        } else {
+          const keys =
+            Object.keys(item)
+              .filter(
+                key =>
+                  ![
+                    "team",
+                    "name"
+                  ].includes(key)
+              );
+
+          value =
+            keys.length
+              ? item[keys[0]]
+              : "";
+        }
+      }
+
+      if (
+        value === undefined ||
+        value === null ||
+        Number.isNaN(value)
+      ) {
+        value = "";
+      }
+
+      const logo =
+        getRecordTeamLogo(
+          teamName
+        );
+
+      rowsHtml += `
+        <div
+          class="top5-row item-index-${index}"
+        >
+
+          <div class="team-side">
+
+            <span class="rank-number">
+              ${index + 1}.
+            </span>
+
+            ${
+              logo
+                ? `
+                  <img
+                    src="${logo}"
+                    class="team-logo"
+                    alt=""
+                    style="
+                      width:24px;
+                      height:24px;
+                      min-width:24px;
+                      min-height:24px;
+                      display:inline-block;
+                      object-fit:contain;
+                    "
+                  >
+                `
+                : `
+                  <div class="team-logo-placeholder">
+                    ?
+                  </div>
+                `
+            }
+
+            <span>
+              ${escapeHtml(
+                String(teamName)
+              )}
+            </span>
+
+          </div>
+
+          <div class="record-value">
+            ${value}
+
+            ${
+              suffix
+                ? `
+                  <span class="record-suffix">
+                    ${suffix}
+                  </span>
+                `
+                : ""
+            }
+
+          </div>
+
+        </div>
+      `;
+    }
+  );
+
+  el.innerHTML = `
+    <div class="record-card top5-card">
+
+      <div class="record-title">
+        ${title}
+      </div>
+
+      <div class="top5-list">
+        ${rowsHtml}
+      </div>
+
+    </div>
+  `;
+}
+
+function renderChampionPodium() {
+  const el =
+    document.getElementById(
+      "championPodium"
+    );
+
+  const tournament =
+    getCurrentTournament();
+
+  if (
+    !el ||
+    !tournament
+  ) {
+    return;
+  }
+
+  const winner =
+    getLeagueWinnerFinal();
+
+  if (!winner) {
+    return;
+  }
+
+  const winnerLogo =
+    getRecordTeamLogo(
+      winner.team
+    );
+
+  const rawTournamentLogo =
+    tournament.tournamentImage ||
+    tournament.logo ||
+    "";
+
+  const tournamentLogoUrl =
+    typeof rawTournamentLogo ===
+      "object" &&
+    rawTournamentLogo !== null
+      ? (
+          rawTournamentLogo.url ||
+          rawTournamentLogo.src ||
+          rawTournamentLogo.href ||
+          ""
+        )
+      : rawTournamentLogo;
+
+  const isDecided =
+    winner.decided &&
+    winner.team !== "TBD";
+
+  el.innerHTML = `
+    <div class="champion-card">
+
+      <div class="champion-tournament-logo">
+        ${
+          tournamentLogoUrl
+            ? `
+              <img
+                src="${tournamentLogoUrl}"
+                class="tournament-logo"
+                style="
+                  max-width:48px;
+                  max-height:48px;
+                  display:inline-block;
+                  object-fit:contain;
+                "
+                alt=""
+              >
+            `
+            : ""
+        }
+      </div>
+
+      <div class="champion-title">
+        🏆 ${
+          isDecided
+            ? "CHAMPION"
+            : "WINNER TBD"
+        }
+      </div>
+
+      ${
+        isDecided
+          ? `
+            <div class="champion-team-logo-wrap">
+
+              ${
+                winnerLogo
+                  ? `
+                    <img
+                      src="${winnerLogo}"
+                      class="champion-team-logo"
+                      alt=""
+                      style="
+                        width:48px;
+                        height:48px;
+                        min-width:48px;
+                        min-height:48px;
+                        display:inline-block;
+                        object-fit:contain;
+                      "
+                    >
+                  `
+                  : `
+                    <div class="team-logo-placeholder">
+                      ?
+                    </div>
+                  `
+              }
+
+            </div>
+          `
+          : ""
+      }
+
+      <div class="champion-name">
+        ${escapeHtml(
+          winner.team || "TBD"
+        )}
+      </div>
+
+      ${
+        isDecided
+          ? `
+            <div class="champion-stats">
+              ${winner.pts ?? 0}
+              pts • GD
+              ${winner.gd ?? 0}
+            </div>
+          `
+          : `
+            <div class="champion-stats">
+              League in progress
+            </div>
+          `
+      }
+
+    </div>
+  `;
+}
+
+function renderMatchCard(
+  containerId,
+  match,
+  title,
+  extraLabel = ""
+) {
+  const el =
+    document.getElementById(
+      containerId
+    );
+
+  if (
+    !el ||
+    !match
+  ) {
+    return;
+  }
+
+  const homeLogo =
+    match.homeLogo ||
+    getRecordTeamLogo(
+      match.home
+    );
+
+  const awayLogo =
+    match.awayLogo ||
+    getRecordTeamLogo(
+      match.away
+    );
+
+  el.innerHTML = `
+    <div class="record-card hero">
+
+      <div class="record-title">
+        ${title}
+      </div>
+
+      <div class="match-vertical">
+
+        <div
+          class="team-row card-home-container"
+        >
+
+          <div class="team-side">
+
+            ${
+              homeLogo
+                ? `
+                  <img
+                    src="${homeLogo}"
+                    class="team-logo"
+                    alt=""
+                    style="
+                      width:24px;
+                      height:24px;
+                      min-width:24px;
+                      min-height:24px;
+                      display:inline-block;
+                      object-fit:contain;
+                    "
+                  >
+                `
+                : `
+                  <div class="team-logo-placeholder">
+                    ?
+                  </div>
+                `
+            }
+
+            <span>
+              ${escapeHtml(
+                String(
+                  match.home ||
+                  "Unknown Team"
+                )
+              )}
+            </span>
+
+          </div>
+
+          <div class="team-score">
+            <b>
+              ${match.homeGoals}
+            </b>
+          </div>
+
+        </div>
+
+        <div
+          class="team-row card-away-container"
+        >
+
+          <div class="team-side">
+
+            ${
+              awayLogo
+                ? `
+                  <img
+                    src="${awayLogo}"
+                    class="team-logo"
+                    alt=""
+                    style="
+                      width:24px;
+                      height:24px;
+                      min-width:24px;
+                      min-height:24px;
+                      display:inline-block;
+                      object-fit:contain;
+                    "
+                  >
+                `
+                : `
+                  <div class="team-logo-placeholder">
+                    ?
+                  </div>
+                `
+            }
+
+            <span>
+              ${escapeHtml(
+                String(
+                  match.away ||
+                  "Unknown Team"
+                )
+              )}
+            </span>
+
+          </div>
+
+          <div class="team-score">
+            <b>
+              ${match.awayGoals}
+            </b>
+          </div>
+
+        </div>
+
+        <div class="record-sub center">
+          ${extraLabel}
+        </div>
+
+      </div>
+
+    </div>
+  `;
+}
+''
 
 
 

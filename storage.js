@@ -4198,26 +4198,33 @@ async function loadTournamentFixtures(
 }
 
 
-async function rebuildTableFromMatches() {
-  const tournament = getCurrentTournament();
+async function rebuildTableFromMatches(
+  shouldRender = true
+) {
+  const tournament =
+    getCurrentTournament();
+
   if (!tournament) return;
-  
+
   if (
     cachedTournamentId === tournament.id &&
     tableCache
   ) {
-    if (typeof renderTable === "function") {
+    if (
+      shouldRender &&
+      typeof renderTable === "function"
+    ) {
       renderTable(tableCache);
     }
-    
+
     return tableCache;
   }
-  
+
   showLoader();
-  
+
   try {
     let table = null;
-    
+
     if (
       Array.isArray(
         tournament.tournament_players
@@ -4233,14 +4240,15 @@ async function rebuildTableFromMatches() {
           `/tournaments/${tournament.id}/table`,
           {
             headers: {
-              Authorization: `Bearer ${getToken()}`
+              Authorization:
+                `Bearer ${getToken()}`
             }
           }
         );
-      
+
       const data =
         await response.json();
-      
+
       if (
         !response.ok ||
         !data.success
@@ -4250,32 +4258,39 @@ async function rebuildTableFromMatches() {
           "Failed to load tournament table."
         );
       }
-      
-      table = data.table || [];
+
+      table =
+        data.table || [];
     }
-    
+
     tableCache = table;
-    cachedTournamentId = tournament.id;
-    
-    tournament.table = table;
-    
-    if (typeof renderTable === "function") {
+
+    cachedTournamentId =
+      tournament.id;
+
+    tournament.table =
+      table;
+
+    if (
+      shouldRender &&
+      typeof renderTable === "function"
+    ) {
       renderTable(table);
     }
-    
+
     return table;
-    
+
   } catch (err) {
     console.error(
       "[rebuildTableFromMatches]",
       err
     );
-    
+
     showAlert(
       err.message ||
       "Failed to rebuild table."
     );
-    
+
   } finally {
     hideLoader();
   }

@@ -676,62 +676,6 @@ function saveLogoToIndexedDB(key, base64Data) {
 
 
 
-function renderFormView() {
-  const tournament = getCurrentTournament();
-  if (!tournament) return;
-  
-  const container = document.getElementById("formContainer");
-  if (!container) return;
-  
-  container.innerHTML = "";
-  
-  const sortedTable = getSortedTable(
-    [...(tournament.table || [])]
-  );
-  
-  sortedTable.forEach((tableRow, index) => {
-    const teamName = tableRow.name;
-    const form = getTeamForm(teamName);
-    
-    const logoUrl = getTeamLogo(tournament, teamName);
-    
-    const row = document.createElement("div");
-    row.className = "form-row";
-    row.setAttribute("data-index", index);
-    
-    row.innerHTML = `
-      <div class="form-team">
-
-        <span class="form-position">
-          ${index + 1}
-        </span>
-
-        ${
-          logoUrl
-          ? `<img 
-              class="Form-team-logo"
-              src="${logoUrl}"
-              alt="${teamName}"
-            >`
-          : `<div class="team-logo-placeholder">⚽</div>`
-        }
-
-        <span>${teamName}</span>
-
-      </div>
-
-      <div class="form-results">
-        ${form.map(result => `
-          <span class="form-badge ${result}">
-            ${result}
-          </span>
-        `).join("")}
-      </div>
-    `;
-    
-    container.appendChild(row);
-  });
-}
 
 function renderKnockoutFixtures(roundIndex = 1) {
   currentKnockoutRoundIndex = roundIndex;
@@ -3439,367 +3383,6 @@ function setupTournamentMenuListener() {
   
 }
 
-function renderStreakCard(containerId, dataArray, title, suffix = "") {
-  const el = document.getElementById(containerId);
-  if (!el || !dataArray) return;
-  
-  const tournament = getCurrentTournament();
-  const normalizedData = Array.isArray(dataArray[0]) ? dataArray : [dataArray];
-  const top3 = normalizedData.slice(0, 3);
-  
-  let rowsHtml = "";
-  
-  top3.forEach((data, index) => {
-    if (!data || data.length < 2) return;
-    const [team, value] = data;
-    const medal = index === 0 ? "🥇" : index === 1 ? "🥈" : "🥉";
-    
-    rowsHtml += `
-      <div class="streak-row streak-row-item-${index}" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
-        <div class="team-side" style="display:flex;align-items:center;gap:8px;">
-          <span class="medal">${medal}</span>
-          <div class="team-logo-placeholder" style="width:24px;height:24px;display:flex;align-items:center;justify-content:center;background:#eee;border-radius:50%;">?</div>
-          <span>${team}</span>
-        </div>
-
-        <div class="record-sub">
-          <b>${value}</b> ${suffix}
-        </div>
-      </div>
-    `;
-  });
-  
-  el.innerHTML = `
-    <div class="record-card hero streak-card">
-      <div class="record-title" style="margin-bottom:12px;font-weight:bold;">
-        ${title}
-      </div>
-
-      <div class="streak-list">
-        ${rowsHtml}
-      </div>
-    </div>
-  `;
-  
-  top3.forEach((data, index) => {
-    if (!data || data.length < 2) return;
-    
-    const [team] = data;
-    const rawLogo = tournament?.teamLogos?.[team];
-    
-    // Safely extract URL from nested structure
-    const logoUrl = typeof rawLogo === "object" && rawLogo !== null ?
-      (rawLogo.url || rawLogo.src || rawLogo.href || "") :
-      rawLogo;
-    
-    if (logoUrl) {
-      const rowNode = el.querySelector(`.streak-row-item-${index} .team-side`);
-      const placeholder = rowNode?.querySelector(".team-logo-placeholder");
-      
-      if (rowNode && placeholder) {
-        const img = document.createElement("img");
-        img.className = "team-logo";
-        img.src = logoUrl;
-        img.alt = team;
-        
-        // Explicit inline styling to guarantee layout rendering in Flex containers
-        img.style.width = "24px";
-        img.style.height = "24px";
-        img.style.minWidth = "24px";
-        img.style.minHeight = "24px";
-        img.style.display = "inline-block";
-        img.style.objectFit = "contain";
-        
-        rowNode.replaceChild(img, placeholder);
-      }
-    }
-  });
-}
-
-
-function renderTop5(containerId, dataArray, title, suffix = "") {
-  const el = document.getElementById(containerId);
-  
-  if (!el || !Array.isArray(dataArray)) return;
-  
-  const tournament = getCurrentTournament();
-  const top5 = dataArray.slice(0, 5);
-  
-  let rowsHtml = "";
-  
-  top5.forEach((item, index) => {
-    let teamName = "";
-    let value = "";
-    
-    if (Array.isArray(item)) {
-      teamName = item[0];
-      value = item[1];
-    } else if (item && typeof item === "object") {
-      teamName = item.team || item.name || "";
-      
-      if ("value" in item) {
-        value = item.value;
-      } else if (suffix && item[suffix] !== undefined) {
-        value = item[suffix];
-      } else {
-        const keys = Object.keys(item).filter(
-          key => !["team", "name"].includes(key)
-        );
-        
-        value = keys.length ? item[keys[0]] : "";
-      }
-    }
-    
-    if (value === undefined || value === null || Number.isNaN(value)) {
-      value = "";
-    }
-    
-    rowsHtml += `
-      <div class="top5-row item-index-${index}">
-        <div class="team-side">
-          <span class="rank-number">${index + 1}.</span>
-          <div class="team-logo-placeholder">?</div>
-          <span>${teamName}</span>
-        </div>
-
-        <div class="record-value">
-          ${value}
-          ${
-            suffix
-              ? `<span class="record-suffix">${suffix}</span>`
-              : ""
-          }
-        </div>
-      </div>
-    `;
-  });
-  
-  el.innerHTML = `
-    <div class="record-card top5-card">
-      <div class="record-title">
-        ${title}
-      </div>
-
-      <div class="top5-list">
-        ${rowsHtml}
-      </div>
-    </div>
-  `;
-  
-  top5.forEach((item, index) => {
-    const teamName = Array.isArray(item) ?
-      item[0] :
-      (item.team || item.name);
-    
-    const rawLogo = tournament?.teamLogos?.[teamName];
-    
-    const logoUrl = typeof rawLogo === "object" && rawLogo !== null ?
-      (rawLogo.url || rawLogo.src || rawLogo.href || "") :
-      rawLogo;
-    
-    if (!logoUrl) return;
-    
-    const row = el.querySelector(
-      `.item-index-${index} .team-side`
-    );
-    
-    const placeholder = row?.querySelector(
-      ".team-logo-placeholder"
-    );
-    
-    if (!row || !placeholder) return;
-    
-    const img = document.createElement("img");
-    img.className = "team-logo";
-    img.src = logoUrl;
-    img.alt = teamName || "";
-    img.style.width = "24px";
-    img.style.height = "24px";
-    img.style.minWidth = "24px";
-    img.style.minHeight = "24px";
-    img.style.display = "inline-block";
-    img.style.objectFit = "contain";
-    
-    row.replaceChild(img, placeholder);
-  });
-}
-
-function renderChampionPodium() {
-  const el = document.getElementById("championPodium");
-  const tournament = getCurrentTournament();
-  if (!el || !tournament) return;
-  
-  const winner = getLeagueWinnerFinal();
-  if (!winner) return;
-  
-  const rawLogo = tournament.teamLogos?.[winner.team];
-  const logoUrl = typeof rawLogo === "object" && rawLogo !== null ?
-    (rawLogo.url || rawLogo.src || rawLogo.href || "") :
-    rawLogo;
-  
-  const rawTournamentLogo = tournament.tournamentImage || tournament.logo || "";
-  const tournamentLogoUrl = typeof rawTournamentLogo === "object" && rawTournamentLogo !== null ?
-    (rawTournamentLogo.url || rawTournamentLogo.src || rawTournamentLogo.href || "") :
-    rawTournamentLogo;
-  
-  const isDecided = winner.decided && winner.team !== "TBD";
-  
-  el.innerHTML = `
-    <div class="champion-card">
-
-      <div class="champion-tournament-logo">
-        ${
-          tournamentLogoUrl
-            ? `<img src="${tournamentLogoUrl}" class="tournament-logo" style="max-width:48px;max-height:48px;display:inline-block;object-fit:contain;">`
-            : ""
-        }
-      </div>
-
-      <div class="champion-title">
-        🏆 ${isDecided ? "CHAMPION" : "WINNER TBD"}
-      </div>
-
-      ${
-        isDecided
-          ? `
-          <div class="champion-team-logo-wrap">
-            <div class="team-logo-placeholder">?</div>
-          </div>
-        `
-          : ""
-      }
-
-      <div class="champion-name">
-        ${winner.team}
-      </div>
-
-      ${
-        isDecided
-          ? `<div class="champion-stats">${winner.pts} pts • GD ${winner.gd}</div>`
-          : `<div class="champion-stats">League in progress</div>`
-      }
-
-    </div>
-  `;
-  
-  if (isDecided && logoUrl) {
-    const wrap = el.querySelector(".champion-team-logo-wrap");
-    const placeholder = wrap?.querySelector(".team-logo-placeholder");
-    
-    if (wrap && placeholder) {
-      const img = document.createElement("img");
-      img.className = "champion-team-logo";
-      img.src = logoUrl;
-      img.alt = winner.team || "";
-      img.style.width = "48px";
-      img.style.height = "48px";
-      img.style.minWidth = "48px";
-      img.style.minHeight = "48px";
-      img.style.display = "inline-block";
-      img.style.objectFit = "contain";
-      
-      img.onerror = () => {
-        console.warn("Failed to load champion logo:", logoUrl);
-      };
-      
-      wrap.replaceChild(img, placeholder);
-    }
-  }
-}
-
-function renderMatchCard(containerId, match, title, extraLabel = "") {
-  const el = document.getElementById(containerId);
-  if (!el || !match) return;
-  
-  const tournament = getCurrentTournament();
-  
-  const rawHomeLogo = tournament?.teamLogos?.[match.home];
-  const homeLogoUrl = typeof rawHomeLogo === "object" && rawHomeLogo !== null ?
-    (rawHomeLogo.url || rawHomeLogo.src || rawHomeLogo.href || "") :
-    rawHomeLogo;
-  
-  const rawAwayLogo = tournament?.teamLogos?.[match.away];
-  const awayLogoUrl = typeof rawAwayLogo === "object" && rawAwayLogo !== null ?
-    (rawAwayLogo.url || rawAwayLogo.src || rawAwayLogo.href || "") :
-    rawAwayLogo;
-  
-  el.innerHTML = `
-    <div class="record-card hero">
-      <div class="record-title">${title}</div>
-
-      <div class="match-vertical">
-
-        <div class="team-row card-home-container">
-          <div class="team-side">
-            <div class="team-logo-placeholder">?</div>
-            <span>${match.home}</span>
-          </div>
-
-          <div class="team-score">
-            <b>${match.homeGoals}</b>
-          </div>
-        </div>
-
-        <div class="team-row card-away-container">
-          <div class="team-side">
-            <div class="team-logo-placeholder">?</div>
-            <span>${match.away}</span>
-          </div>
-
-          <div class="team-score">
-            <b>${match.awayGoals}</b>
-          </div>
-        </div>
-
-        <div class="record-sub center">
-          ${extraLabel}
-        </div>
-
-      </div>
-    </div>
-  `;
-  
-  if (homeLogoUrl) {
-    const homeRow = el.querySelector(".card-home-container .team-side");
-    const placeholder = homeRow?.querySelector(".team-logo-placeholder");
-    
-    if (homeRow && placeholder) {
-      const img = document.createElement("img");
-      img.className = "team-logo";
-      img.src = homeLogoUrl;
-      img.alt = match.home || "";
-      img.style.width = "24px";
-      img.style.height = "24px";
-      img.style.minWidth = "24px";
-      img.style.minHeight = "24px";
-      img.style.display = "inline-block";
-      img.style.objectFit = "contain";
-      
-      homeRow.replaceChild(img, placeholder);
-    }
-  }
-  
-  if (awayLogoUrl) {
-    const awayRow = el.querySelector(".card-away-container .team-side");
-    const placeholder = awayRow?.querySelector(".team-logo-placeholder");
-    
-    if (awayRow && placeholder) {
-      const img = document.createElement("img");
-      img.className = "team-logo";
-      img.src = awayLogoUrl;
-      img.alt = match.away || "";
-      img.style.width = "24px";
-      img.style.height = "24px";
-      img.style.minWidth = "24px";
-      img.style.minHeight = "24px";
-      img.style.display = "inline-block";
-      img.style.objectFit = "contain";
-      
-      awayRow.replaceChild(img, placeholder);
-    }
-  }
-}
-
 
 
 function createTournamentCard(tournament, currentUser) {
@@ -5110,6 +4693,7 @@ async function openProfileModal() {
     );
   }
 }
+
 function renderUserProfile(profile) {
   const usernameElement =
     document.getElementById(
@@ -5141,14 +4725,14 @@ function renderUserProfile(profile) {
   const phone =
     profile?.phone;
   phoneElement.textContent =
-    phone
-      ? `WhatsApp: ${phone}`
-      : "WhatsApp number not added";
+    phone ?
+    `WhatsApp: ${phone}` :
+    "WhatsApp number not added";
   teamsElement.innerHTML = "";
   const teams =
-    Array.isArray(profile?.teams)
-      ? profile.teams
-      : [];
+    Array.isArray(profile?.teams) ?
+    profile.teams :
+    [];
   if (!teams.length) {
     emptyElement.hidden = false;
     return;
@@ -5183,3 +4767,219 @@ function renderUserProfile(profile) {
     );
   });
 }
+
+
+async function renderFormView() {
+  const tournament =
+    getCurrentTournament();
+  
+  if (!tournament) return;
+  
+  const container =
+    document.getElementById(
+      "formContainer"
+    );
+  
+  if (!container) return;
+  
+  try {
+    showLoader();
+    
+    await loadTournamentFixtures(
+      tournament.id
+    );
+    
+    const table =
+      await rebuildTableFromMatches(
+        false
+      );
+    
+    if (
+      !Array.isArray(table) ||
+      !table.length
+    ) {
+      container.innerHTML = `
+        <div class="empty-state">
+          No team form available.
+        </div>
+      `;
+      
+      return;
+    }
+    
+    const sortedTable =
+      getSortedTable(
+        [...table]
+      );
+    
+    container.innerHTML = "";
+    
+    sortedTable.forEach(
+      (tableRow, index) => {
+        const teamId =
+          String(
+            tableRow.id || ""
+          );
+        
+        const teamName =
+          tableRow.name ||
+          "Unknown Team";
+        
+        const logoUrl =
+          tableRow.logo ||
+          null;
+        
+        const form =
+          getTeamForm(
+            teamId,
+            fixtures
+          );
+        
+        const row =
+          document.createElement(
+            "div"
+          );
+        
+        row.className =
+          "form-row";
+        
+        row.setAttribute(
+          "data-index",
+          index
+        );
+        
+        row.innerHTML = `
+          <div class="form-team">
+
+            <span class="form-position">
+              ${tableRow.pos || index + 1}
+            </span>
+
+            ${
+              logoUrl
+                ? `<img
+                    class="Form-team-logo"
+                    src="${logoUrl}"
+                    alt=""
+                    loading="lazy"
+                  >`
+                : `<div class="team-logo-placeholder">
+                    ⚽
+                  </div>`
+            }
+
+            <span>
+              ${escapeHtml(teamName)}
+            </span>
+
+          </div>
+
+          <div class="form-results">
+            ${form.map(result => `
+              <span class="form-badge ${result}">
+                ${result}
+              </span>
+            `).join("")}
+          </div>
+        `;
+        
+        container.appendChild(
+          row
+        );
+      }
+    );
+    
+  } catch (err) {
+    console.error(
+      "[renderFormView]",
+      err
+    );
+    
+    container.innerHTML = `
+      <div class="empty-state">
+        Failed to load team form.
+      </div>
+    `;
+    
+    showAlert(
+      err.message ||
+      "Failed to load team form."
+    );
+    
+  } finally {
+    hideLoader();
+  }
+}
+function getTeamForm(
+  teamId,
+  fixtures
+) {
+  const playedMatches =
+    (fixtures || [])
+    .filter(match =>
+      Number(match.played) === 1 &&
+      (
+        String(match.home_team_id) ===
+        String(teamId) ||
+        String(match.away_team_id) ===
+        String(teamId)
+      )
+    )
+    .sort(
+      (a, b) =>
+      Number(
+        a.playedAt ??
+        a.played_at ??
+        a.updated_at ??
+        a.created_at ??
+        0
+      ) -
+      Number(
+        b.playedAt ??
+        b.played_at ??
+        b.updated_at ??
+        b.created_at ??
+        0
+      )
+    );
+  
+  return playedMatches
+    .slice(-5)
+    .map(match => {
+      const isHome =
+        String(match.home_team_id) ===
+        String(teamId);
+      
+      const teamGoals =
+        Number(
+          isHome ?
+          match.homeGoals :
+          match.awayGoals
+        );
+      
+      const opponentGoals =
+        Number(
+          isHome ?
+          match.awayGoals :
+          match.homeGoals
+        );
+      
+      if (
+        teamGoals >
+        opponentGoals
+      ) {
+        return "W";
+      }
+      
+      if (
+        teamGoals <
+        opponentGoals
+      ) {
+        return "L";
+      }
+      
+      return "D";
+    });
+}
+
+

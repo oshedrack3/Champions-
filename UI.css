@@ -3742,3 +3742,74 @@ tbody tr:nth-child(1) td {
     padding: 0 14px;
   }
 }
+
+.form-results {
+  
+  display: flex !important;
+  
+  align-items: center;
+  
+  justify-content: flex-end;
+  
+  gap: 5px;
+  
+  flex-shrink: 0;
+  
+  min-width: 30px;
+  
+  visibility: visible !important;
+  
+  opacity: 1 !important;
+  
+}
+
+.form-badge {
+  
+  display: inline-flex !important;
+  
+  align-items: center;
+  
+  justify-content: center;
+  
+  width: 24px;
+  
+  height: 24px;
+  
+  min-width: 24px;
+  
+  border-radius: 50%;
+  
+  font-size: 11px;
+  
+  font-weight: 700;
+  
+  line-height: 1;
+  
+  color: #fff;
+  
+  visibility: visible !important;
+  
+  opacity: 1 !important;
+  
+  box-sizing: border-box;
+  
+}
+
+.form-badge.W {
+  
+  background: #22c55e !important;
+  
+}
+
+.form-badge.D {
+  
+  background: #f59e0b !important;
+  
+}
+
+.form-badge.L {
+  
+  background: #ef4444 !important;
+  
+}
+
