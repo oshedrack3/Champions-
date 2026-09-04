@@ -7,6 +7,11 @@ let noticeScrollIndex = 0;
 let noticeInteractionTimeout = null;
 let hallOfFameAdminData = null;
 let submissionDeadlineInterval = null;
+const submissionAlertedTournaments =
+  new Set();
+let noticesMemoryCache = null;
+let noticesSyncChecked = false;
+
 let teamsByTournament = {};
 let tournamentRefreshRunning = false;
 let tableCache = null;
@@ -640,6 +645,83 @@ function setCurrentTournament(tournament) {
 }
 
 
+function updateTableCacheFromPlayers(updatedPlayers) {
+  if (
+    !Array.isArray(updatedPlayers) ||
+    !Array.isArray(tableCache)
+  ) {
+    return;
+  }
+
+  updatedPlayers.forEach(player => {
+    if (!player || !player.team_id) return;
+
+    const tableIndex =
+      tableCache.findIndex(
+        team =>
+          String(team.id) ===
+          String(player.team_id)
+      );
+
+    if (tableIndex === -1) return;
+
+    const gf =
+      Number(player.gf) || 0;
+
+    const ga =
+      Number(player.ga) || 0;
+
+    tableCache[tableIndex] = {
+      ...tableCache[tableIndex],
+      id: player.team_id,
+      name:
+        player.team_name ||
+        player.team?.name ||
+        tableCache[tableIndex].name ||
+        "",
+      logo:
+        player.team_logo ||
+        player.team?.logo ||
+        tableCache[tableIndex].logo ||
+        null,
+      played:
+        Number(player.played) || 0,
+      wins:
+        Number(player.wins) || 0,
+      draws:
+        Number(player.draws) || 0,
+      losses:
+        Number(player.losses) || 0,
+      gf,
+      ga,
+      gd: gf - ga,
+      pts:
+        Number(player.points) || 0
+    };
+  });
+
+  tableCache.sort((a, b) => {
+    if (b.pts !== a.pts) {
+      return b.pts - a.pts;
+    }
+
+    if (b.gd !== a.gd) {
+      return b.gd - a.gd;
+    }
+
+    if (b.gf !== a.gf) {
+      return b.gf - a.gf;
+    }
+
+    return a.name.localeCompare(b.name);
+  });
+
+  tableCache.forEach((team, index) => {
+    team.pos = index + 1;
+  });
+}
+
+
 async function approveSubmission() {
   
   if (!currentReviewSubmission) return;
@@ -693,10 +775,6 @@ async function approveSubmission() {
       
     }
     
-    tournament.table =
-      result.table ||
-      tournament.table;
-    
     tournament.prevRanks =
       result.prevRanks ||
       tournament.prevRanks;
@@ -733,6 +811,13 @@ async function approveSubmission() {
         }
       );
       
+      updateTableCacheFromPlayers(
+        result.players
+      );
+      
+      tournament.table =
+        tableCache;
+      
     }
     
     const cached =
@@ -745,7 +830,7 @@ async function approveSubmission() {
     if (cached) {
       
       cached.table =
-        tournament.table;
+        tableCache;
       
       cached.prevRanks =
         tournament.prevRanks;
@@ -793,7 +878,7 @@ async function approveSubmission() {
     await renderFixtures();
     
     renderTable(
-      tournament.table
+      tableCache
     );
     
     if (
@@ -821,6 +906,7 @@ async function approveSubmission() {
   }
   
 }
+
 
 
 async function rejectSubmission() {
@@ -4160,6 +4246,7 @@ async function buildFixturesFromMatches(
     };
   });
 }
+
 async function loadTournamentFixtures(
   tournamentId
 ) {
@@ -4197,6 +4284,107 @@ async function loadTournamentFixtures(
   return fixtures;
 }
 
+
+
+function checkSubmissionAlerts(
+  tournament
+) {
+  if (
+    !tournament ||
+    !Array.isArray(fixtures) ||
+    !fixtures.length
+  ) {
+    return;
+  }
+  
+  const user =
+    getCurrentUser();
+  
+  if (!user) return;
+  
+  const tournamentId =
+    String(tournament.id);
+  
+  if (
+    submissionAlertedTournaments.has(
+      tournamentId
+    )
+  ) {
+    return;
+  }
+  
+  const role =
+    String(
+      user.role ||
+      tournament.user_role ||
+      ""
+    ).toLowerCase();
+  
+  if (role === "admin") {
+    const hasPending =
+      fixtures.some(match =>
+        String(
+          match.submission_status || ""
+        ).toLowerCase() === "pending"
+      );
+    
+    if (!hasPending) {
+      return;
+    }
+    
+    submissionAlertedTournaments.add(
+      tournamentId
+    );
+    
+    showAlert(
+      "You have a pending match submission to review."
+    );
+    
+    return;
+  }
+  
+  const player =
+    tournament.tournament_players?.find(
+      item =>
+      String(item.user_id) ===
+      String(user.id)
+    );
+  
+  if (!player?.team_id) {
+    return;
+  }
+  
+  const hasRejected =
+    fixtures.some(match => {
+      const status =
+        String(
+          match.submission_status || ""
+        ).toLowerCase();
+      
+      const isMyMatch =
+        String(match.home_team_id) ===
+        String(player.team_id) ||
+        String(match.away_team_id) ===
+        String(player.team_id);
+      
+      return (
+        isMyMatch &&
+        status === "rejected"
+      );
+    });
+  
+  if (!hasRejected) {
+    return;
+  }
+  
+  submissionAlertedTournaments.add(
+    tournamentId
+  );
+  
+  showAlert(
+    "Your match submission was rejected."
+  );
+}
 
 async function rebuildTableFromMatches(
   shouldRender = true

@@ -1822,38 +1822,66 @@ async function updateSubmissionDeadline(
 }
 
 
-async function getNotices() {
+
+async function getNotices(force = false) {
   const token =
     getToken();
-  
+
   if (!token) {
     throw new Error(
       "Invalid session."
     );
   }
-  
+
+  if (
+    !force &&
+    Array.isArray(
+      noticesMemoryCache
+    )
+  ) {
+    return noticesMemoryCache;
+  }
+
   let notices =
-    await getCachedData(
-      "notices"
-    );
-  
+    Array.isArray(
+      noticesMemoryCache
+    )
+      ? noticesMemoryCache
+      : await getCachedData(
+          "notices"
+        );
+
   if (!Array.isArray(notices)) {
     notices = [];
   }
-  
+
+  if (
+    !force &&
+    noticesSyncChecked
+  ) {
+    noticesMemoryCache =
+      notices;
+
+    return notices;
+  }
+
   const cachedSync =
     await getCachedData(
       "noticesSync"
     );
-  
+
   const lastChangeId =
     cachedSync &&
     Number.isInteger(
-      Number(cachedSync.lastChangeId)
-    ) ?
-    Number(cachedSync.lastChangeId) :
-    0;
-  
+      Number(
+        cachedSync.lastChangeId
+      )
+    )
+      ? Number(
+          cachedSync.lastChangeId
+        )
+      : 0;
+
   const response =
     await apiRequest(
       `${API}/notices/sync?since=${lastChangeId}`,
@@ -1865,14 +1893,17 @@ async function getNotices() {
       },
       getNotices
     );
-  
+
   if (!response) {
+    noticesMemoryCache =
+      notices;
+
     return notices;
   }
-  
+
   const data =
     await response.json();
-  
+
   if (
     !response.ok ||
     !data.success
@@ -1882,15 +1913,21 @@ async function getNotices() {
       "Failed to synchronize notices."
     );
   }
-  
+
   const newNotices =
-    Array.isArray(data.notices) ?
-    data.notices : [];
-  
+    Array.isArray(
+      data.notices
+    )
+      ? data.notices
+      : [];
+
   const deleted =
-    Array.isArray(data.deleted) ?
-    data.deleted : [];
-  
+    Array.isArray(
+      data.deleted
+    )
+      ? data.deleted
+      : [];
+
   const noticeMap =
     new Map(
       notices.map(
@@ -1900,18 +1937,18 @@ async function getNotices() {
         ]
       )
     );
-  
+
   for (
     const notice of newNotices
   ) {
     if (!notice?.id) continue;
-    
+
     noticeMap.set(
       notice.id,
       notice
     );
   }
-  
+
   for (
     const noticeId of deleted
   ) {
@@ -1919,101 +1956,127 @@ async function getNotices() {
       noticeId
     );
   }
-  
+
   notices =
     Array.from(
       noticeMap.values()
     );
-  
+
   notices =
     notices.filter(
       notice =>
-      !notice.expires_at ||
-      Number(notice.expires_at) >
-      Date.now()
+        !notice.expires_at ||
+        Number(
+          notice.expires_at
+        ) > Date.now()
     );
-  
+
   notices.sort(
     (a, b) =>
-    Number(b.created_at || 0) -
-    Number(a.created_at || 0)
+      Number(
+        b.created_at || 0
+      ) -
+      Number(
+        a.created_at || 0
+      )
   );
-  
+
   await saveCachedData(
     "notices",
     "",
     notices
   );
-  
+
   await saveCachedData(
     "noticesSync",
     "",
     {
-      lastChangeId: Number(
-        data.lastChangeId ||
-        lastChangeId
-      )
+      lastChangeId:
+        Number(
+          data.lastChangeId ??
+          lastChangeId
+        )
     }
   );
-  
+
+  noticesMemoryCache =
+    notices;
+
+  noticesSyncChecked =
+    true;
+
   return notices;
 }
 async function createNotice() {
   const title =
     document
-    .getElementById("noticeTitle")
-    .value
-    .trim();
-  
+      .getElementById(
+        "noticeTitle"
+      )
+      .value
+      .trim();
+
   const category =
     document
-    .getElementById("noticeCategory")
-    .value;
-  
+      .getElementById(
+        "noticeCategory"
+      )
+      .value;
+
   const content =
     document
-    .getElementById("noticeContent")
-    .value
-    .trim();
-  
+      .getElementById(
+        "noticeContent"
+      )
+      .value
+      .trim();
+
   const files =
     Array.from(
       document
-      .getElementById("noticeImages")
-      .files || []
+        .getElementById(
+          "noticeImages"
+        )
+        .files || []
     );
-  
+
   const published =
     document
-    .getElementById("noticePublished")
-    .checked;
-  
+      .getElementById(
+        "noticePublished"
+      )
+      .checked;
+
   const noExpiry =
     document
-    .getElementById("noticeNoExpiry")
-    .checked;
-  
+      .getElementById(
+        "noticeNoExpiry"
+      )
+      .checked;
+
   const expiryValue =
     document
-    .getElementById("noticeExpiresAt")
-    .value;
-  
+      .getElementById(
+        "noticeExpiresAt"
+      )
+      .value;
+
   if (!title) {
     showAlert(
       "Enter a notice title."
     );
     return;
   }
-  
+
   if (!content) {
     showAlert(
       "Enter the notice content."
     );
     return;
   }
-  
+
   let expiresAt = null;
-  
+
   if (!noExpiry) {
     if (!expiryValue) {
       showAlert(
@@ -2021,12 +2084,12 @@ async function createNotice() {
       );
       return;
     }
-    
+
     expiresAt =
       new Date(
         expiryValue
       ).getTime();
-    
+
     if (
       !Number.isFinite(
         expiresAt
@@ -2039,57 +2102,64 @@ async function createNotice() {
       return;
     }
   }
-  
+
   if (files.length > 10) {
     showAlert(
       "You can upload a maximum of 10 images."
     );
     return;
   }
-  
+
   showLoader();
-  
+
   try {
     const images = [];
-    
-    for (const file of files) {
+
+    for (
+      const file of files
+    ) {
       const base64 =
         await fileToBase64(
           file,
           1200
         );
-      
-      images.push(base64);
+
+      images.push(
+        base64
+      );
     }
-    
+
     const response =
       await apiRequest(
         `${API}/notices`,
         {
           method: "POST",
           headers: {
-            "Content-Type": "application/json",
-            Authorization: getToken()
+            "Content-Type":
+              "application/json",
+            Authorization:
+              getToken()
           },
-          body: JSON.stringify({
-            title,
-            content,
-            category,
-            images,
-            published,
-            expiresAt
-          })
+          body:
+            JSON.stringify({
+              title,
+              content,
+              category,
+              images,
+              published,
+              expiresAt
+            })
         },
         createNotice
       );
-    
+
     if (!response) {
       return;
     }
-    
+
     const data =
       await response.json();
-    
+
     if (
       !response.ok ||
       !data.success
@@ -2099,7 +2169,7 @@ async function createNotice() {
         "Failed to create notice."
       );
     }
-    
+
     if (
       data.notice &&
       data.notice.published &&
@@ -2111,14 +2181,18 @@ async function createNotice() {
       )
     ) {
       let notices =
-        await getCachedData(
-          "notices"
-        );
-      
+        Array.isArray(
+          noticesMemoryCache
+        )
+          ? noticesMemoryCache
+          : await getCachedData(
+              "notices"
+            );
+
       if (!Array.isArray(notices)) {
         notices = [];
       }
-      
+
       const noticeMap =
         new Map(
           notices.map(
@@ -2128,34 +2202,46 @@ async function createNotice() {
             ]
           )
         );
-      
+
       noticeMap.set(
         data.notice.id,
         data.notice
       );
-      
+
       notices =
         Array.from(
           noticeMap.values()
         );
-      
+
+      notices =
+        notices.filter(
+          notice =>
+            !notice.expires_at ||
+            Number(
+              notice.expires_at
+            ) > Date.now()
+        );
+
       notices.sort(
         (a, b) =>
-        Number(
-          b.created_at || 0
-        ) -
-        Number(
-          a.created_at || 0
-        )
+          Number(
+            b.created_at || 0
+          ) -
+          Number(
+            a.created_at || 0
+          )
       );
-      
+
+      noticesMemoryCache =
+        notices;
+
       await saveCachedData(
         "notices",
         "",
         notices
       );
     }
-    
+
     if (
       data.changeId !== null &&
       data.changeId !== undefined
@@ -2164,120 +2250,195 @@ async function createNotice() {
         "noticesSync",
         "",
         {
-          lastChangeId: Number(
-            data.changeId
-          )
+          lastChangeId:
+            Number(
+              data.changeId
+            )
         }
       );
     }
-    
+
     closeNoticeBoardModal();
-    
+
     showActionModal(
       "Notice published successfully.",
       "success"
     );
-    
+
   } catch (err) {
     console.error(
       "[createNotice]",
       err
     );
-    
+
     showAlert(
       err.message ||
       "Failed to create notice."
     );
-    
+
   } finally {
     hideLoader();
   }
 }
+
 async function handleRegister() {
   const username =
-    document.getElementById("registerUsername").value.trim();
+    document
+      .getElementById("registerUsername")
+      .value
+      .trim();
+
   const email =
-    document.getElementById("registerEmail").value.trim();
+    document
+      .getElementById("registerEmail")
+      .value
+      .trim();
+
+  const phone =
+    document
+      .getElementById("registerPhone")
+      .value
+      .trim();
+
   const password =
-    document.getElementById("registerPassword").value;
+    document
+      .getElementById("registerPassword")
+      .value;
+
   const role =
-    document.getElementById("registerRole").value;
-  if (!username || !email || !password || !role) {
-    showAlert("Please fill in all fields.");
+    document
+      .getElementById("registerRole")
+      .value;
+
+  if (
+    !username ||
+    !email ||
+    !phone ||
+    !password ||
+    !role
+  ) {
+    showAlert(
+      "Please fill in all fields."
+    );
     return;
   }
+
   showLoader();
+
   try {
-    const res = await fetch(`${API}/auth/register`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        username,
-        email,
-        password,
-        role
-      })
-    });
-    console.log("REGISTER HTTP STATUS:", res.status);
-    console.log("REGISTER HTTP OK:", res.ok);
-    const responseText = await res.text();
+    const res =
+      await fetch(
+        `${API}/auth/register`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type":
+              "application/json"
+          },
+          body:
+            JSON.stringify({
+              username,
+              email,
+              phone,
+              password,
+              role
+            })
+        }
+      );
+
+    console.log(
+      "REGISTER HTTP STATUS:",
+      res.status
+    );
+
+    console.log(
+      "REGISTER HTTP OK:",
+      res.ok
+    );
+
+    const responseText =
+      await res.text();
+
     console.log(
       "REGISTER RAW RESPONSE:",
       responseText
     );
+
     let result;
+
     try {
-      result = JSON.parse(responseText);
+      result =
+        JSON.parse(
+          responseText
+        );
     } catch (parseError) {
       console.error(
         "REGISTER JSON PARSE ERROR:",
         parseError
       );
+
       throw new Error(
         `Server returned an invalid response (${res.status}).`
       );
     }
+
     console.log(
       "REGISTER JSON:",
       result
     );
-    if (!res.ok || !result.success) {
+
+    if (
+      !res.ok ||
+      !result.success
+    ) {
       throw new Error(
         result.message ||
         `Registration failed (${res.status}).`
       );
     }
+
     showAlert(
       "Account created successfully."
     );
+
     document.getElementById(
       "registerUsername"
     ).value = "";
+
     document.getElementById(
       "registerEmail"
     ).value = "";
+
+    document.getElementById(
+      "registerPhone"
+    ).value = "";
+
     document.getElementById(
       "registerPassword"
     ).value = "";
+
     document.getElementById(
       "registerRole"
     ).selectedIndex = 0;
+
     showLogin();
+
   } catch (err) {
     console.error(
       "Registration request failed:",
       err
     );
+
     showAlert(
       err.message ||
       "Failed to create account."
     );
+
   } finally {
     hideLoader();
   }
 }
+
 
 async function getTournamentMatches(tournamentId) {
   const token = getToken();

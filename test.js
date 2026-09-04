@@ -27,6 +27,9 @@ async function renderFixtures() {
     await loadTournamentFixtures(
       tournament.id
     );
+    checkSubmissionAlerts(
+  tournament
+);
     
     toggleRoundCarousel(
       search
