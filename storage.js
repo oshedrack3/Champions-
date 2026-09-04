@@ -644,44 +644,162 @@ async function approveSubmission() {
   
   if (!currentReviewSubmission) return;
   
-  const tournament = getCurrentTournament();
+  const tournament =
+    getCurrentTournament();
   
   showLoader();
   
   try {
     
-    const result = await reviewMatchSubmission(
-      tournament.id,
-      currentReviewSubmission.id,
-      "approved"
-    );
+    const result =
+      await reviewMatchSubmission(
+        tournament.id,
+        currentReviewSubmission.id,
+        "approved"
+      );
     
+    const updatedMatch =
+      result.match;
     
-    tournament.matches = result.matches;
-    tournament.table = result.table;
-    tournament.prevRanks = result.prevRanks;
-    tournament.records = result.records;
-    tournament.matchSubmissions = result.matchSubmissions;
+    if (updatedMatch) {
+      
+      const matchIndex =
+        fixtures.findIndex(
+          match =>
+            String(match.id) ===
+            String(updatedMatch.id)
+        );
+      
+      if (matchIndex !== -1) {
+        
+        fixtures[matchIndex] = {
+          ...fixtures[matchIndex],
+          ...updatedMatch,
+          homeGoals:
+            updatedMatch.home_score,
+          awayGoals:
+            updatedMatch.away_score,
+          played:
+            Number(updatedMatch.played) === 1,
+          playedAt:
+            updatedMatch.played_at,
+          scheduledAt:
+            updatedMatch.scheduled_at,
+          submission_status:
+            "approved"
+        };
+        
+      }
+      
+    }
     
+    tournament.table =
+      result.table ||
+      tournament.table;
     
-    const cached = myTournaments.find(
-      t => String(t.id) === String(tournament.id)
-    );
+    tournament.prevRanks =
+      result.prevRanks ||
+      tournament.prevRanks;
+    
+    tournament.records =
+      result.records ||
+      tournament.records;
+    
+    tournament.matchSubmissions =
+      result.matchSubmissions ||
+      tournament.matchSubmissions;
+    
+    if (
+      Array.isArray(result.players) &&
+      Array.isArray(tournament.tournament_players)
+    ) {
+      
+      result.players.forEach(
+        updatedPlayer => {
+          
+          const playerIndex =
+            tournament.tournament_players.findIndex(
+              player =>
+                String(player.id) ===
+                String(updatedPlayer.id)
+            );
+          
+          if (playerIndex !== -1) {
+            tournament.tournament_players[
+              playerIndex
+            ] = updatedPlayer;
+          }
+          
+        }
+      );
+      
+    }
+    
+    const cached =
+      myTournaments.find(
+        t =>
+          String(t.id) ===
+          String(tournament.id)
+      );
     
     if (cached) {
-      cached.matches = result.matches;
-      cached.table = result.table;
-      cached.prevRanks = result.prevRanks;
-      cached.records = result.records;
-      cached.matchSubmissions = result.matchSubmissions;
+      
+      cached.table =
+        tournament.table;
+      
+      cached.prevRanks =
+        tournament.prevRanks;
+      
+      cached.records =
+        tournament.records;
+      
+      cached.matchSubmissions =
+        tournament.matchSubmissions;
+      
+      if (
+        Array.isArray(
+          result.players
+        ) &&
+        Array.isArray(
+          cached.tournament_players
+        )
+      ) {
+        
+        result.players.forEach(
+          updatedPlayer => {
+            
+            const playerIndex =
+              cached.tournament_players.findIndex(
+                player =>
+                  String(player.id) ===
+                  String(updatedPlayer.id)
+              );
+            
+            if (playerIndex !== -1) {
+              cached.tournament_players[
+                playerIndex
+              ] = updatedPlayer;
+            }
+            
+          }
+        );
+        
+      }
+      
     }
     
     closeReviewModal();
     
-    renderFixtures();
-    renderTable(tournament.table);
+    await renderFixtures();
     
-    if (typeof renderRecords === "function") {
+    renderTable(
+      tournament.table
+    );
+    
+    if (
+      typeof renderRecords ===
+      "function"
+    ) {
       renderRecords();
     }
     
@@ -692,7 +810,9 @@ async function approveSubmission() {
     
   } catch (err) {
     
-    showAlert(err.message);
+    showAlert(
+      err.message
+    );
     
   } finally {
     
@@ -702,14 +822,18 @@ async function approveSubmission() {
   
 }
 
+
 async function rejectSubmission() {
   
   if (!currentReviewSubmission) return;
   
   const reason =
-    document.getElementById(
-      "reviewModalRejectReason"
-    ).value.trim();
+    document
+      .getElementById(
+        "reviewModalRejectReason"
+      )
+      .value
+      .trim();
   
   if (!reason) {
     return showAlert(
@@ -717,45 +841,72 @@ async function rejectSubmission() {
     );
   }
   
-  const tournament = getCurrentTournament();
+  const tournament =
+    getCurrentTournament();
   
   showLoader();
   
   try {
     
-    const result = await reviewMatchSubmission(
-      tournament.id,
-      currentReviewSubmission.id,
-      "rejected",
-      reason
-    );
+    const result =
+      await reviewMatchSubmission(
+        tournament.id,
+        currentReviewSubmission.id,
+        "rejected",
+        reason
+      );
     
+    const matchIndex =
+      fixtures.findIndex(
+        match =>
+          String(match.id) ===
+          String(
+            currentReviewSubmission.match_id
+          )
+      );
     
-    tournament.matches = result.matches;
-    tournament.table = result.table;
-    tournament.prevRanks = result.prevRanks;
-    tournament.records = result.records;
-    tournament.matchSubmissions = result.matchSubmissions;
+    if (matchIndex !== -1) {
+      
+      fixtures[matchIndex] = {
+        ...fixtures[matchIndex],
+        submission_status:
+          "rejected"
+      };
+      
+    }
     
+    tournament.matchSubmissions =
+      result.matchSubmissions ||
+      tournament.matchSubmissions;
     
-    const cached = myTournaments.find(
-      t => String(t.id) === String(tournament.id)
-    );
+    const cached =
+      myTournaments.find(
+        t =>
+          String(t.id) ===
+          String(tournament.id)
+      );
     
     if (cached) {
-      cached.matches = result.matches;
-      cached.table = result.table;
-      cached.prevRanks = result.prevRanks;
-      cached.records = result.records;
-      cached.matchSubmissions = result.matchSubmissions;
+      cached.matchSubmissions =
+        tournament.matchSubmissions;
     }
     
     closeReviewModal();
+    
     await renderFixtures();
     
-    renderTable(tournament.table);
+    if (
+      tournament.table
+    ) {
+      renderTable(
+        tournament.table
+      );
+    }
     
-    if (typeof renderRecords === "function") {
+    if (
+      typeof renderRecords ===
+      "function"
+    ) {
       renderRecords();
     }
     
@@ -766,7 +917,9 @@ async function rejectSubmission() {
     
   } catch (err) {
     
-    showAlert(err.message);
+    showAlert(
+      err.message
+    );
     
   } finally {
     

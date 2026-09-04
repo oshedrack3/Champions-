@@ -635,33 +635,72 @@ async function sendMatchSubmission() {
     return;
   }
   
-  const homeGoals = Number(document.getElementById("homeGoals").value);
-  const awayGoals = Number(document.getElementById("awayGoals").value);
+  const homeGoals =
+    Number(
+      document.getElementById("homeGoals").value
+    );
   
-  if (isNaN(homeGoals) || isNaN(awayGoals)) {
-    return showAlert("Enter both scores.");
+  const awayGoals =
+    Number(
+      document.getElementById("awayGoals").value
+    );
+  
+  if (
+    isNaN(homeGoals) ||
+    isNaN(awayGoals)
+  ) {
+    return showAlert(
+      "Enter both scores."
+    );
   }
   
   const file =
-    document.getElementById("matchScreenshot").files[0];
+    document
+      .getElementById("matchScreenshot")
+      .files[0];
   
   if (!file) {
-    return showAlert("Please upload a match screenshot.");
+    return showAlert(
+      "Please upload a match screenshot."
+    );
   }
   
   showLoader();
   
   try {
-    
-    const screenshot = await fileToBase64(file);
+    const screenshot =
+      await fileToBase64(file);
     
     await submitMatchResult({
-      tournamentId: tournament.id,
-      matchId: currentMatch.id,
+      tournamentId:
+        tournament.id,
+      matchId:
+        currentMatch.id,
       homeGoals,
       awayGoals,
       screenshot
     });
+    
+    const matchIndex =
+      fixtures.findIndex(
+        match =>
+          String(match.id) ===
+          String(currentMatch.id)
+      );
+    
+    if (matchIndex !== -1) {
+      fixtures[matchIndex] = {
+        ...fixtures[matchIndex],
+        submission_status:
+          "pending"
+      };
+    }
+    
+    currentMatch = {
+      ...currentMatch,
+      submission_status:
+        "pending"
+    };
     
     closeResultRecord();
     
@@ -669,21 +708,22 @@ async function sendMatchSubmission() {
       "Result submitted for admin approval.",
       "success"
     );
-    await refreshCurrentTournament();
+    
     await renderFixtures();
     
   } catch (err) {
     
     console.error(err);
     
-    showAlert(err.message);
+    showAlert(
+      err.message
+    );
     
   } finally {
     
     hideLoader();
     
   }
-  
 }
 
 async function invitePlayer(username) {
@@ -1474,12 +1514,61 @@ async function joinTournament(tournamentId) {
       );
     }
     
+    const updatedPlayers =
+      Array.isArray(result.players) ?
+      result.players :
+      [];
+    
+    const tournament =
+      getCurrentTournament();
+    
+    if (
+      tournament &&
+      String(tournament.id) ===
+      String(tournamentId)
+    ) {
+      if (
+        !Array.isArray(
+          tournament.tournament_players
+        )
+      ) {
+        tournament.tournament_players = [];
+      }
+      
+      const existingPlayers =
+        new Map(
+          tournament.tournament_players.map(
+            player => [
+              String(player.team_id),
+              player
+            ]
+          )
+        );
+      
+      updatedPlayers.forEach(
+        player => {
+          existingPlayers.set(
+            String(player.team_id),
+            player
+          );
+        }
+      );
+      
+      tournament.tournament_players =
+        Array.from(
+          existingPlayers.values()
+        );
+      
+      tableCache = null;
+      cachedTournamentId = null;
+      
+      await rebuildTableFromMatches();
+    }
+    
     showActionModal(
       "Successfully joined tournament",
       "success"
     );
-    
-    await loadPublicTournaments();
     
   } catch (err) {
     console.error(
@@ -2383,6 +2472,7 @@ function closeUpdateProfile() {
     "true"
   );
 }
+
 function openUpdateProfile() {
   const modal =
     document.getElementById(
@@ -2503,8 +2593,7 @@ async function saveUpdatedProfile() {
   const currentProfile =
     cachedProfile &&
     typeof cachedProfile === "object" ?
-    cachedProfile :
-    {};
+    cachedProfile : {};
   const currentUsername =
     String(
       currentProfile.username ||
@@ -2645,4 +2734,4 @@ async function saveUpdatedProfile() {
     saveButton.textContent =
       "Save Changes";
   }
-} 
+}
