@@ -2296,30 +2296,32 @@ function animateNotificationBell() {
   
 }
 
-function getSortedCompetitions(competitions) {
-  return [...competitions].sort((a, b) => {
-    const timeA = new Date(
-      a.createdAt || a.dateCreated || a.timestamp || 0
-    ).getTime();
-    
-    const timeB = new Date(
-      b.createdAt || b.dateCreated || b.timestamp || 0
-    ).getTime();
-    
-    return timeA - timeB;
-  });
+function getSortedCompetitions(
+  competitions
+) {
+  return [...competitions].sort(
+    (a, b) =>
+    Number(a.created_at || 0) -
+    Number(b.created_at || 0)
+  );
 }
-
 async function renderCompetitionList() {
-  const container = document.getElementById("competitionList");
+  const container =
+    document.getElementById(
+      "competitionList"
+    );
   if (!container) return;
-  
-  const currentUser = getCurrentUser();
-  const competitions = getSortedCompetitions(myCompetitions || []);
-  
+  const currentUser =
+    getCurrentUser();
+  const competitions =
+    getSortedCompetitions(
+      myCompetitions || []
+    );
   container.innerHTML = "";
-  
-  if (!competitions || competitions.length === 0) {
+  if (
+    !competitions ||
+    competitions.length === 0
+  ) {
     container.innerHTML = `
       <p class="emptyText">
         No competitions available
@@ -2333,12 +2335,19 @@ async function renderCompetitionList() {
     `;
     return;
   }
-  
-  competitions.forEach(competition => {
-    const card = createCompetitionCard(competition);
-    container.appendChild(card);
-  });
+  competitions.forEach(
+    competition => {
+      const card =
+        createCompetitionCard(
+          competition
+        );
+      container.appendChild(
+        card
+      );
+    }
+  );
 }
+
 
 function getCompetitionTournamentCount(competition) {
   return competition.tournament_count ?? 0;
