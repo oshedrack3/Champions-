@@ -1,6 +1,10 @@
+let pairingModalMode = null;
+let pairingModalData = null;
 let APP_MODE = "view";
 let myCompetitions = [];
 let currentCompetition = null;
+myTournaments = null;
+let currentKnockoutRoundIndex = 1;
 const STORE = "tournaments";
 let noticeScrollTimer = null;
 let noticeScrollIndex = 0;
@@ -28,7 +32,7 @@ let tournamentEvents = null;
 let notificationEvents = null;
 let notifications = [];
 let selectedCompetitionId = null;
-let myTournaments = null;
+
 let editingCompetitionId = null;
 let publicTournaments = [];
 let editingTeamId = null;
@@ -38,7 +42,6 @@ let fixtures = [];
 let fixturesLoaded = false;
 let fixturesTournamentId = null;
 
-let currentKnockoutRoundIndex = 1;
 let TournamentListStyle = "row";
 const FetchGuard = {};
 
@@ -496,7 +499,6 @@ async function handleSave(tournament, newName, oldName) {
   tournament.teamLogos = tournament.teamLogos || {};
   tournament.table = tournament.table || [];
   
-  // Update team names everywhere
   const updateMatches = (matches) => {
     if (!Array.isArray(matches)) return;
     
@@ -532,7 +534,7 @@ async function handleSave(tournament, newName, oldName) {
   updateMatches(tournament.knockoutMatches);
   
   
-  // Update table team name
+ 
   tournament.table.forEach(team => {
     if (team?.name === oldName) {
       team.name = newName;
@@ -540,7 +542,7 @@ async function handleSave(tournament, newName, oldName) {
   });
   
   
-  // Update logo key if team name changed
+
   if (
     oldName !== newName &&
     tournament.teamLogos[oldName]
@@ -2533,17 +2535,19 @@ async function handleSetScore() {
     closeResultRecord();
     return;
   }
-  
-  const hg = parseInt(
-    document.getElementById("homeGoals").value,
-    10
-  );
-  
-  const ag = parseInt(
-    document.getElementById("awayGoals").value,
-    10
-  );
-  
+
+  const hg =
+    parseInt(
+      document.getElementById("homeGoals").value,
+      10
+    );
+
+  const ag =
+    parseInt(
+      document.getElementById("awayGoals").value,
+      10
+    );
+
   if (
     !currentMatch.home_team_id ||
     !currentMatch.away_team_id ||
@@ -2552,130 +2556,61 @@ async function handleSetScore() {
     hg < 0 ||
     ag < 0
   ) {
-    showAlert("Invalid Team or Score input");
+    showAlert(
+      "Invalid Team or Score input"
+    );
     return;
   }
-  
+
   const tournament =
     getCurrentTournament();
-  
+
   if (!tournament) {
-    showAlert("Tournament not found.");
+    showAlert(
+      "Tournament not found."
+    );
     return;
   }
-  
-  await saveLeagueResult(
-    tournament,
+
+  await setMatchResult(
     currentMatch,
     hg,
     ag
   );
 }
 
-async function setMatchResult(match, hg, ag) {
+async function setMatchResult(
+  match,
+  hg,
+  ag
+) {
   const tournament =
     getCurrentTournament();
-  
+
   if (!tournament || !match) {
     return;
   }
-  
-  const homeGoals = Number(hg);
-  const awayGoals = Number(ag);
-  
+
+  const homeGoals =
+    Number(hg);
+
+  const awayGoals =
+    Number(ag);
+
   if (
     !Number.isInteger(homeGoals) ||
     !Number.isInteger(awayGoals) ||
     homeGoals < 0 ||
     awayGoals < 0
   ) {
+    showAlert(
+      "Invalid Team or Score input"
+    );
     return;
   }
-  
-  const groupMatch = (
-    tournament.groupMatches || []
-  ).find(
-    m =>
-    String(m.id) ===
-    String(match.id)
-  );
-  
-  if (groupMatch) {
-    groupMatch.home_score =
-      homeGoals;
-    
-    groupMatch.away_score =
-      awayGoals;
-    
-    groupMatch.played = true;
-    
-    if (!groupMatch.played_at) {
-      groupMatch.played_at =
-        Date.now();
-    }
-    
-    return await saveCupGroupResult(
-      tournament
-    );
-  }
-  
-  const knockoutMatch = (
-    tournament.knockoutMatches || []
-  ).find(
-    m =>
-    String(m.id) ===
-    String(match.id)
-  );
-  
-  if (knockoutMatch) {
-    knockoutMatch.home_score =
-      homeGoals;
-    
-    knockoutMatch.away_score =
-      awayGoals;
-    
-    knockoutMatch.played = true;
-    
-    if (!knockoutMatch.played_at) {
-      knockoutMatch.played_at =
-        Date.now();
-    }
-    
-    return await saveKnockoutResult(
-      tournament,
-      knockoutMatch
-    );
-  }
-  
-  const leagueMatch = (
-    tournament.matches || []
-  ).find(
-    m =>
-    String(m.id) ===
-    String(match.id)
-  );
-  
-  if (leagueMatch) {
-    return await saveLeagueResult(
-      tournament,
-      leagueMatch,
-      homeGoals,
-      awayGoals
-    );
-  }
-}
 
-async function saveLeagueResult(
-  tournament,
-  match,
-  homeGoals,
-  awayGoals
-) {
-  if (!tournament || !match || !match.id) {
-    return;
-  }
-  
   if (
+    !match.id ||
     !match.home_team_id ||
     !match.away_team_id
   ) {
@@ -2684,368 +2619,268 @@ async function saveLeagueResult(
     );
     return;
   }
-  
+
   showLoader();
-  
+
   try {
-    const response = await apiRequest(
-      `${API}/tournaments/${encodeURIComponent(
-        tournament.id
-      )}/matches/${encodeURIComponent(
-        match.id
-      )}/result`,
-      {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${getToken()}`
+    const response =
+      await apiRequest(
+        `${API}/tournaments/${encodeURIComponent(
+          tournament.id
+        )}/matches/${encodeURIComponent(
+          match.id
+        )}/result`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type":
+              "application/json",
+            Authorization:
+              `Bearer ${getToken()}`
+          },
+          body: JSON.stringify({
+            home_score: homeGoals,
+            away_score: awayGoals
+          })
         },
-        body: JSON.stringify({
-          home_score: Number(homeGoals),
-          away_score: Number(awayGoals)
-        })
-      },
-      () => saveLeagueResult(
-        tournament,
-        match,
-        homeGoals,
-        awayGoals
-      )
-    );
-    
+        () =>
+          setMatchResult(
+            match,
+            hg,
+            ag
+          )
+      );
+
     if (!response) {
       throw new Error(
         "No response from server."
       );
     }
-    
-    const data = await response.json();
-    
-    if (!response.ok || !data.success) {
+
+    const data =
+      await response.json();
+
+    if (
+      !response.ok ||
+      !data.success
+    ) {
       throw new Error(
         data.message ||
         "Failed to save match result."
       );
     }
-    
+
     const updatedMatch =
       data.match;
-    
+
     const updatedPlayers =
-      Array.isArray(data.players) ?
-      data.players : [];
-    
+      Array.isArray(data.players)
+        ? data.players
+        : [];
+
     if (updatedMatch) {
-      const matchIndex =
-        (tournament.matches || []).findIndex(
-          m =>
-          String(m.id) ===
-          String(updatedMatch.id)
+      const replaceMatch = array => {
+        if (!Array.isArray(array)) {
+          return;
+        }
+
+        const index =
+          array.findIndex(
+            item =>
+              String(item.id) ===
+              String(updatedMatch.id)
+          );
+
+        if (index !== -1) {
+          array[index] =
+            updatedMatch;
+        }
+      };
+
+      replaceMatch(
+        tournament.matches
+      );
+
+      replaceMatch(
+        tournament.groupMatches
+      );
+
+      replaceMatch(
+        tournament.knockoutMatches
+      );
+
+      replaceMatch(
+        tournament.thirdPlaceMatch
+      );
+
+      const fixtureIndex =
+        fixtures.findIndex(
+          item =>
+            String(item.id) ===
+            String(updatedMatch.id)
         );
-      
-      if (matchIndex !== -1) {
-        tournament.matches[matchIndex] =
-          updatedMatch;
+
+      if (fixtureIndex !== -1) {
+        fixtures[fixtureIndex] = {
+          ...fixtures[fixtureIndex],
+          ...updatedMatch,
+          homeGoals:
+            updatedMatch.home_score,
+          awayGoals:
+            updatedMatch.away_score,
+          played:
+            Number(
+              updatedMatch.played
+            ) === 1,
+          playedAt:
+            updatedMatch.played_at,
+          scheduledAt:
+            updatedMatch.scheduled_at
+        };
       }
     }
-    
+
     if (
       Array.isArray(
         tournament.tournament_players
       )
     ) {
-      for (const player of updatedPlayers) {
-        const playerIndex =
+      for (
+        const player of updatedPlayers
+      ) {
+        const index =
           tournament.tournament_players.findIndex(
-            p =>
-            String(p.id) ===
-            String(player.id)
+            item =>
+              String(item.id) ===
+              String(player.id)
           );
-        
-        if (playerIndex !== -1) {
+
+        if (index !== -1) {
           tournament.tournament_players[
-            playerIndex
+            index
           ] = player;
         }
       }
     }
-    
+
     const cached =
       myTournaments.find(
-        t =>
-        String(t.id) ===
-        String(tournament.id)
+        item =>
+          String(item.id) ===
+          String(tournament.id)
       );
-    
+
     if (cached) {
-      cached.matches =
-        tournament.matches;
-      
-      cached.tournament_players =
-        tournament.tournament_players;
+      if (
+        Array.isArray(
+          tournament.matches
+        )
+      ) {
+        cached.matches =
+          tournament.matches;
+      }
+
+      if (
+        Array.isArray(
+          tournament.groupMatches
+        )
+      ) {
+        cached.groupMatches =
+          tournament.groupMatches;
+      }
+
+      if (
+        Array.isArray(
+          tournament.knockoutMatches
+        )
+      ) {
+        cached.knockoutMatches =
+          tournament.knockoutMatches;
+      }
+
+      if (
+        Array.isArray(
+          tournament.tournament_players
+        )
+      ) {
+        cached.tournament_players =
+          tournament.tournament_players;
+      }
     }
-    
+
+    tableCache = null;
+    cachedTournamentId = null;
+
+    fixturesLoaded = false;
+    fixturesTournamentId = null;
+    fixtures = [];
+
     const table =
       buildTableFromTournamentPlayers(
         tournament
       );
-    
+
     tournament.table =
       table;
-    
+
     if (cached) {
       cached.table =
         table;
     }
-    fixturesLoaded = false;
-  fixturesTournamentId = null;
-  fixtures = [];
-    renderFixtures();
-    renderTable(table);
-    
+
+    await loadTournamentFixtures(
+      tournament.id
+    );
+
+    if (
+      tournament.type === "cup" ||
+      tournament.format === "cup"
+    ) {
+      await renderCupFixtures();
+      await renderCupTables();
+
+      if (
+        typeof renderFullBracket ===
+        "function"
+      ) {
+        await renderFullBracket();
+      }
+    } else {
+      renderFixtures();
+      renderTable(table);
+    }
+
     if (
       typeof renderRecords ===
       "function"
     ) {
       renderRecords();
     }
-    
+
     closeResultRecord();
-    
+
     showActionModal(
       "Result Saved",
       "success"
     );
-    
+
     return data;
-    
+
   } catch (error) {
     console.error(
-      "Error saving league result:",
+      "Error saving match result:",
       error
     );
-    
+
     showAlert(
       error.message ||
       "Failed to save match result."
     );
-    
+
   } finally {
     hideLoader();
   }
 }
-
-async function saveCupGroupResult(tournament) {
-  if (!tournament) return;
-  
-  generateGroupTables(tournament);
-  
-  showLoader();
-  
-  try {
-    await updateTournament(
-      tournament.id,
-      {
-        updates: {
-          groupMatches: tournament.groupMatches,
-          groupTables: tournament.groupTables
-        }
-      }
-    );
-    
-    const cached = myTournaments.find(
-      t =>
-      String(t.id) ===
-      String(tournament.id)
-    );
-    
-    if (cached) {
-      cached.groupMatches = [
-        ...(tournament.groupMatches || [])
-      ];
-      
-      cached.groupTables = {
-        ...(tournament.groupTables || {})
-      };
-    }
-    
-    renderCupFixtures();
-    renderCupTables();
-    checkForEndOfGroupstage();
-    showActionModal(
-      "Result Saved",
-      "success"
-    );
-    
-  } catch (err) {
-    console.error(
-      "Error saving cup group result:",
-      err
-    );
-  } finally {
-    hideLoader();
-  }
-}
-
-function processKnockoutUpdate(match, tournament) {
-  if (
-    !match ||
-    !tournament?.knockoutMatches?.length
-  ) {
-    return;
-  }
-  
-  if (!match.played) {
-    return;
-  }
-  
-  const homeGoals =
-    Number(match.homeGoals);
-  
-  const awayGoals =
-    Number(match.awayGoals);
-  
-  if (
-    !Number.isFinite(homeGoals) ||
-    !Number.isFinite(awayGoals)
-  ) {
-    return;
-  }
-  
-  if (homeGoals === awayGoals) {
-    return;
-  }
-  
-  const winner =
-    homeGoals > awayGoals ?
-    match.home :
-    match.away;
-  
-  const winnerName =
-    typeof winner === "string" ?
-    winner :
-    winner?.name;
-  
-  if (!winnerName) {
-    return;
-  }
-  
-  match.winner = winnerName;
-  
-  const finalRound =
-    Math.max(
-      ...tournament.knockoutMatches.map(
-        m =>
-        Number(m.roundIndex) || 0
-      )
-    );
-  
-  if (
-    Number(match.roundIndex) ===
-    finalRound
-  ) {
-    tournament.champion =
-      winnerName;
-    
-    tournament.championName =
-      winnerName;
-    
-    return;
-  }
-  
-  const nextRound =
-    Number(match.roundIndex) + 1;
-  
-  const nextSlot =
-    Math.floor(
-      Number(match.slot) / 2
-    );
-  
-  const nextMatch =
-    tournament.knockoutMatches.find(
-      m =>
-      Number(m.roundIndex) ===
-      nextRound &&
-      Number(m.slot) ===
-      nextSlot
-    );
-  
-  if (!nextMatch) {
-    throw new Error(
-      `Next knockout match not found for ${match.id}`
-    );
-  }
-  
-  const winnerGoesHome =
-    Number(match.slot) % 2 === 0;
-  
-  if (winnerGoesHome) {
-    nextMatch.home =
-      winnerName;
-  } else {
-    nextMatch.away =
-      winnerName;
-  }
-  
-  nextMatch.homeGoals = null;
-  nextMatch.awayGoals = null;
-  nextMatch.played = false;
-  nextMatch.playedAt = null;
-  nextMatch.winner = null;
-}
-
-async function saveKnockoutResult(
-  tournament,
-  match
-) {
-  processKnockoutUpdate(
-    match,
-    tournament
-  );
-  
-  showLoader();
-  
-  try {
-    await updateTournament(
-      tournament.id,
-      {
-        updates: {
-          knockoutMatches: tournament.knockoutMatches
-        }
-      }
-    );
-    
-    const cached =
-      myTournaments.find(
-        t =>
-        String(t.id) ===
-        String(tournament.id)
-      );
-    
-    if (cached) {
-      cached.knockoutMatches =
-        tournament.knockoutMatches;
-    }
-    
-    closeResultRecord();
-    
-    await renderFullBracket();
-    
-    showActionModal(
-      "Result Saved",
-      "success"
-    );
-    
-  } catch (err) {
-    console.error(
-      "Error saving knockout result:",
-      err
-    );
-  } finally {
-    hideLoader();
-  }
-}
-
 
 function getStableMatchOrder(matches) {
   return [...matches]

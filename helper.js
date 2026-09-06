@@ -656,6 +656,11 @@ const menuConfig = {
     */
   ],
   bracket: [
+    {
+  label: "Join Tournament",
+  action: "joinTour",
+  roles: ["admin", "player"]
+},
     
     {
       label: "Share Bracket",
@@ -672,7 +677,7 @@ const menuConfig = {
     {
       label: "See Cup Fixtures",
       action: "toggleBracketFixture",
-      roles: ["admin", "player"]
+      roles: ["admin"]
     },
     
     {
@@ -2123,55 +2128,32 @@ function toggleCupSetUpView() {
 }
 
 
-function shouldOpenKnockoutDirectly() {
-  const tournament = getCurrentTournament();
-  const currentUser = getCurrentUser();
-  
-  if (!tournament || !currentUser) return false;
-  if (currentUser.role !== "player") return false;
-  
-  const hasGroupMatches =
-    tournament.groupMatches &&
-    (
-      Array.isArray(tournament.groupMatches) ?
-      tournament.groupMatches.length > 0 :
-      Object.keys(tournament.groupMatches).length > 0
-    );
-  
-  const hasKnockoutMatches =
-    tournament.knockoutMatches &&
-    (
-      Array.isArray(tournament.knockoutMatches) ?
-      tournament.knockoutMatches.length > 0 :
-      Object.keys(tournament.knockoutMatches).length > 0
-    );
-  
-  return !hasGroupMatches && hasKnockoutMatches;
-}
+
 
 
 function shouldOpenKnockoutDirectly() {
-  const tournament = getCurrentTournament();
-  const currentUser = getCurrentUser();
-  
-  if (!tournament || !currentUser) return false;
-  
-  const hasGroupMatches =
-    Array.isArray(tournament.groupMatches) ?
-    tournament.groupMatches.length > 0 :
-    tournament.groupMatches &&
-    Object.keys(tournament.groupMatches).length > 0;
-  
-  const hasKnockoutMatches =
-    Array.isArray(tournament.knockoutMatches) ?
-    tournament.knockoutMatches.length > 0 :
-    tournament.knockoutMatches &&
-    Object.keys(tournament.knockoutMatches).length > 0;
-  
-  return currentUser.role === "player" &&
-    !hasGroupMatches &&
-    hasKnockoutMatches;
+  const tournament =
+    getCurrentTournament();
+  const currentUser =
+    getCurrentUser();
+  if (
+    !tournament ||
+    !currentUser
+  ) {
+    return false;
+  }
+  if (
+    currentUser.role !==
+    "player"
+  ) {
+    return false;
+  }
+  return (
+    tournament.settings?.enableGroups !==
+    true
+  );
 }
+
 
 function goToCupPage() {
   document.getElementById("listOfTournamentPage").style.display = "none";
@@ -2192,14 +2174,13 @@ function goToCupPage() {
     return;
   }
   
-  const tournament = getCurrentTournament();
-  
-  if (tournament) {
-    renderCupTables();
-    renderCupFixtures();
+ 
     toggleCupView("tables");
-  }
+  
 }
+
+
+
 
 function openSubmissionDeadlineModal() {
   const tournament = getCurrentTournament();

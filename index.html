@@ -289,71 +289,323 @@
       
       <!-- Cup Page -->
       <section id="cupPage" style="display:none">
-        
-        
-        <!-- SETUP BOX -->
-        <div id="cupBox" style="display:none">
-          
-          <div id="cupTeamView" style="display:none">
-            <div id="cupTeamsContainer">
-              
-            </div>
-          </div>
-          
-          <!-- GROUP STAGE CARD -->
-          <div id="setUpCard">
-            <div class="stageCard">
-              <div class="stageHeader">
-                <label>
-                  <input type="checkbox" id="enableGroups" onchange="toggleGroupSettings()">Enable Group Stage
-                </label>
-              </div>
-              
-              <div id="groupOptions" style="display:none;">
-                <label for="teamsPerGroup">Teams Per Group</label>
-                <select id="teamsPerGroup">
-                  <option value="2">2 Teams</option>
-                  <option value="3">3 Teams</option>
-                  <option value="4" selected>4 Teams</option>
-                  <option value="5">5 Teams</option>
-                  <option value="6">6 Teams</option>
-                  <option value="7">7 Teams</option>
-                  <option value="8">8 Teams</option>
-                  <option value="9">9 Teams</option>
-                  <option value="10">10 Teams</option>
-                  <option value="11">11 Teams</option>
-                  <option value="12">12 Teams</option>
-                </select>
-                
-                <label for="teamsQualify">Teams Qualifying</label>
-                <select id="teamsQualify">
-                
-                  <option value="2" selected>Top 2</option>
-                </select>
-              </div>
-            </div>
-            
-            <!-- KNOCKOUT CARD -->
-            <div class="stageCard">
-              <h3>Knockout Stage</h3>
-              <label for="knockoutRound">Start From</label>
-              <select id="knockoutRound">
-                <option value="16">Round of 16</option>
-                <option value="8" selected>Quarter Final</option>
-                <option value="4">Semi Final</option>
-                <option value="2">Final</option>
-              </select>
-            </div>
-            
-            <!-- ACTIONS -->
-            <div class="cupActions">
-              <button class="btn-create" onclick="generateTournament()"> Create</button>
-            </div>
-            
-          </div>
+<!-- SETUP BOX -->
+<div id="cupBox" style="display:none">
+
+  <div id="cupTeamView" style="display:none">
+    <div id="cupTeamsContainer"></div>
+  </div>
+
+  <div id="setUpCard">
+
+    <div class="stageCard">
+
+      <h3>Tournament Stage</h3>
+
+      <label for="tournamentStartFrom">
+        Start From
+      </label>
+
+      <select
+        id="tournamentStartFrom"
+        onchange="toggleGroupSettings()"
+      >
+        <option value="group" selected>
+          Group Stage
+        </option>
+
+        <option value="32">
+          Round of 32
+        </option>
+
+        <option value="16">
+          Round of 16
+        </option>
+
+        <option value="8">
+          Quarter Final
+        </option>
+
+        <option value="4">
+          Semi Final
+        </option>
+
+        <option value="2">
+          Final
+        </option>
+      </select>
+
+    </div>
+
+
+    <div
+      class="stageCard"
+      id="groupStageCard"
+    >
+
+      <div class="stageHeader">
+
+        <label>
+          <input
+            type="checkbox"
+            id="enableGroups"
+            onchange="toggleGroupSettings()"
+          >
+
+          Enable Group Stage
+        </label>
+
+      </div>
+
+
+      <div
+        id="groupOptions"
+        style="display:none;"
+      >
+
+        <label for="groupingMode">
+          Group Assignment
+        </label>
+
+        <select
+          id="groupingMode"
+          onchange="handleGroupingModeChange()"
+        >
+
+          <option
+            value="auto"
+            selected
+          >
+            Automatic
+          </option>
+
+          <option value="manual">
+            Manual
+          </option>
+
+        </select>
+
+
+        <label for="teamsPerGroup">
+          Teams Per Group
+        </label>
+
+        <select id="teamsPerGroup">
+
+          <option value="2">
+            2 Teams
+          </option>
+
+          <option value="3">
+            3 Teams
+          </option>
+
+          <option
+            value="4"
+            selected
+          >
+            4 Teams
+          </option>
+
+          <option value="5">
+            5 Teams
+          </option>
+
+          <option value="6">
+            6 Teams
+          </option>
+
+          <option value="7">
+            7 Teams
+          </option>
+
+          <option value="8">
+            8 Teams
+          </option>
+
+          <option value="9">
+            9 Teams
+          </option>
+
+          <option value="10">
+            10 Teams
+          </option>
+
+          <option value="11">
+            11 Teams
+          </option>
+
+          <option value="12">
+            12 Teams
+          </option>
+
+        </select>
+
+
+        <label for="teamsQualify">
+          Teams Qualifying Per Group
+        </label>
+
+        <select id="teamsQualify">
+
+          <option value="1">
+            Top 1
+          </option>
+
+          <option
+            value="2"
+            selected
+          >
+            Top 2
+          </option>
+
+          <option value="3">
+            Top 3
+          </option>
+
+          <option value="4">
+            Top 4
+          </option>
+
+        </select>
+
+
+        <label for="groupRoundMode">
+          Group Matches
+        </label>
+
+        <select id="groupRoundMode">
+
+          <option
+            value="single"
+            selected
+          >
+            Single Round
+          </option>
+
+          <option value="double">
+            Double Round
+          </option>
+
+        </select>
+
+
+        <div
+          id="manualGroupOptions"
+          style="display:none;"
+        >
+
+          <button
+            type="button"
+            class="btn-secondary"
+            onclick="openManualGroupSetup()"
+          >
+            Assign Teams to Groups
+          </button>
+
         </div>
-        </div>
-        
+
+      </div>
+
+    </div>
+
+
+    <div class="stageCard">
+
+      <h3>Knockout Stage</h3>
+
+
+      <label for="knockoutPairingMode">
+        First Round Pairing
+      </label>
+
+      <select
+        id="knockoutPairingMode"
+        onchange="handleKnockoutPairingModeChange()"
+      >
+
+        <option
+          value="auto"
+          selected
+        >
+          Automatic
+        </option>
+
+        <option value="manual">
+          Manual
+        </option>
+
+      </select>
+
+
+      <div
+        id="manualKnockoutOptions"
+        style="display:none;"
+      >
+
+        <button
+          type="button"
+          class="btn-secondary"
+          onclick="openManualKnockoutSetup()"
+        >
+          Set First Round Pairings
+        </button>
+
+      </div>
+
+
+      <label for="knockoutRoundMode">
+        Knockout Matches
+      </label>
+
+      <select id="knockoutRoundMode">
+
+        <option
+          value="single"
+          selected
+        >
+          Single Match
+        </option>
+
+        <option value="double">
+          Two Legs
+        </option>
+
+      </select>
+
+
+      <label>
+
+        <input
+          type="checkbox"
+          id="thirdPlaceMatch"
+        >
+
+        Third-Place Match
+
+      </label>
+
+    </div>
+
+
+    <div class="cupActions">
+
+      <button
+        type="button"
+        class="btn-create"
+        onclick="generateTournament()"
+      >
+        Create
+      </button>
+
+    </div>
+
+  </div>
+
+</div>
+
+
+            
         <!-- CUP SCHEDULE & NAVIGATION -->
         <div id="cupSchedule" style="display:none">
           
@@ -365,9 +617,11 @@
         <!-- FULL BRACKET VIEW -->
         <div id="knockOut" style="display:none">
           
-          <div id="bracketViewport" style="display:">
+          <div id="bracketViewport">
             <div id="bracket-container"></div>
           </div>
+            <div id="bracketTeamLists"></div>
+  </div>
           
           <div id="bracketFixturesView">
             <div id="knockOutFixtureList">
@@ -381,6 +635,7 @@
         
         
         
+      
       </section>
       
       
@@ -1742,6 +1997,58 @@
     </div>
   </div>
 </div>
+
+<div
+  id="tmPairingModal"
+  class="tm-pairing-modal-overlay"
+  style="display:none;"
+>
+  <div class="tm-pairing-modal">
+
+    <div class="tm-pairing-header">
+
+      <h3 id="tmPairingModalTitle">
+        Manual Pairing
+      </h3>
+
+      <button
+        type="button"
+        class="tm-pairing-close"
+        onclick="closePairingModal()"
+      >
+        ×
+      </button>
+
+    </div>
+
+    <div
+      id="tmPairingModalContent"
+      class="tm-pairing-content"
+    ></div>
+
+    <div class="tm-pairing-actions">
+
+      <button
+        type="button"
+        class="tm-pairing-cancel"
+        onclick="closePairingModal()"
+      >
+        Cancel
+      </button>
+
+      <button
+        type="button"
+        class="tm-pairing-save"
+        onclick="savePairingModal()"
+      >
+        Save
+      </button>
+
+    </div>
+
+  </div>
+</div>
+
   
   <script src="storage.js"></script>
   <script src="league.js"></script>

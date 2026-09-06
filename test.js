@@ -28,8 +28,8 @@ async function renderFixtures() {
       tournament.id
     );
     checkSubmissionAlerts(
-  tournament
-);
+      tournament
+    );
     
     toggleRoundCarousel(
       search
@@ -930,144 +930,6 @@ function attachKnockoutFixtureLogo(
 }
 
 
-function toggleBracketMode(mode) {
-  document
-    .querySelectorAll(".bracketTopActions .bracket-tab")
-    .forEach(btn => btn.classList.remove("active"));
-  
-  const bracketView = document.getElementById("bracketViewport");
-  const fixturesView = document.getElementById("bracketFixturesView");
-  
-  if (mode === "bracket") {
-    bracketView.style.display = "block";
-    fixturesView.style.display = "none";
-    
-    renderFullBracket();
-    
-    const tabs = document.querySelectorAll(".bracketTopActions .bracket-tab");
-    if (tabs[1]) tabs[1].classList.add("active");
-  }
-  
-  else {
-    bracketView.style.display = "none";
-    fixturesView.style.display = "block";
-    
-    renderKnockoutFixtures();
-    
-    const tabs = document.querySelectorAll(".bracketTopActions .bracket-tab");
-    if (tabs[0]) tabs[0].classList.add("active");
-  }
-}
-
-
-function enableKnockoutSwipe() {
-  const container = document.getElementById("knockOutFixtureList");
-  if (!container) return;
-  
-  let startX = 0;
-  let endX = 0;
-  
-  container.addEventListener("touchstart", e => {
-    startX = e.changedTouches[0].screenX;
-  });
-  
-  container.addEventListener("touchend", e => {
-    endX = e.changedTouches[0].screenX;
-    handleSwipe();
-  });
-  
-  function handleSwipe() {
-    const diff = startX - endX;
-    const threshold = 50;
-    
-    const tournament = getCurrentTournament();
-    const maxRounds = Math.max(
-      ...tournament.knockoutMatches.map(m => m.roundIndex || 1)
-    );
-    
-    
-    if (diff > threshold && currentKnockoutRoundIndex < maxRounds) {
-      renderKnockoutFixtures(currentKnockoutRoundIndex + 1);
-    }
-    
-    
-    if (diff < -threshold && currentKnockoutRoundIndex > 1) {
-      renderKnockoutFixtures(currentKnockoutRoundIndex - 1);
-    }
-  }
-}
-
-
-function shareKnockoutFixtures() {
-  closeMenu();
-  const element = document.getElementById('knockOutFixtureList');
-  const titleText = document.getElementById('roundLabel')?.textContent || 'Knockout Fixtures';
-  const fileName = titleText.replace(/\s/g, '-');
-  
-  if (!element) {
-    showAlert('Knockout fixture list not found!');
-    return;
-  }
-  
-  const options = {
-    backgroundColor: '#0d1117',
-    useCORS: true,
-    allowTaint: true,
-    logging: false,
-    imageTimeout: 0,
-    scale: Math.min(4, window.devicePixelRatio * 2),
-    width: element.scrollWidth,
-    height: element.scrollHeight,
-    scrollX: 0,
-    scrollY: 0,
-    
-    onclone: (doc) => {
-      const cloned = doc.getElementById('knockOutFixtureList');
-      if (cloned) {
-        cloned.style.background = '#0d1117';
-        cloned.style.overflow = 'visible';
-        cloned.style.height = 'auto';
-        cloned.style.width = '100%';
-        
-        cloned.querySelectorAll('*').forEach(el => {
-          el.style.webkitFontSmoothing = 'antialiased';
-          el.style.textRendering = 'geometricPrecision';
-        });
-      }
-    }
-  };
-  
-  html2canvas(element, options).then(canvas => {
-    canvas.toBlob(blob => {
-      if (!blob) {
-        show('Failed to process screenshot image.');
-        return;
-      }
-      
-      const file = new File(
-        [blob],
-        `knockout-${fileName}.png`, { type: 'image/png' }
-      );
-      
-      if (navigator.canShare && navigator.canShare({ files: [file] })) {
-        navigator.share({
-          files: [file],
-          title: titleText,
-          text: `Check out the latest ${titleText}!`
-        }).catch(err => console.log('Share dismissed', err));
-      } else {
-        const link = document.createElement('a');
-        link.download = `knockout-${fileName}.png`;
-        link.href = canvas.toDataURL('image/png');
-        link.click();
-      }
-    }, 'image/png');
-  }).catch(err => {
-    console.error(err);
-    showAlert('Could not take screenshot');
-  });
-}
-
 
 
 
@@ -1160,6 +1022,7 @@ function loadPOTConfig() {
   document.getElementById("mapCup").value = config.cup || "";
   document.getElementById("mapSuper").value = config.super || "";
 }
+
 
 
 
@@ -2316,224 +2179,7 @@ function previewTournamentImage(event) {
 
 
 
-async function renderTeams(
-  containerId = "teamList"
-) {
-  showLoader();
-  
-  try {
-    const container =
-      document.getElementById(
-        containerId
-      );
-    
-    if (!container) return;
-    
-    const tournament =
-      getCurrentTournament();
-    
-    if (!tournament) {
-      showAlert(
-        "No tournament selected"
-      );
-      return;
-    }
-    
-    const teams =
-      await loadTournamentTeams(
-        tournament.id
-      );
-    
-    container.className =
-      "CupTeamsContainer";
-    
-    container.innerHTML = "";
-    
-    const counterLabel =
-      document.getElementById(
-        "teamCount"
-      );
-    
-    const teamadded =
-      document.getElementById(
-        "teamsadded"
-      );
-    
-    if (counterLabel) {
-      counterLabel.textContent =
-        `Total Teams Register : ${teams.length}`;
-    }
-    
-    if (teamadded) {
-      teamadded.textContent =
-        teams.length;
-    }
-    
-    if (!teams.length) {
-      container.innerHTML =
-        "<p>No teams added yet</p>";
-      return;
-    }
-    
-    teams.forEach(team => {
-      const div =
-        document.createElement(
-          "div"
-        );
-      
-      div.className =
-        "team-card";
-      
-      div.innerHTML = `
-        <div class="team-swipe-wrapper">
-          <div class="team-actions">
-            <button
-              class="btn-edit data-admin"
-              onclick="openEditTeam('${team.id}')"
-            >
-              Edit
-            </button>
 
-            <button
-              class="btn-delete data-admin"
-              onclick="deleteTeam('${team.id}')"
-            >
-              Delete
-            </button>
-          </div>
-
-          <div class="team-content">
-            ${
-              team.logo
-                ? `
-                  <img
-                    class="team-logo"
-                    src="${team.logo}"
-                    alt="${team.name}"
-                  />
-                `
-                : `
-                  <div class="team-logo-placeholder">
-                    ?
-                  </div>
-                `
-            }
-
-            <span>${team.name}</span>
-          </div>
-        </div>
-      `;
-      
-      let startX = 0;
-      let currentX = 0;
-      let isSwiping = false;
-      
-      const content =
-        div.querySelector(
-          ".team-content"
-        );
-      
-      const start = x => {
-        startX = x;
-        currentX = x;
-        isSwiping = true;
-      };
-      
-      const move = x => {
-        if (!isSwiping) return;
-        
-        currentX = x;
-        
-        const diff =
-          currentX - startX;
-        
-        if (diff < 0) {
-          content.style.transform =
-            `translateX(${diff}px)`;
-        }
-      };
-      
-      const end = () => {
-        if (!isSwiping) return;
-        
-        isSwiping = false;
-        
-        const diff =
-          currentX - startX;
-        
-        content.style.transform =
-          diff < -80 ?
-          "translateX(-120px)" :
-          "translateX(0)";
-      };
-      
-      div.addEventListener(
-        "touchstart",
-        e =>
-        start(
-          e.touches[0].clientX
-        )
-      );
-      
-      div.addEventListener(
-        "mousedown",
-        e =>
-        start(
-          e.clientX
-        )
-      );
-      
-      div.addEventListener(
-        "touchmove",
-        e =>
-        move(
-          e.touches[0].clientX
-        )
-      );
-      
-      div.addEventListener(
-        "mousemove",
-        e =>
-        move(
-          e.clientX
-        )
-      );
-      
-      div.addEventListener(
-        "touchend",
-        end
-      );
-      
-      div.addEventListener(
-        "mouseup",
-        end
-      );
-      
-      div.addEventListener(
-        "mouseleave",
-        end
-      );
-      
-      container.appendChild(
-        div
-      );
-    });
-    
-  } catch (err) {
-    console.error(
-      "[renderTeams]",
-      err
-    );
-    
-    showAlert(
-      err.message ||
-      "Failed to load teams."
-    );
-    
-  } finally {
-    hideLoader();
-  }
-}
 
 function renderNotifications() {
   
@@ -3595,103 +3241,6 @@ async function deleteCompetition(competitionId) {
 
 
 
-async function renderTeams(containerId = "teamList") {
-  showLoader();
-  const container = document.getElementById(containerId);
-  if (!container) return;
-  
-  const current = getCurrentTournament();
-  if (!current) return;
-  
-  const latestTournaments = await getMyTournaments();
-  const tournament = latestTournaments.find(t => String(t.id) === String(current.id));
-  
-  if (!tournament) {
-    hideLoader();
-    return showAlert("Tournament not found");
-  }
-  
-  currentTournament = tournament;
-  const index = myTournaments.findIndex(t => String(t.id) === String(tournament.id));
-  if (index !== -1) myTournaments[index] = tournament;
-  
-  container.className = "CupTeamsContainer";
-  container.innerHTML = "";
-  
-  const counterLabel = document.getElementById("teamCount");
-  const teamadded = document.getElementById("teamsadded");
-  
-  let teamsObj = tournament.teams || {};
-  if (Array.isArray(teamsObj)) {
-    const converted = {};
-    teamsObj.forEach((oldName, i) => {
-      const id = `old_${i}`;
-      converted[id] = typeof oldName === "object" ? oldName : { id, name: oldName, logo: tournament.teamLogos?.[oldName] || null };
-    });
-    teamsObj = converted;
-  }
-  
-  const teams = Object.values(teamsObj);
-  
-  if (counterLabel) counterLabel.textContent = `Total Teams Register : ${teams.length}`;
-  if (teamadded) teamadded.textContent = teams.length;
-  
-  if (teams.length === 0) {
-    container.innerHTML = "<p>No teams added yet</p>";
-  }
-  
-  teams.forEach((team) => {
-    const div = document.createElement("div");
-    div.className = "team-card";
-    
-    div.innerHTML = `
-      <div class="team-swipe-wrapper">
-        <div class="team-actions">
-          <button class="btn-edit data-admin" onclick="openEditTeam('${team.id}')">Edit</button>
-          <button class="btn-delete data-admin" onclick="deleteTeam('${team.id}')">Delete</button>
-        </div>
-
-        <div class="team-content">
-          ${team.logo ? `<img class="team-logo" src="${team.logo}" alt="${team.name}" />` : `<div class="team-logo-placeholder">?</div>`}
-          <span>${team.name}</span>
-        </div>
-      </div>
-    `;
-    
-    let startX = 0,
-      currentX = 0,
-      isSwiping = false;
-    const content = div.querySelector(".team-content");
-    const start = (x) => {
-      startX = x;
-      currentX = x;
-      isSwiping = true;
-    };
-    const move = (x) => {
-      if (!isSwiping) return;
-      currentX = x;
-      const diff = currentX - startX;
-      if (diff < 0) content.style.transform = `translateX(${diff}px)`;
-    };
-    const end = () => {
-      if (!isSwiping) return;
-      isSwiping = false;
-      const diff = currentX - startX;
-      content.style.transform = diff < -80 ? "translateX(-120px)" : "translateX(0)";
-    };
-    div.addEventListener("touchstart", e => start(e.touches[0].clientX));
-    div.addEventListener("mousedown", e => start(e.clientX));
-    div.addEventListener("touchmove", e => move(e.touches[0].clientX));
-    div.addEventListener("mousemove", e => move(e.clientX));
-    div.addEventListener("touchend", end);
-    div.addEventListener("mouseup", end);
-    div.addEventListener("mouseleave", end);
-    
-    container.appendChild(div);
-  });
-  
-  hideLoader();
-}
 
 
 
@@ -3699,90 +3248,7 @@ async function renderTeams(containerId = "teamList") {
 
 
 
-function renderTeams(containerId = "teamList") {
-  const container = document.getElementById(containerId);
-  if (!container) return;
-  
-  const tournament = getCurrentTournament();
-  if (!tournament) return;
-  
-  container.className = "CupTeamsContainer";
-  container.innerHTML = "";
-  
-  const counterLabel = document.getElementById("teamCount");
-  const teamadded = document.getElementById("teamsadded");
-  
-  let teamsObj = tournament.teams || {};
-  if (Array.isArray(teamsObj)) {
-    const converted = {};
-    teamsObj.forEach((oldName, i) => {
-      const id = `old_${i}`;
-      converted[id] = typeof oldName === "object" ? oldName : { id, name: oldName, logo: tournament.teamLogos?.[oldName] || null };
-    });
-    teamsObj = converted;
-  }
-  
-  const teams = Object.values(teamsObj);
-  
-  if (counterLabel) counterLabel.textContent = `Total Teams Register : ${teams.length}`;
-  if (teamadded) teamadded.textContent = teams.length;
-  
-  if (teams.length === 0) {
-    container.innerHTML = "<p>No teams added yet</p>";
-    return;
-  }
-  
-  teams.forEach((team) => {
-    const div = document.createElement("div");
-    div.className = "team-card";
-    
-    div.innerHTML = `
-      <div class="team-swipe-wrapper">
-        <div class="team-actions">
-          <button class="btn-edit data-admin" onclick="openEditTeam('${team.id}')">Edit</button>
-          <button class="btn-delete data-admin" onclick="deleteTeam('${team.id}')">Delete</button>
-        </div>
 
-        <div class="team-content">
-          ${team.logo ? `<img class="team-logo" src="${team.logo}" alt="${team.name}" />` : `<div class="team-logo-placeholder">?</div>`}
-          <span>${team.name}</span>
-        </div>
-      </div>
-    `;
-    
-    let startX = 0,
-      currentX = 0,
-      isSwiping = false;
-    const content = div.querySelector(".team-content");
-    const start = (x) => {
-      startX = x;
-      currentX = x;
-      isSwiping = true;
-    };
-    const move = (x) => {
-      if (!isSwiping) return;
-      currentX = x;
-      const diff = currentX - startX;
-      if (diff < 0) content.style.transform = `translateX(${diff}px)`;
-    };
-    const end = () => {
-      if (!isSwiping) return;
-      isSwiping = false;
-      const diff = currentX - startX;
-      content.style.transform = diff < -80 ? "translateX(-120px)" : "translateX(0)";
-    };
-    
-    div.addEventListener("touchstart", e => start(e.touches[0].clientX));
-    div.addEventListener("mousedown", e => start(e.clientX));
-    div.addEventListener("touchmove", e => move(e.touches[0].clientX));
-    div.addEventListener("mousemove", e => move(e.clientX));
-    div.addEventListener("touchend", end);
-    div.addEventListener("mouseup", end);
-    div.addEventListener("mouseleave", end);
-    
-    container.appendChild(div);
-  });
-}
 
 function escapeHtml(value) {
   return String(value ?? "")
@@ -4734,8 +4200,7 @@ function renderUserProfile(profile) {
   teamsElement.innerHTML = "";
   const teams =
     Array.isArray(profile?.teams) ?
-    profile.teams :
-    [];
+    profile.teams : [];
   if (!teams.length) {
     emptyElement.hidden = false;
     return;
@@ -4913,6 +4378,7 @@ async function renderFormView() {
     hideLoader();
   }
 }
+
 function getTeamForm(
   teamId,
   fixtures
@@ -4983,6 +4449,254 @@ function getTeamForm(
       
       return "D";
     });
+}
+
+
+async function renderTeams(
+  containerId = "teamList"
+) {
+  showLoader();
+  try {
+    const container =
+      document.getElementById(
+        containerId
+      );
+    if (!container) return;
+    const tournament =
+      getCurrentTournament();
+    if (!tournament) {
+      showAlert(
+        "No tournament selected"
+      );
+      return;
+    }
+    const players =
+      Array.isArray(
+        tournament.tournament_players
+      ) ?
+      tournament.tournament_players :
+      [];
+    const registeredPlayers =
+      players.filter(
+        player =>
+        player &&
+        player.team_id
+      );
+    let sourceTeams = [];
+    if (
+      Array.isArray(
+        teamsByTournament[tournament.id]
+      )
+    ) {
+      sourceTeams =
+        teamsByTournament[
+          tournament.id
+        ];
+    } else {
+      sourceTeams =
+        await loadTournamentTeams(
+          tournament.id
+        );
+    }
+    const teamMap =
+      new Map();
+    sourceTeams.forEach(
+      team => {
+        if (!team?.id) return;
+        teamMap.set(
+          String(team.id),
+          team
+        );
+      }
+    );
+    const teams =
+      registeredPlayers.map(
+        player => {
+          const team =
+            teamMap.get(
+              String(
+                player.team_id
+              )
+            );
+          return {
+            id: player.team_id,
+            name: player.team_name ||
+              player.team?.name ||
+              team?.name ||
+              "Unknown Team",
+            logo: player.team_logo ||
+              player.team?.logo ||
+              team?.logo ||
+              null
+          };
+        }
+      );
+    const uniqueTeams =
+      Array.from(
+        new Map(
+          teams.map(team => [
+            String(team.id),
+            team
+          ])
+        ).values()
+      );
+    container.className =
+      "CupTeamsContainer";
+    container.innerHTML = "";
+    const counterLabel =
+      document.getElementById(
+        "teamCount"
+      );
+    const teamadded =
+      document.getElementById(
+        "teamsadded"
+      );
+    if (counterLabel) {
+      counterLabel.textContent =
+        `Total Teams Register : ${uniqueTeams.length}`;
+    }
+    if (teamadded) {
+      teamadded.textContent =
+        uniqueTeams.length;
+    }
+    if (!uniqueTeams.length) {
+      container.innerHTML =
+        "<p>No teams added yet</p>";
+      return;
+    }
+    uniqueTeams.forEach(
+      team => {
+        const div =
+          document.createElement(
+            "div"
+          );
+        div.className =
+          "team-card";
+        div.innerHTML = `
+          <div class="team-swipe-wrapper">
+            <div class="team-actions">
+              <button
+                class="btn-edit data-admin"
+                onclick="openEditTeam('${team.id}')"
+              >
+                Edit
+              </button>
+              <button
+                class="btn-delete data-admin"
+                onclick="deleteTeam('${team.id}')"
+              >
+                Delete
+              </button>
+            </div>
+            <div class="team-content">
+              ${
+                team.logo
+                  ? `
+                    <img
+                      class="team-logo"
+                      src="${team.logo}"
+                      alt="${team.name}"
+                    />
+                  `
+                  : `
+                    <div class="team-logo-placeholder">
+                      ?
+                    </div>
+                  `
+              }
+              <span>${team.name}</span>
+            </div>
+          </div>
+        `;
+        let startX = 0;
+        let currentX = 0;
+        let isSwiping = false;
+        const content =
+          div.querySelector(
+            ".team-content"
+          );
+        const start = x => {
+          startX = x;
+          currentX = x;
+          isSwiping = true;
+        };
+        const move = x => {
+          if (!isSwiping) return;
+          currentX = x;
+          const diff =
+            currentX - startX;
+          if (diff < 0) {
+            content.style.transform =
+              `translateX(${diff}px)`;
+          }
+        };
+        const end = () => {
+          if (!isSwiping) return;
+          isSwiping = false;
+          const diff =
+            currentX - startX;
+          content.style.transform =
+            diff < -80 ?
+            "translateX(-120px)" :
+            "translateX(0)";
+        };
+        div.addEventListener(
+          "touchstart",
+          e =>
+          start(
+            e.touches[0].clientX
+          )
+        );
+        div.addEventListener(
+          "mousedown",
+          e =>
+          start(
+            e.clientX
+          )
+        );
+        div.addEventListener(
+          "touchmove",
+          e =>
+          move(
+            e.touches[0].clientX
+          )
+        );
+        div.addEventListener(
+          "mousemove",
+          e =>
+          move(
+            e.clientX
+          )
+        );
+        div.addEventListener(
+          "touchend",
+          end
+        );
+        div.addEventListener(
+          "mouseup",
+          end
+        );
+        div.addEventListener(
+          "mouseleave",
+          end
+        );
+        container.appendChild(
+          div
+        );
+      }
+    );
+  } catch (err) {
+    console.error(
+      "[renderTeams]",
+      err
+    );
+    showAlert(
+      err.message ||
+      "Failed to load teams."
+    );
+  } finally {
+    hideLoader();
+  }
 }
 
 
