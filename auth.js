@@ -264,3 +264,6 @@ function switchAppMode() {
     setAppMode("view");
   }
 }
+
+
+

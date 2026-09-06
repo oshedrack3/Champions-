@@ -3179,10 +3179,6 @@ function setupTournamentClick(
 
 
 
-function importTeams() {
-  
-}
-
 async function removeCompetition(id) {
   const token = getToken();
   
@@ -4465,33 +4461,41 @@ async function renderTeams(
   containerId = "teamList"
 ) {
   showLoader();
+
   try {
     const container =
       document.getElementById(
         containerId
       );
+
     if (!container) return;
+
     const tournament =
       getCurrentTournament();
+
     if (!tournament) {
       showAlert(
         "No tournament selected"
       );
       return;
     }
+
     const players =
       Array.isArray(
         tournament.tournament_players
-      ) ?
-      tournament.tournament_players :
-      [];
+      )
+        ? tournament.tournament_players
+        : [];
+
     const registeredPlayers =
       players.filter(
         player =>
-        player &&
-        player.team_id
+          player &&
+          player.team_id
       );
+
     let sourceTeams = [];
+
     if (
       Array.isArray(
         teamsByTournament[tournament.id]
@@ -4507,17 +4511,21 @@ async function renderTeams(
           tournament.id
         );
     }
+
     const teamMap =
       new Map();
+
     sourceTeams.forEach(
       team => {
         if (!team?.id) return;
+
         teamMap.set(
           String(team.id),
           team
         );
       }
     );
+
     const teams =
       registeredPlayers.map(
         player => {
@@ -4527,76 +4535,88 @@ async function renderTeams(
                 player.team_id
               )
             );
+
           return {
             id: player.team_id,
-            name: player.team_name ||
+            playerId: player.id,
+            name:
+              player.team_name ||
               player.team?.name ||
               team?.name ||
               "Unknown Team",
-            logo: player.team_logo ||
+            logo:
+              player.team_logo ||
               player.team?.logo ||
               team?.logo ||
               null
           };
         }
       );
+
     const uniqueTeams =
       Array.from(
         new Map(
-          teams.map(team => [
-            String(team.id),
-            team
-          ])
+          teams.map(
+            team => [
+              String(team.id),
+              team
+            ]
+          )
         ).values()
       );
+
     container.className =
       "CupTeamsContainer";
+
     container.innerHTML = "";
+
     const counterLabel =
       document.getElementById(
         "teamCount"
       );
+
     const teamadded =
       document.getElementById(
         "teamsadded"
       );
+
     if (counterLabel) {
       counterLabel.textContent =
         `Total Teams Register : ${uniqueTeams.length}`;
     }
+
     if (teamadded) {
       teamadded.textContent =
         uniqueTeams.length;
     }
+
     if (!uniqueTeams.length) {
       container.innerHTML =
         "<p>No teams added yet</p>";
       return;
     }
+
     uniqueTeams.forEach(
       team => {
         const div =
           document.createElement(
             "div"
           );
+
         div.className =
           "team-card";
+
         div.innerHTML = `
           <div class="team-swipe-wrapper">
             <div class="team-actions">
               <button
-                class="btn-edit data-admin"
-                onclick="openEditTeam('${team.id}')"
-              >
-                Edit
-              </button>
-              <button
                 class="btn-delete data-admin"
-                onclick="deleteTeam('${team.id}')"
+                onclick="removeTournamentPlayer('${team.playerId}')"
               >
-                Delete
+                Remove
               </button>
             </div>
+
             <div class="team-content">
               ${
                 team.logo
@@ -4613,96 +4633,119 @@ async function renderTeams(
                     </div>
                   `
               }
+
               <span>${team.name}</span>
             </div>
           </div>
         `;
+
         let startX = 0;
         let currentX = 0;
         let isSwiping = false;
+
         const content =
           div.querySelector(
             ".team-content"
           );
+
         const start = x => {
           startX = x;
           currentX = x;
           isSwiping = true;
         };
+
         const move = x => {
           if (!isSwiping) return;
+
           currentX = x;
+
           const diff =
             currentX - startX;
+
           if (diff < 0) {
             content.style.transform =
               `translateX(${diff}px)`;
           }
         };
+
         const end = () => {
           if (!isSwiping) return;
+
           isSwiping = false;
+
           const diff =
             currentX - startX;
+
           content.style.transform =
-            diff < -80 ?
-            "translateX(-120px)" :
-            "translateX(0)";
+            diff < -80
+              ? "translateX(-120px)"
+              : "translateX(0)";
         };
+
         div.addEventListener(
           "touchstart",
           e =>
-          start(
-            e.touches[0].clientX
-          )
+            start(
+              e.touches[0].clientX
+            )
         );
+
         div.addEventListener(
           "mousedown",
           e =>
-          start(
-            e.clientX
-          )
+            start(
+              e.clientX
+            )
         );
+
         div.addEventListener(
           "touchmove",
           e =>
-          move(
-            e.touches[0].clientX
-          )
+            move(
+              e.touches[0].clientX
+            )
         );
+
         div.addEventListener(
           "mousemove",
           e =>
-          move(
-            e.clientX
-          )
+            move(
+              e.clientX
+            )
         );
+
         div.addEventListener(
           "touchend",
           end
         );
+
         div.addEventListener(
           "mouseup",
           end
         );
+
         div.addEventListener(
           "mouseleave",
           end
         );
+
         container.appendChild(
           div
         );
       }
     );
+
   } catch (err) {
     console.error(
       "[renderTeams]",
       err
     );
+
     showAlert(
       err.message ||
       "Failed to load teams."
     );
+
   } finally {
     hideLoader();
   }

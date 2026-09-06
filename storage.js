@@ -4649,3 +4649,501 @@ async function openMatchContacts(match) {
     }
   );
 }
+
+
+async function importTeams() {
+  const current =
+    getCurrentTournament();
+  
+  if (!current?.id) {
+    showAlert(
+      "No tournament is currently selected."
+    );
+    return;
+  }
+  
+  const token =
+    getToken();
+  
+  if (!token) {
+    showAlert(
+      "You must be logged in."
+    );
+    return;
+  }
+  
+  showLoader();
+  
+  try {
+    const res =
+      await apiRequest(
+        `${API}/tournaments/importable`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: token
+          }
+        },
+        () =>
+        importTeams()
+      );
+    
+    if (!res) {
+      throw new Error(
+        "No response from server."
+      );
+    }
+    
+    const result =
+      await res.json();
+    
+    if (
+      !res.ok ||
+      !result.success
+    ) {
+      throw new Error(
+        result.message ||
+        "Failed to load tournaments."
+      );
+    }
+    
+    const tournaments =
+      (result.tournaments || [])
+      .filter(
+        t =>
+        String(t.id) !==
+        String(current.id)
+      );
+    
+    if (!tournaments.length) {
+      throw new Error(
+        "No tournaments available."
+      );
+    }
+    
+    const html =
+      tournaments
+      .map(
+        t => `
+            <button
+              type="button"
+              class="list-item-btn"
+              data-import-tournament="${t.id}"
+            >
+              ${t.name}
+            </button>
+          `
+      )
+      .join("");
+    
+    hideLoader();
+    
+    openListModal(
+      "Import Teams From",
+      html
+    );
+    
+  } catch (err) {
+    console.error(
+      "[importTeams]",
+      err
+    );
+    
+    showAlert(
+      err.message ||
+      "Failed to load tournaments."
+    );
+    
+    hideLoader();
+  }
+}
+
+document.addEventListener(
+  "click",
+  function (e) {
+    const btn =
+      e.target.closest(
+        ".list-item-btn[data-import-tournament]"
+      );
+
+    if (!btn) {
+      return;
+    }
+
+    const sourceId =
+      btn.dataset.importTournament;
+
+    importAllTeamsFromTournament(
+      sourceId
+    );
+  }
+);
+
+async function importAllTeamsFromTournament(
+  sourceId
+) {
+  const current =
+    getCurrentTournament();
+
+  if (!current?.id) {
+    showAlert(
+      "No tournament is currently selected."
+    );
+    return;
+  }
+
+  if (!sourceId) {
+    showAlert(
+      "Source tournament is required."
+    );
+    return;
+  }
+
+  if (
+    String(sourceId) ===
+    String(current.id)
+  ) {
+    showAlert(
+      "You cannot import from the current tournament."
+    );
+    return;
+  }
+
+  const token =
+    getToken();
+
+  if (!token) {
+    showAlert(
+      "You must be logged in."
+    );
+    return;
+  }
+
+  showLoader();
+
+  try {
+    const res =
+      await apiRequest(
+        `${API}/tournaments/${encodeURIComponent(
+          current.id
+        )}/import-teams`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: token,
+            "Content-Type":
+              "application/json"
+          },
+          body: JSON.stringify({
+            source_tournament_id:
+              sourceId
+          })
+        },
+        () =>
+          importAllTeamsFromTournament(
+            sourceId
+          )
+      );
+
+    if (!res) {
+      throw new Error(
+        "No response from server."
+      );
+    }
+
+    const result =
+      await res.json();
+
+    if (
+      !res.ok ||
+      !result.success
+    ) {
+      throw new Error(
+        result.message ||
+        "Failed to import teams."
+      );
+    }
+
+    const updatedPlayers =
+      Array.isArray(result.players)
+        ? result.players
+        : [];
+
+    const tournament =
+      getCurrentTournament();
+
+    if (
+      tournament &&
+      String(tournament.id) ===
+        String(current.id)
+    ) {
+      if (
+        !Array.isArray(
+          tournament.tournament_players
+        )
+      ) {
+        tournament.tournament_players =
+          [];
+      }
+
+      const existingPlayers =
+        new Map(
+          tournament.tournament_players.map(
+            player => [
+              String(
+                player.team_id
+              ),
+              player
+            ]
+          )
+        );
+
+      updatedPlayers.forEach(
+        player => {
+          existingPlayers.set(
+            String(
+              player.team_id
+            ),
+            player
+          );
+        }
+      );
+
+      tournament.tournament_players =
+        Array.from(
+          existingPlayers.values()
+        );
+
+      tableCache = null;
+      cachedTournamentId = null;
+
+      if (
+        tournament.format ===
+        "league"
+      ) {
+        await rebuildTableFromMatches();
+      } else {
+        await renderFullBracket();
+      }
+
+      if (
+        typeof renderTeams ===
+        "function"
+      ) {
+        renderTeams();
+      }
+    }
+
+    closeListModal();
+
+    showActionModal(
+      result.message ||
+        "Teams imported successfully.",
+      "success"
+    );
+
+  } catch (err) {
+    console.error(
+      "[importAllTeamsFromTournament]",
+      err
+    );
+
+    showAlert(
+      err.message ||
+      "Failed to import teams."
+    );
+
+  } finally {
+    hideLoader();
+  }
+}
+async function removeTournamentPlayer(
+  playerId
+) {
+  const current =
+    getCurrentTournament();
+
+  if (!current?.id) {
+    showAlert(
+      "No tournament is currently selected."
+    );
+    return;
+  }
+
+  if (!playerId) {
+    showAlert(
+      "Player is required."
+    );
+    return;
+  }
+
+  const player =
+    Array.isArray(
+      current.tournament_players
+    )
+      ? current.tournament_players.find(
+          item =>
+            String(item.id) ===
+            String(playerId)
+        )
+      : null;
+
+  const teamName =
+    player?.team_name ||
+    player?.team?.name ||
+    "this team";
+
+  showConfirmModal(
+    `Are you sure you want to remove ${teamName} from this tournament?`,
+    "Remove",
+    "Cancel"
+  );
+
+  confirmYes = async () => {
+    closeConfirmModal();
+
+    const token =
+      getToken();
+
+    if (!token) {
+      showAlert(
+        "You must be logged in."
+      );
+      return;
+    }
+
+    showLoader();
+
+    try {
+      const tournamentId =
+        current.id;
+
+      const res =
+        await apiRequest(
+          `${API}/tournaments/${encodeURIComponent(
+            tournamentId
+          )}/players/${encodeURIComponent(
+            playerId
+          )}`,
+          {
+            method: "DELETE",
+            headers: {
+              Authorization: token
+            }
+          },
+          () =>
+            removeTournamentPlayer(
+              playerId
+            )
+        );
+
+      if (!res) {
+        throw new Error(
+          "No response from server."
+        );
+      }
+
+      const result =
+        await res.json();
+
+      if (
+        !res.ok ||
+        !result.success
+      ) {
+        throw new Error(
+          result.message ||
+          "Failed to remove player."
+        );
+      }
+
+      const tournament =
+        getCurrentTournament();
+
+      if (
+        tournament &&
+        String(tournament.id) ===
+          String(tournamentId)
+      ) {
+        if (
+          !Array.isArray(
+            tournament.tournament_players
+          )
+        ) {
+          tournament.tournament_players =
+            [];
+        }
+
+        tournament.tournament_players =
+          tournament.tournament_players.filter(
+            player =>
+              String(player.id) !==
+              String(playerId)
+          );
+      }
+
+      if (
+        teamsByTournament &&
+        Array.isArray(
+          teamsByTournament[
+            tournamentId
+          ]
+        )
+      ) {
+        teamsByTournament[
+          tournamentId
+        ] =
+          teamsByTournament[
+            tournamentId
+          ].filter(
+            team =>
+              String(team.id) !==
+              String(
+                result.player?.team_id
+              )
+          );
+      }
+
+      tableCache = null;
+      cachedTournamentId = null;
+
+      if (
+        tournament?.format ===
+        "league"
+      ) {
+        await rebuildTableFromMatches();
+        await renderTeams(
+          "teamList"
+        );
+      } else {
+        await renderTeams(
+          "cupTeamsContainer"
+        );
+        await renderFullBracket();
+      }
+
+      showActionModal(
+        result.message ||
+          "Player removed successfully.",
+        "success"
+      );
+
+    } catch (error) {
+      console.error(
+        "[removeTournamentPlayer]",
+        error
+      );
+
+      showAlert(
+        error.message ||
+          "Failed to remove player."
+      );
+
+    } finally {
+      hideLoader();
+    }
+  };
+
+  confirmNo = () => {
+    closeConfirmModal();
+  };
+}
