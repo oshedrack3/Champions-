@@ -1647,29 +1647,51 @@ async function getPublicTournaments(forceRefresh = false) {
 async function subscribeUser() {
   try {
     if (!("serviceWorker" in navigator)) {
-      throw new Error("Service Worker is not supported.");
+      throw new Error(
+        "Service Worker is not supported."
+      );
     }
     
     if (!("PushManager" in window)) {
-      throw new Error("Push notifications are not supported.");
+      throw new Error(
+        "Push notifications are not supported."
+      );
     }
     
-    const permission = await Notification.requestPermission();
+    if (!("Notification" in window)) {
+      throw new Error(
+        "Notifications are not supported."
+      );
+    }
+    
+    const permission =
+      await Notification.requestPermission();
     
     if (permission !== "granted") {
-      throw new Error("Notification permission was not granted.");
+      throw new Error(
+        "Notification permission was not granted."
+      );
     }
     
-    const reg = await navigator.serviceWorker.ready;
+    const reg =
+      await navigator.serviceWorker.ready;
     
     const publicKey =
-      "BB0Mj76Yp4Of8Z3PdEzapp7mUSe05UwIPmjGNMFvdfZ5g4Wzub4YzBs4I_mUXT7vlpD286h2vi4mCvnKBTa1IrU";
+      "BOJKZZBKMDY282dAfh2rgiLIeNuzUJmuu2qyZRO09rSyhX_SuXzT8f6dOJijBSuTLyOKuIOMh8mniyuXbqnVChM";
     
-    const subscription =
-      await reg.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(publicKey)
-      });
+    let subscription =
+      await reg.pushManager.getSubscription();
+    
+    if (!subscription) {
+      subscription =
+        await reg.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey:
+            urlBase64ToUint8Array(
+              publicKey
+            )
+        });
+    }
     
     console.log(
       "Push subscription:",
@@ -1677,18 +1699,21 @@ async function subscribeUser() {
     );
     
     const res = await fetch(
-      `${API}/api/push/subscribe`,
+      `${API}/subscribe`,
       {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${getToken()}`
+          Authorization:
+            `Bearer ${getToken()}`
         },
-        body: JSON.stringify(subscription)
+        body:
+          JSON.stringify(subscription)
       }
     );
     
-    const result = await res.json();
+    const result =
+      await res.json();
     
     if (!res.ok || !result.success) {
       throw new Error(
@@ -1713,7 +1738,9 @@ async function subscribeUser() {
   }
 }
 
-function urlBase64ToUint8Array(base64String) {
+function urlBase64ToUint8Array(
+  base64String
+) {
   const padding =
     "=".repeat(
       (4 - (base64String.length % 4)) % 4
@@ -1721,10 +1748,11 @@ function urlBase64ToUint8Array(base64String) {
   
   const base64 =
     (base64String + padding)
-    .replace(/-/g, "+")
-    .replace(/_/g, "/");
+      .replace(/-/g, "+")
+      .replace(/_/g, "/");
   
-  const rawData = atob(base64);
+  const rawData =
+    atob(base64);
   
   return Uint8Array.from(
     [...rawData].map(
@@ -1733,29 +1761,38 @@ function urlBase64ToUint8Array(base64String) {
   );
 }
 
-window.addEventListener("load", async () => {
-  showLoader();
-  
-  const loggedIn = await verifySession();
-  
-  if (loggedIn) {
-    hideAllPages();
-    await goToCompetitionPage();
-    loadMyCompetitions();
-    await renderCompetitionList();
-    startNotificationEvents();
-    await loadNotifications();
-    await registerSW();
-    await askPermission();
-    await subscribeUser();
+window.addEventListener(
+  "load",
+  async () => {
+    showLoader();
     
-  } else {
-    goToLoginPage();
+    const loggedIn =
+      await verifySession();
+    
+    if (loggedIn) {
+      hideAllPages();
+      
+      await goToCompetitionPage();
+      
+      loadMyCompetitions();
+      
+      await renderCompetitionList();
+      
+      startNotificationEvents();
+      
+      await loadNotifications();
+      
+      await registerSW();
+      
+      await subscribeUser();
+      
+    } else {
+      goToLoginPage();
+    }
+    
+    hideLoader();
   }
-  
-  hideLoader();
-});
-
+);
 async function updateSubmissionDeadline(
   tournamentId,
   fromRound,
@@ -2871,3 +2908,5 @@ async function saveUpdatedProfile() {
       "Save Changes";
   }
 }
+
+
