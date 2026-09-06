@@ -217,82 +217,6 @@ function runOnce(key, caller, fn) {
   
   fn();
 }
-async function removeTournament(id) {
-  const idStr =
-    String(id).trim();
-  
-  try {
-    const token =
-      getToken();
-    
-    if (!token) {
-      throw new Error(
-        "You are not logged in."
-      );
-    }
-    
-    const res =
-      await apiRequest(
-        `${API}/tournaments/${encodeURIComponent(idStr)}`,
-        {
-          method: "DELETE",
-          headers: {
-            Authorization: token
-          }
-        },
-        () =>
-        removeTournament(id)
-      );
-    
-    if (!res) {
-      throw new Error(
-        "No response from server."
-      );
-    }
-    
-    const result =
-      await res.json();
-    
-    if (
-      !res.ok ||
-      !result.success
-    ) {
-      throw new Error(
-        result.message ||
-        "Failed to delete tournament."
-      );
-    }
-    
-    myTournaments =
-      myTournaments.filter(
-        t =>
-        String(t.id) !== idStr
-      );
-    
-    if (
-      currentTournament &&
-      String(
-        currentTournament.id
-      ) === idStr
-    ) {
-      currentTournament =
-        null;
-    }
-    
-    console.log(
-      "Tournament deleted:",
-      idStr
-    );
-    
-  } catch (err) {
-    console.error(
-      "[DELETE] Failed:",
-      err
-    );
-    
-    throw err;
-  }
-}
 
 
 async function deleteFixtures() {
@@ -374,52 +298,6 @@ function getCurrentTournament() {
 }
 
 
-async function deleteTournament(id) {
-  const tournament =
-    myTournaments.find(
-      t =>
-      String(t.id) ===
-      String(id)
-    );
-  
-  const confirmed =
-    await showConfirmModal(
-      `Delete "${tournament?.name || "this tournament"}" permanently? This cannot be undone.`,
-      "Yes",
-      "No"
-    );
-  
-  if (!confirmed) {
-    return;
-  }
-  
-  showLoader();
-  
-  try {
-    await removeTournament(id);
-    
-    await renderTournamentList();
-    
-    showActionModal(
-      "❌ Tournament Deleted",
-      "delete"
-    );
-    
-  } catch (err) {
-    console.error(
-      "Failed to delete tournament:",
-      err
-    );
-    
-    showAlert(
-      err.message ||
-      "Failed to delete tournament."
-    );
-    
-  } finally {
-    hideLoader();
-  }
-}
 
 function getTournamentFromMemory(id) {
   return myTournaments.find(
@@ -5146,4 +5024,139 @@ async function removeTournamentPlayer(
   confirmNo = () => {
     closeConfirmModal();
   };
+}
+
+
+
+async function deleteTournament(id) {
+  const tournament =
+    myTournaments.find(
+      t =>
+      String(t.id) ===
+      String(id)
+    );
+  
+  const confirmed =
+    await showConfirmModal(
+      `Delete "${tournament?.name || "this tournament"}" permanently? This cannot be undone.`,
+      "Yes",
+      "No"
+    );
+  
+  if (!confirmed) {
+    return;
+  }
+  
+  showLoader();
+  
+  try {
+    await removeTournament(id);
+    
+    await renderTournamentList();
+    
+    showActionModal(
+      "❌ Tournament Deleted",
+      "delete"
+    );
+    
+  } catch (err) {
+    console.error(
+      "Failed to delete tournament:",
+      err
+    );
+    
+    showAlert(
+      err?.message ||
+      "Failed to delete tournament."
+    );
+    
+  } finally {
+    hideLoader();
+  }
+}
+
+
+async function removeTournament(id) {
+  const idStr =
+    String(id).trim();
+  
+  try {
+    const token =
+      getToken();
+    
+    if (!token) {
+      throw new Error(
+        "You are not logged in."
+      );
+    }
+    
+    const res =
+      await apiRequest(
+        `${API}/tournaments/${encodeURIComponent(idStr)}`,
+        {
+          method: "DELETE",
+          headers: {
+            Authorization: token
+          }
+        },
+        () =>
+        removeTournament(id)
+      );
+    
+    if (!res) {
+      throw new Error(
+        "No response from server."
+      );
+    }
+    
+    const responseText =
+      await res.text();
+    
+    let result;
+    
+    try {
+      result =
+        JSON.parse(responseText);
+    } catch {
+      throw new Error(
+        `Server returned invalid JSON. HTTP ${res.status}`
+      );
+    }
+    
+    if (
+      !res.ok ||
+      !result.success
+    ) {
+      throw new Error(
+        result.message ||
+        "Failed to delete tournament."
+      );
+    }
+    
+    myTournaments =
+      myTournaments.filter(
+        t =>
+        String(t.id) !==
+        idStr
+      );
+    
+    if (
+      currentTournament &&
+      String(
+        currentTournament.id
+      ) === idStr
+    ) {
+      currentTournament = null;
+    }
+    
+    return result;
+    
+  } catch (err) {
+    console.error(
+      "Failed to delete tournament:",
+      err
+    );
+    
+    throw err;
+  }
 }
