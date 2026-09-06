@@ -36,3 +36,4 @@ self.addEventListener("notificationclick", (event) => {
     clients.openWindow(url)
   );
 });
+

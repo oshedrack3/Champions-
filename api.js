@@ -1644,99 +1644,6 @@ async function getPublicTournaments(forceRefresh = false) {
   }
 }
 
-async function subscribeUser() {
-  try {
-    if (!("serviceWorker" in navigator)) {
-      throw new Error(
-        "Service Worker is not supported."
-      );
-    }
-    
-    if (!("PushManager" in window)) {
-      throw new Error(
-        "Push notifications are not supported."
-      );
-    }
-    
-    if (!("Notification" in window)) {
-      throw new Error(
-        "Notifications are not supported."
-      );
-    }
-    
-    const permission =
-      await Notification.requestPermission();
-    
-    if (permission !== "granted") {
-      throw new Error(
-        "Notification permission was not granted."
-      );
-    }
-    
-    const reg =
-      await navigator.serviceWorker.ready;
-    
-    const publicKey =
-      "BOJKZZBKMDY282dAfh2rgiLIeNuzUJmuu2qyZRO09rSyhX_SuXzT8f6dOJijBSuTLyOKuIOMh8mniyuXbqnVChM";
-    
-    let subscription =
-      await reg.pushManager.getSubscription();
-    
-    if (!subscription) {
-      subscription =
-        await reg.pushManager.subscribe({
-          userVisibleOnly: true,
-          applicationServerKey:
-            urlBase64ToUint8Array(
-              publicKey
-            )
-        });
-    }
-    
-    console.log(
-      "Push subscription:",
-      subscription
-    );
-    
-    const res = await fetch(
-      `${API}/subscribe`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization:
-            `Bearer ${getToken()}`
-        },
-        body:
-          JSON.stringify(subscription)
-      }
-    );
-    
-    const result =
-      await res.json();
-    
-    if (!res.ok || !result.success) {
-      throw new Error(
-        result.message ||
-        "Failed to save push subscription."
-      );
-    }
-    
-    console.log(
-      "Push subscription saved successfully."
-    );
-    
-    return subscription;
-    
-  } catch (err) {
-    console.error(
-      "Push subscription failed:",
-      err
-    );
-    
-    return null;
-  }
-}
 
 function urlBase64ToUint8Array(
   base64String
@@ -1761,38 +1668,6 @@ function urlBase64ToUint8Array(
   );
 }
 
-window.addEventListener(
-  "load",
-  async () => {
-    showLoader();
-    
-    const loggedIn =
-      await verifySession();
-    
-    if (loggedIn) {
-      hideAllPages();
-      
-      await goToCompetitionPage();
-      
-      loadMyCompetitions();
-      
-      await renderCompetitionList();
-      
-      startNotificationEvents();
-      
-      await loadNotifications();
-      
-      await registerSW();
-      
-      await subscribeUser();
-      
-    } else {
-      goToLoginPage();
-    }
-    
-    hideLoader();
-  }
-);
 async function updateSubmissionDeadline(
   tournamentId,
   fromRound,
@@ -2910,3 +2785,45 @@ async function saveUpdatedProfile() {
 }
 
 
+
+
+
+
+
+
+
+
+
+
+window.addEventListener(
+  "load",
+  async () => {
+    showLoader();
+    
+    const loggedIn =
+      await verifySession();
+    
+    if (loggedIn) {
+      hideAllPages();
+      
+      await goToCompetitionPage();
+      
+      loadMyCompetitions();
+      
+      await renderCompetitionList();
+      
+      startNotificationEvents();
+      
+      await loadNotifications();
+      
+      
+      await registerSW();
+      await subscribeUser();
+      
+    } else {
+      goToLoginPage();
+    }
+    
+    hideLoader();
+  }
+);
