@@ -456,9 +456,9 @@ function handleMenuAction(action) {
   closeMenu();
   
   const actions = {
-    openHOF:openHallOfFame,
-    openProfile:openProfileModal,
-    joinTour:handleJoinTournament,
+    openHOF: openHallOfFame,
+    openProfile: openProfileModal,
+    joinTour: handleJoinTournament,
     newNotice: openNoticeBoardModal,
     deadlineEdit: openSubmissionDeadlineModal,
     editHallofFame: showHallOfFameEditor,
@@ -494,7 +494,7 @@ function handleMenuAction(action) {
 
 const menuConfig = {
   competition: [
-        {
+    {
       label: "👤 My Profile",
       action: "openProfile",
       roles: ["admin", "player"]
@@ -510,7 +510,7 @@ const menuConfig = {
       action: "deleteAcc",
       roles: ["admin", "player"]
     },
-
+    
     {
       label: "Delete User Account",
       action: "managerDeleteUser",
@@ -529,30 +529,30 @@ const menuConfig = {
       roles: ["admin"]
     },
     
-     {
-       label: "Hall of Fame",
-       action: "openHOF",
-       roles: ["admin", "player"]
-     },
-     /*
-     {
-       label: "Delete Tournament",
-       action: "deleteTournament",
-       roles: ["admin"]
-     },
-     
-     {
-       label: "Setup POTS Tournaments",
-       action: "openPOTS",
-       roles: ["admin"]
-     },
-     
-     {
-       label: "Share POTS Ranking",
-       action: "sharePOTS",
-       roles: ["admin", "player"]
-     }
-     */
+    {
+      label: "Hall of Fame",
+      action: "openHOF",
+      roles: ["admin", "player"]
+    },
+    /*
+    {
+      label: "Delete Tournament",
+      action: "deleteTournament",
+      roles: ["admin"]
+    },
+    
+    {
+      label: "Setup POTS Tournaments",
+      action: "openPOTS",
+      roles: ["admin"]
+    },
+    
+    {
+      label: "Share POTS Ranking",
+      action: "sharePOTS",
+      roles: ["admin", "player"]
+    }
+    */
   ],
   
   tournaments: [
@@ -629,6 +629,11 @@ const menuConfig = {
     
   ],
   group: [
+    {
+      label: "Set Deadline",
+      action: "deadlineEdit",
+      roles: ["admin"]
+    },
     
     {
       label: "Share Group Matches",
@@ -656,11 +661,16 @@ const menuConfig = {
     */
   ],
   bracket: [
+        {
+      label: "Set Deadline",
+      action: "deadlineEdit",
+      roles: ["admin"]
+    },
     {
-  label: "Join Tournament",
-  action: "joinTour",
-  roles: ["admin", "player"]
-},
+      label: "Join Tournament",
+      action: "joinTour",
+      roles: ["admin", "player"]
+    },
     
     {
       label: "Share Bracket",
@@ -715,13 +725,13 @@ const menuConfig = {
       action: "newCup",
       roles: ["admin"]
     },
-        {
+    {
       label: "Join Tournament",
       action: "joinTour",
       roles: ["admin", "player"]
     },
-
-      
+    
+    
     {
       label: "Import Teams",
       action: "importTeams",
@@ -852,7 +862,7 @@ function goBackFromTournament() {
 
 function closeAddTeam() {
   document.getElementById("addNewTeam").style.display = "none";
- openProfileModal();
+  openProfileModal();
 }
 
 
@@ -2071,6 +2081,7 @@ async function openHallOfFame() {
     "block";
   await loadHallOfFame();
 }
+
 function closeHallOfFame() {
   const hallOfFameSection =
     document.getElementById(
@@ -2097,6 +2108,7 @@ function closeHallOfFame() {
       "block";
   }
 }
+
 function toggleCupSetUpView() {
   const teamView =
     document.getElementById("cupTeamView");
@@ -2174,8 +2186,8 @@ function goToCupPage() {
     return;
   }
   
- 
-    toggleCupView("tables");
+  
+  toggleCupView("tables");
   
 }
 
@@ -2274,9 +2286,9 @@ document
       reader.readAsDataURL(file);
     });
   });
-  
-  
-  
+
+
+
 function closeProfileModal() {
   const modal =
     document.getElementById(
@@ -2301,8 +2313,7 @@ async function openEditTeam() {
     
     const teams =
       Array.isArray(profile?.teams) ?
-      profile.teams :
-      [];
+      profile.teams : [];
     
     if (!teams.length) {
       showAlert(
