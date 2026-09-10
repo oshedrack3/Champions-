@@ -2497,16 +2497,17 @@ tbody tr:nth-child(1) td {
   font-weight: 700;
   color: #222;
 }
-
 .notice-content {
   margin: 0;
+  padding: 0;
   color: #555;
   font-size: 14px;
   line-height: 1.45;
   white-space: pre-wrap;
   word-break: break-word;
+  text-align: justify;
+  text-indent: 0;
 }
-
 .notice-images {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -4564,3 +4565,26 @@ button.knockout-score-cell:hover {
   overflow-x: hidden;
 }
 
+.notice-delete-btn {
+  display: block;
+  width: 100%;
+  margin-top: 16px;
+  padding: 10px 14px;
+  border: 1px solid #dc3545;
+  border-radius: 8px;
+  background: transparent;
+  color: #dc3545;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.notice-delete-btn:hover {
+  background: #dc3545;
+  color: #fff;
+}
+
+.notice-delete-btn:active {
+  transform: scale(0.98);
+}

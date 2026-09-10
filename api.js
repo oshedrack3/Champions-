@@ -275,26 +275,29 @@ async function updateTournament(id, changes) {
 async function updateTournamentDetails(id, data) {
   const token = getToken();
   
-  const res = await fetch(`${API}/tournaments/${id}/details`, {
-    method: "PATCH",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: token
-    },
-    body: JSON.stringify(data)
-  });
+  const res = await fetch(
+    `${API}/tournaments/${id}`,
+    {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: token
+      },
+      body: JSON.stringify(data)
+    }
+  );
   
   const result = await res.json();
   
   if (!res.ok || !result.success) {
-    throw new Error(result.message || "Failed to update tournament details.");
+    throw new Error(
+      result.message ||
+      "Failed to update tournament details."
+    );
   }
   
   return result.tournament;
 }
-
-
-
 async function uploadTeamLogo(tournamentId, teamId, teamName, logo) {
   const token = getToken();
   
@@ -1908,14 +1911,12 @@ async function createNotice() {
     )
     .value
     .trim();
-  
   const category =
     document
     .getElementById(
       "noticeCategory"
     )
     .value;
-  
   const content =
     document
     .getElementById(
@@ -1923,7 +1924,6 @@ async function createNotice() {
     )
     .value
     .trim();
-  
   const files =
     Array.from(
       document
@@ -1932,44 +1932,37 @@ async function createNotice() {
       )
       .files || []
     );
-  
   const published =
     document
     .getElementById(
       "noticePublished"
     )
     .checked;
-  
   const noExpiry =
     document
     .getElementById(
       "noticeNoExpiry"
     )
     .checked;
-  
   const expiryValue =
     document
     .getElementById(
       "noticeExpiresAt"
     )
     .value;
-  
   if (!title) {
     showAlert(
       "Enter a notice title."
     );
     return;
   }
-  
   if (!content) {
     showAlert(
       "Enter the notice content."
     );
     return;
   }
-  
   let expiresAt = null;
-  
   if (!noExpiry) {
     if (!expiryValue) {
       showAlert(
@@ -1977,12 +1970,10 @@ async function createNotice() {
       );
       return;
     }
-    
     expiresAt =
       new Date(
         expiryValue
       ).getTime();
-    
     if (
       !Number.isFinite(
         expiresAt
@@ -1995,19 +1986,15 @@ async function createNotice() {
       return;
     }
   }
-  
   if (files.length > 10) {
     showAlert(
       "You can upload a maximum of 10 images."
     );
     return;
   }
-  
   showLoader();
-  
   try {
     const images = [];
-    
     for (
       const file of files
     ) {
@@ -2016,12 +2003,10 @@ async function createNotice() {
           file,
           1200
         );
-      
       images.push(
         base64
       );
     }
-    
     const response =
       await apiRequest(
         `${API}/notices`,
@@ -2042,14 +2027,11 @@ async function createNotice() {
         },
         createNotice
       );
-    
     if (!response) {
       return;
     }
-    
     const data =
       await response.json();
-    
     if (
       !response.ok ||
       !data.success
@@ -2059,7 +2041,17 @@ async function createNotice() {
         "Failed to create notice."
       );
     }
-    
+    let notices =
+      Array.isArray(
+        noticesMemoryCache
+      )
+        ? noticesMemoryCache
+        : await getCachedData(
+            "notices"
+          );
+    if (!Array.isArray(notices)) {
+      notices = [];
+    }
     if (
       data.notice &&
       data.notice.published &&
@@ -2070,68 +2062,151 @@ async function createNotice() {
         ) > Date.now()
       )
     ) {
-      let notices =
-        Array.isArray(
-          noticesMemoryCache
-        ) ?
-        noticesMemoryCache :
-        await getCachedData(
-          "notices"
-        );
-      
-      if (!Array.isArray(notices)) {
-        notices = [];
-      }
-      
       const noticeMap =
         new Map(
           notices.map(
             notice => [
-              notice.id,
+              String(notice.id),
               notice
             ]
           )
         );
-      
       noticeMap.set(
-        data.notice.id,
+        String(data.notice.id),
         data.notice
       );
-      
       notices =
         Array.from(
           noticeMap.values()
         );
-      
       notices =
         notices.filter(
           notice =>
-          !notice.expires_at ||
-          Number(
-            notice.expires_at
-          ) > Date.now()
+            !notice.expires_at ||
+            Number(
+              notice.expires_at
+            ) > Date.now()
         );
-      
       notices.sort(
         (a, b) =>
-        Number(
-          b.created_at || 0
-        ) -
-        Number(
-          a.created_at || 0
-        )
-      );
-      
-      noticesMemoryCache =
-        notices;
-      
-      await saveCachedData(
-        "notices",
-        "",
-        notices
+          Number(
+            b.created_at || 0
+          ) -
+          Number(
+            a.created_at || 0
+          )
       );
     }
-    
+    noticesMemoryCache =
+      notices;
+    await saveCachedData(
+      "notices",
+      "",
+      notices
+    );
+    if (
+      data.changeId !== null &&
+      data.changeId !== undefined
+    ) {
+      await saveCachedData(
+        "noticesSync",
+        "",
+        {
+          lastChangeId:
+            Number(
+              data.changeId
+            )
+        }
+      );
+    }
+    renderNotices(
+      notices
+    );
+    closeNoticeBoardModal();
+    showActionModal(
+      "Notice published successfully.",
+      "success"
+    );
+  } catch (err) {
+    console.error(
+      "[createNotice]",
+      err
+    );
+    showAlert(
+      err.message ||
+      "Failed to create notice."
+    );
+  } finally {
+    hideLoader();
+  }
+}
+async function deleteNotice(noticeId) {
+  if (!noticeId) {
+    showAlert(
+      "Invalid notice."
+    );
+    return;
+  }
+  const confirmed =
+    await showConfirmModal(
+      "Are you sure you want to delete this notice?",
+      "Delete",
+      "Cancel"
+    );
+  if (!confirmed) {
+    return;
+  }
+  showLoader();
+  try {
+    const response =
+      await apiRequest(
+        `${API}/notices/${noticeId}`,
+        {
+          method: "DELETE",
+          headers: {
+            Authorization: getToken()
+          }
+        },
+        deleteNotice
+      );
+    if (!response) {
+      return;
+    }
+    const data =
+      await response.json();
+    if (
+      !response.ok ||
+      !data.success
+    ) {
+      throw new Error(
+        data.message ||
+        "Failed to delete notice."
+      );
+    }
+    let notices =
+      Array.isArray(
+        noticesMemoryCache
+      ) ?
+      noticesMemoryCache :
+      await getCachedData(
+        "notices"
+      );
+    if (!Array.isArray(notices)) {
+      notices = [];
+    }
+    notices =
+      notices.filter(
+        notice =>
+        String(notice.id) !==
+        String(noticeId)
+      );
+    noticesMemoryCache =
+      notices;
+    await saveCachedData(
+      "notices",
+      "",
+      notices
+    );
     if (
       data.changeId !== null &&
       data.changeId !== undefined
@@ -2146,25 +2221,22 @@ async function createNotice() {
         }
       );
     }
-    
-    closeNoticeBoardModal();
-    
+    renderNotices(notices);
     showActionModal(
-      "Notice published successfully.",
+      "Notice deleted successfully.",
       "success"
     );
-    
+    return true;
   } catch (err) {
     console.error(
-      "[createNotice]",
+      "[deleteNotice]",
       err
     );
-    
     showAlert(
       err.message ||
-      "Failed to create notice."
+      "Failed to delete notice."
     );
-    
+    return false;
   } finally {
     hideLoader();
   }

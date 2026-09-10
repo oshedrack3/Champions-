@@ -2305,48 +2305,7 @@ function getSortedCompetitions(
     Number(b.created_at || 0)
   );
 }
-async function renderCompetitionList() {
-  const container =
-    document.getElementById(
-      "competitionList"
-    );
-  if (!container) return;
-  const currentUser =
-    getCurrentUser();
-  const competitions =
-    getSortedCompetitions(
-      myCompetitions || []
-    );
-  container.innerHTML = "";
-  if (
-    !competitions ||
-    competitions.length === 0
-  ) {
-    container.innerHTML = `
-      <p class="emptyText">
-        No competitions available
-        <br><br>
-        ${
-          currentUser?.role === "player"
-            ? "Competitions will appear here when you are invited to a tournament."
-            : "Competitions will appear here as soon as you create one. Click the side menu to create one."
-        }
-      </p>
-    `;
-    return;
-  }
-  competitions.forEach(
-    competition => {
-      const card =
-        createCompetitionCard(
-          competition
-        );
-      container.appendChild(
-        card
-      );
-    }
-  );
-}
+
 
 
 function getCompetitionTournamentCount(competition) {
@@ -2493,6 +2452,48 @@ function createCompetitionCard(competition) {
   }
   
   return div;
+}
+async function renderCompetitionList() {
+  const container =
+    document.getElementById(
+      "competitionList"
+    );
+  if (!container) return;
+  const currentUser =
+    getCurrentUser();
+  const competitions =
+    getSortedCompetitions(
+      myCompetitions || []
+    );
+  container.innerHTML = "";
+  if (
+    !competitions ||
+    competitions.length === 0
+  ) {
+    container.innerHTML = `
+      <p class="emptyText">
+        No competitions available
+        <br><br>
+        ${
+          currentUser?.role === "player"
+            ? "Competitions will appear here when you are invited to a tournament."
+            : "Competitions will appear here as soon as you create one. Click the side menu to create one."
+        }
+      </p>
+    `;
+    return;
+  }
+  competitions.forEach(
+    competition => {
+      const card =
+        createCompetitionCard(
+          competition
+        );
+      container.appendChild(
+        card
+      );
+    }
+  );
 }
 
 
@@ -3331,21 +3332,19 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 
+
 function renderNotices(notices) {
   const container =
     document.getElementById("noticeBoard");
-  
   if (!container) return;
-  
   if (!notices.length) {
     container.innerHTML = `
       <div class="notice-empty">
-        No notices available.
+        No notices at the moment.
       </div>
     `;
     return;
   }
-  
   container.innerHTML = `
     <div class="notice-slider-wrapper">
       <div class="notice-slider">
@@ -3354,7 +3353,6 @@ function renderNotices(notices) {
             Array.isArray(notice.images) ?
             notice.images :
             [];
-
           const imagesHTML = images.length ?
             `
               <div class="notice-images">
@@ -3369,7 +3367,6 @@ function renderNotices(notices) {
               </div>
             ` :
             "";
-
           return `
             <article
               class="notice-card"
@@ -3381,30 +3378,37 @@ function renderNotices(notices) {
                     notice.category || "General"
                   )}
                 </span>
-
                 <span class="notice-date">
                   ${formatNoticeDate(
                     notice.createdAt
                   )}
                 </span>
               </div>
-
               <h3 class="notice-title">
                 ${escapeHtml(notice.title)}
               </h3>
-
-              <div class="notice-content">
-                ${escapeHtml(notice.content)}
-              </div>
-
-              ${imagesHTML}
+           <div class="notice-content">
+  ${escapeHtml(
+    notice.content
+      .split("\n")
+      .map(line => line.trim())
+      .join("\n")
+  )}
+</div>             
+${imagesHTML}
+              <button
+                type="button"
+                class="notice-delete-btn data-admin"
+                onclick="deleteNotice('${notice.id}')"
+              >
+                Delete
+              </button>
             </article>
           `;
         }).join("")}
       </div>
     </div>
   `;
-  
   setupNoticeInteraction();
   setupNoticeScrollTracking();
   startNoticeAutoScroll();
@@ -4461,41 +4465,40 @@ async function renderTeams(
   containerId = "teamList"
 ) {
   showLoader();
-
+  
   try {
     const container =
       document.getElementById(
         containerId
       );
-
+    
     if (!container) return;
-
+    
     const tournament =
       getCurrentTournament();
-
+    
     if (!tournament) {
       showAlert(
         "No tournament selected"
       );
       return;
     }
-
+    
     const players =
       Array.isArray(
         tournament.tournament_players
-      )
-        ? tournament.tournament_players
-        : [];
-
+      ) ?
+      tournament.tournament_players : [];
+    
     const registeredPlayers =
       players.filter(
         player =>
-          player &&
-          player.team_id
+        player &&
+        player.team_id
       );
-
+    
     let sourceTeams = [];
-
+    
     if (
       Array.isArray(
         teamsByTournament[tournament.id]
@@ -4511,21 +4514,21 @@ async function renderTeams(
           tournament.id
         );
     }
-
+    
     const teamMap =
       new Map();
-
+    
     sourceTeams.forEach(
       team => {
         if (!team?.id) return;
-
+        
         teamMap.set(
           String(team.id),
           team
         );
       }
     );
-
+    
     const teams =
       registeredPlayers.map(
         player => {
@@ -4535,24 +4538,22 @@ async function renderTeams(
                 player.team_id
               )
             );
-
+          
           return {
             id: player.team_id,
             playerId: player.id,
-            name:
-              player.team_name ||
+            name: player.team_name ||
               player.team?.name ||
               team?.name ||
               "Unknown Team",
-            logo:
-              player.team_logo ||
+            logo: player.team_logo ||
               player.team?.logo ||
               team?.logo ||
               null
           };
         }
       );
-
+    
     const uniqueTeams =
       Array.from(
         new Map(
@@ -4564,48 +4565,48 @@ async function renderTeams(
           )
         ).values()
       );
-
+    
     container.className =
       "CupTeamsContainer";
-
+    
     container.innerHTML = "";
-
+    
     const counterLabel =
       document.getElementById(
         "teamCount"
       );
-
+    
     const teamadded =
       document.getElementById(
         "teamsadded"
       );
-
+    
     if (counterLabel) {
       counterLabel.textContent =
         `Total Teams Register : ${uniqueTeams.length}`;
     }
-
+    
     if (teamadded) {
       teamadded.textContent =
         uniqueTeams.length;
     }
-
+    
     if (!uniqueTeams.length) {
       container.innerHTML =
         "<p>No teams added yet</p>";
       return;
     }
-
+    
     uniqueTeams.forEach(
       team => {
         const div =
           document.createElement(
             "div"
           );
-
+        
         div.className =
           "team-card";
-
+        
         div.innerHTML = `
           <div class="team-swipe-wrapper">
             <div class="team-actions">
@@ -4638,117 +4639,115 @@ async function renderTeams(
             </div>
           </div>
         `;
-
+        
         let startX = 0;
         let currentX = 0;
         let isSwiping = false;
-
+        
         const content =
           div.querySelector(
             ".team-content"
           );
-
+        
         const start = x => {
           startX = x;
           currentX = x;
           isSwiping = true;
         };
-
+        
         const move = x => {
           if (!isSwiping) return;
-
+          
           currentX = x;
-
+          
           const diff =
             currentX - startX;
-
+          
           if (diff < 0) {
             content.style.transform =
               `translateX(${diff}px)`;
           }
         };
-
+        
         const end = () => {
           if (!isSwiping) return;
-
+          
           isSwiping = false;
-
+          
           const diff =
             currentX - startX;
-
+          
           content.style.transform =
-            diff < -80
-              ? "translateX(-120px)"
-              : "translateX(0)";
+            diff < -80 ?
+            "translateX(-120px)" :
+            "translateX(0)";
         };
-
+        
         div.addEventListener(
           "touchstart",
           e =>
-            start(
-              e.touches[0].clientX
-            )
+          start(
+            e.touches[0].clientX
+          )
         );
-
+        
         div.addEventListener(
           "mousedown",
           e =>
-            start(
-              e.clientX
-            )
+          start(
+            e.clientX
+          )
         );
-
+        
         div.addEventListener(
           "touchmove",
           e =>
-            move(
-              e.touches[0].clientX
-            )
+          move(
+            e.touches[0].clientX
+          )
         );
-
+        
         div.addEventListener(
           "mousemove",
           e =>
-            move(
-              e.clientX
-            )
+          move(
+            e.clientX
+          )
         );
-
+        
         div.addEventListener(
           "touchend",
           end
         );
-
+        
         div.addEventListener(
           "mouseup",
           end
         );
-
+        
         div.addEventListener(
           "mouseleave",
           end
         );
-
+        
         container.appendChild(
           div
         );
       }
     );
-
+    
   } catch (err) {
     console.error(
       "[renderTeams]",
       err
     );
-
+    
     showAlert(
       err.message ||
       "Failed to load teams."
     );
-
+    
   } finally {
     hideLoader();
   }
 }
-
-
