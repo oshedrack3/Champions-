@@ -1410,6 +1410,8 @@ function renderMatchCard(
 }
 ''
 
+
+
 function getTeamPerformance(matches) {
   const teams = {};
   
@@ -1481,7 +1483,9 @@ function getTeamPerformance(matches) {
         name: getTeamName(match, side),
         matchesPlayed: 0,
         goals: 0,
+        cleanSheets: 0,
         statMatches: 0,
+        statGoals: 0,
         possession: 0,
         shots: 0,
         shotsOnTarget: 0
@@ -1505,6 +1509,14 @@ function getTeamPerformance(matches) {
     
     home.goals += match.homeGoals;
     away.goals += match.awayGoals;
+    
+    if (match.awayGoals === 0) {
+      home.cleanSheets++;
+    }
+    
+    if (match.homeGoals === 0) {
+      away.cleanSheets++;
+    }
     
     const stats =
       getStats(match);
@@ -1543,11 +1555,23 @@ function getTeamPerformance(matches) {
     home.statMatches++;
     away.statMatches++;
     
-    home.possession += homePossession;
-    away.possession += awayPossession;
+    home.statGoals +=
+      match.homeGoals;
     
-    home.shots += homeShots;
-    away.shots += awayShots;
+    away.statGoals +=
+      match.awayGoals;
+    
+    home.possession +=
+      homePossession;
+    
+    away.possession +=
+      awayPossession;
+    
+    home.shots +=
+      homeShots;
+    
+    away.shots +=
+      awayShots;
     
     home.shotsOnTarget +=
       homeShotsOnTarget;
@@ -1556,7 +1580,8 @@ function getTeamPerformance(matches) {
       awayShotsOnTarget;
   });
   
-  return Object.values(teams)
+  const performance =
+    Object.values(teams)
     .map(team => {
       const averagePossession =
         team.statMatches ?
@@ -1585,7 +1610,7 @@ function getTeamPerformance(matches) {
       
       const goalEfficiency =
         team.shots > 0 ?
-        (team.goals /
+        (team.statGoals /
           team.shots) *
         100 :
         0;
@@ -1598,13 +1623,69 @@ function getTeamPerformance(matches) {
         shotAccuracy,
         goalEfficiency
       };
-    })
-    .sort(
-      (a, b) =>
-      b.goals - a.goals ||
-      b.goalEfficiency -
-      a.goalEfficiency
+    });
+  
+  if (
+    Array.isArray(tableCache) &&
+    tableCache.length
+  ) {
+    const tableOrder =
+      new Map();
+    
+    tableCache.forEach(
+      (team, index) => {
+        const key =
+          team.team_id ||
+          team.teamId ||
+          team.id ||
+          team.name;
+        
+        if (key) {
+          tableOrder.set(
+            String(key),
+            index
+          );
+        }
+      }
     );
+    
+    performance.sort(
+      (a, b) => {
+        const aIndex =
+          tableOrder.get(
+            String(a.id)
+          );
+        
+        const bIndex =
+          tableOrder.get(
+            String(b.id)
+          );
+        
+        if (
+          aIndex !== undefined &&
+          bIndex !== undefined
+        ) {
+          return aIndex - bIndex;
+        }
+        
+        if (
+          aIndex !== undefined
+        ) {
+          return -1;
+        }
+        
+        if (
+          bIndex !== undefined
+        ) {
+          return 1;
+        }
+        
+        return 0;
+      }
+    );
+  }
+  
+  return performance;
 }
 
 function renderTeamPerformance(
@@ -1633,16 +1714,17 @@ function renderTeamPerformance(
     <div class="team-performance-card">
       
       <div class="team-performance-header">
-        <h3>📊 Team Performance Statistics </h3>
-         </div>
+        <h3>📊 Team Performance Statistics</h3>
+      </div>
+      
       <p class="team-performance-description">
-  These statistics show how each team has performed in the tournament.
-  Possession shows the average share of the ball, Shots shows average attempts
-  per match, SOT means shots on target, Shot Accuracy is the percentage of
-  shots that were on target, and Goal Efficiency is the percentage of shots
-  converted into goals.
-</p>
-
+        These statistics show how each team has performed in the tournament.
+        Possession shows the average share of the ball, Shots shows average
+        attempts per match, SOT means shots on target, Shot Accuracy is the
+        percentage of shots that were on target, Goal Efficiency is the
+        percentage of shots converted into goals, and CS means clean sheets.
+      </p>
+      
       <div class="team-performance-table-wrap">
         <table class="team-performance-table">
           <thead>
@@ -1654,9 +1736,10 @@ function renderTeamPerformance(
               <th>SOT</th>
               <th>Accuracy</th>
               <th>Efficiency</th>
+              <th>CS</th>
             </tr>
           </thead>
-
+          
           <tbody>
             ${teams.map(team => `
               <tr>
@@ -1668,11 +1751,11 @@ function renderTeamPerformance(
                     }
                   </div>
                 </td>
-
+                
                 <td>
                   ${team.matchesPlayed}
                 </td>
-
+                
                 <td>
                   ${
                     team.statMatches
@@ -1680,7 +1763,7 @@ function renderTeamPerformance(
                       : "-"
                   }%
                 </td>
-
+                
                 <td>
                   ${
                     team.statMatches
@@ -1688,7 +1771,7 @@ function renderTeamPerformance(
                       : "-"
                   }
                 </td>
-
+                
                 <td>
                   ${
                     team.statMatches
@@ -1696,7 +1779,7 @@ function renderTeamPerformance(
                       : "-"
                   }
                 </td>
-
+                
                 <td>
                   ${
                     team.statMatches
@@ -1704,7 +1787,7 @@ function renderTeamPerformance(
                       : "-"
                   }%
                 </td>
-
+                
                 <td>
                   ${
                     team.statMatches
@@ -1712,12 +1795,16 @@ function renderTeamPerformance(
                       : "-"
                   }%
                 </td>
+                
+                <td>
+                  ${team.cleanSheets}
+                </td>
               </tr>
             `).join("")}
           </tbody>
         </table>
       </div>
-
+      
     </div>
   `;
 }
