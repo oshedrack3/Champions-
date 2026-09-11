@@ -4149,6 +4149,173 @@ function createFixtureCard(
   return div;
 }
 
+function createFixtureCard(
+  tournament,
+  match
+) {
+  const div =
+    document.createElement("div");
+  const played =
+    Boolean(match.played);
+  const round =
+    Number(match.round) || 1;
+  const homeName =
+    match.home || "Home";
+  const awayName =
+    match.away || "Away";
+  let stats = null;
+  if (match.stats) {
+    try {
+      stats =
+        typeof match.stats === "string" ?
+        JSON.parse(match.stats) :
+        match.stats;
+    } catch {
+      stats = null;
+    }
+  }
+  const hasStats =
+    stats &&
+    stats.possession &&
+    stats.shots &&
+    stats.shotsOnTarget;
+  div.className =
+    `fixture-row ${
+      played
+        ? "played"
+        : "not-played"
+    }`;
+  div.innerHTML = `
+    <div class="fixture-label">
+      ${tournament.name || "Tournament"} •
+      R${String(round).padStart(2, "0")}
+      ${getSubmissionBadge(match)}
+    </div>
+    <div class="fixture-row-content">
+      <div class="fixture-teams-stack">
+        <div class="team-row-item team-home-container">
+          <div class="fixture-team-logo-placeholder">
+            ?
+          </div>
+          <span class="fixture-team-name">
+            ${homeName}
+          </span>
+        </div>
+        <div class="team-row-item team-away-container">
+          <div class="fixture-team-logo-placeholder">
+            ?
+          </div>
+          <span class="fixture-team-name">
+            ${awayName}
+          </span>
+        </div>
+      </div>
+      <div class="fixture-status-pane">
+        ${
+          played
+            ? `
+              <div class="score-stack">
+                <span class="score-badge played">
+                  ${match.homeGoals ?? 0}
+                </span>
+                <span class="ft-badge">
+                  Full Time
+                </span>
+                <span class="score-badge played">
+                  ${match.awayGoals ?? 0}
+                </span>
+              </div>
+            `
+            : `
+              <span class="vs-text-alt">
+                ${formatMatchDay(
+                  match.scheduledAt
+                )}
+              </span>
+            `
+        }
+      </div>
+      <div class="fixture-contact-area">
+        <button
+          class="fixture-contact-btn"
+          type="button"
+          aria-label="Team contacts"
+          title="Team contacts"
+        >
+          ☎
+        </button>
+      </div>
+    </div>
+    ${
+      played && hasStats
+        ? `
+          <div class="fixture-match-stats">
+            <div class="fixture-stat-row">
+              <span>Possession</span>
+              <span>
+                ${stats.possession[0]}% -
+                ${stats.possession[1]}%
+              </span>
+            </div>
+            <div class="fixture-stat-row">
+              <span>Shots</span>
+              <span>
+                ${stats.shots[0]} -
+                ${stats.shots[1]}
+              </span>
+            </div>
+            <div class="fixture-stat-row">
+              <span>Shots on Target</span>
+              <span>
+                ${stats.shotsOnTarget[0]} -
+                ${stats.shotsOnTarget[1]}
+              </span>
+            </div>
+          </div>
+        `
+        : ""
+    }
+    ${
+      played
+        ? `
+          <div class="match-playedTime">
+            ${formatRecordedTime(
+              match.playedAt
+            )}
+          </div>
+        `
+        : ""
+    }
+  `;
+  replaceTeamLogo(
+    div,
+    ".team-home-container",
+    match.homeLogo,
+    homeName
+  );
+  replaceTeamLogo(
+    div,
+    ".team-away-container",
+    match.awayLogo,
+    awayName
+  );
+  div.style.cursor =
+    "pointer";
+  div.onclick = () =>
+    onFixtureClick(match);
+  const contactBtn =
+    div.querySelector(
+      ".fixture-contact-btn"
+    );
+  if (contactBtn) {
+    contactBtn.onclick = (event) => {
+      event.stopPropagation();
+      openMatchContacts(match);
+    };
+  }
+  return div;
+}
+
 async function openProfileModal() {
   const modal =
     document.getElementById(
@@ -4751,3 +4918,6 @@ async function renderTeams(
     hideLoader();
   }
 }
+
+
+

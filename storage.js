@@ -2980,9 +2980,6 @@ function getSelectedMatchDays() {
   
   return Array.from(checkboxes).map(cb => Number(cb.value));
 }
-
-
-
 function getMatchDates(startDate, endDate, matchDays) {
   const dates = [];
   

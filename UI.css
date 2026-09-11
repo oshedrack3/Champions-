@@ -4588,3 +4588,148 @@ button.knockout-score-cell:hover {
 .notice-delete-btn:active {
   transform: scale(0.98);
 }
+
+
+.fixture-match-stats {
+  margin: 10px 12px 0;
+  padding: 8px 10px;
+  background: #f7f8fa;
+  border: 1px solid #e2e5e9;
+  border-radius: 8px;
+}
+
+.fixture-stat-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 28px;
+  font-size: 12px;
+  color: #4b5563;
+}
+
+.fixture-stat-row+.fixture-stat-row {
+  border-top: 1px solid #e5e7eb;
+}
+
+.fixture-stat-row span:first-child {
+  font-weight: 600;
+  color: #374151;
+}
+
+.fixture-stat-row span:last-child {
+  font-weight: 700;
+  color: #111827;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.match-playedTime {
+  margin-top: 8px;
+}
+
+
+
+.team-performance-card {
+  margin: 12px 0;
+  background: #fff;
+  border: 1px solid #e2e5e9;
+  border-radius: 12px;
+  overflow: hidden;
+  margin-bottom: 12px;
+}
+
+.team-performance-header {
+  padding: 14px 15px;
+  border-bottom: 1px solid #e5e7eb;
+  text-align: center;
+}
+
+.team-performance-header h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.team-performance-header span {
+  display: block;
+  margin-top: 3px;
+  font-size: 11px;
+  color: #6b7280;
+}
+.team-performance-table-wrap {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.team-performance-table {
+  width: 100%;
+  min-width: 650px;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.team-performance-table th {
+  padding: 10px 8px;
+  background: #f7f8fa;
+  color: #4b5563;
+  font-size: 11px;
+  font-weight: 700;
+  text-align: center;
+  white-space: nowrap;
+  border-bottom: 1px solid #e2e5e9;
+}
+
+.team-performance-table th:first-child {
+  text-align: left;
+  padding-left: 14px;
+}
+
+.team-performance-table td {
+  padding: 11px 8px;
+  text-align: center;
+  color: #374151;
+  font-weight: 600;
+  border-bottom: 1px solid #edf0f2;
+  white-space: nowrap;
+}
+
+.team-performance-table tr:last-child td {
+  border-bottom: none;
+}
+
+.team-performance-table td:first-child {
+  text-align: left;
+  padding-left: 14px;
+}
+
+.team-performance-name {
+  max-width: 150px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-weight: 700;
+  color: #111827;
+}
+
+.team-performance-empty {
+  margin: 12px 0;
+  padding: 20px;
+  background: #fff;
+  border: 1px solid #e2e5e9;
+  border-radius: 12px;
+  text-align: center;
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.team-performance-description {
+  margin: 0;
+  padding: 10px 15px 12px;
+  font-size: 11px;
+  line-height: 1.5;
+  color: #6b7280;
+  background: #fafafa;
+  border-bottom: 1px solid #e5e7eb;
+}

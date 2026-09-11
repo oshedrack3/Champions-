@@ -472,34 +472,6 @@ async function getTeams(tournamentId) {
   return result.teams || [];
 }
 
-
-async function submitMatchResult(data) {
-  const token = getToken();
-  const res = await fetch(
-    `${API}/tournaments/${data.tournamentId}/matches/${data.matchId}/submission`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: token
-      },
-      body: JSON.stringify({
-        home_goals: data.homeGoals,
-        away_goals: data.awayGoals,
-        screenshot: data.screenshot
-      })
-    }
-  );
-  const result = await res.json();
-  if (!res.ok || !result.success) {
-    throw new Error(
-      result.message ||
-      "Failed to submit result."
-    );
-  }
-  return result;
-}
-
 async function getMatchSubmission(
   tournamentId,
   matchId,
@@ -628,102 +600,6 @@ async function reviewMatchSubmission(
   return result;
 }
 
-
-async function sendMatchSubmission() {
-  closeResultRecord();
-  
-  const tournament = getCurrentTournament();
-  
-  if (!tournament || !currentMatch) {
-    return;
-  }
-  
-  const homeGoals =
-    Number(
-      document.getElementById("homeGoals").value
-    );
-  
-  const awayGoals =
-    Number(
-      document.getElementById("awayGoals").value
-    );
-  
-  if (
-    isNaN(homeGoals) ||
-    isNaN(awayGoals)
-  ) {
-    return showAlert(
-      "Enter both scores."
-    );
-  }
-  
-  const file =
-    document
-    .getElementById("matchScreenshot")
-    .files[0];
-  
-  if (!file) {
-    return showAlert(
-      "Please upload a match screenshot."
-    );
-  }
-  
-  showLoader();
-  
-  try {
-    const screenshot =
-      await fileToBase64(file);
-    
-    await submitMatchResult({
-      tournamentId: tournament.id,
-      matchId: currentMatch.id,
-      homeGoals,
-      awayGoals,
-      screenshot
-    });
-    
-    const matchIndex =
-      fixtures.findIndex(
-        match =>
-        String(match.id) ===
-        String(currentMatch.id)
-      );
-    
-    if (matchIndex !== -1) {
-      fixtures[matchIndex] = {
-        ...fixtures[matchIndex],
-        submission_status: "pending"
-      };
-    }
-    
-    currentMatch = {
-      ...currentMatch,
-      submission_status: "pending"
-    };
-    
-    closeResultRecord();
-    
-    showActionModal(
-      "Result submitted for admin approval.",
-      "success"
-    );
-    
-    await renderFixtures();
-    
-  } catch (err) {
-    
-    console.error(err);
-    
-    showAlert(
-      err.message
-    );
-    
-  } finally {
-    
-    hideLoader();
-    
-  }
-}
 
 async function invitePlayer(username) {
   const tournament = getCurrentTournament();
@@ -1419,9 +1295,9 @@ async function joinTournament(
           }
         },
         () =>
-          joinTournament(
-            tournamentId
-          )
+        joinTournament(
+          tournamentId
+        )
       );
     if (!teamsRes) {
       throw new Error(
@@ -1476,9 +1352,9 @@ async function joinTournament(
           })
         },
         () =>
-          joinTournament(
-            tournamentId
-          )
+        joinTournament(
+          tournamentId
+        )
       );
     if (!res) {
       throw new Error(
@@ -1497,23 +1373,22 @@ async function joinTournament(
       );
     }
     const updatedPlayers =
-      Array.isArray(result.players)
-        ? result.players
-        : [];
+      Array.isArray(result.players) ?
+      result.players :
+      [];
     const tournament =
       getCurrentTournament();
     if (
       tournament &&
       String(tournament.id) ===
-        String(tournamentId)
+      String(tournamentId)
     ) {
       if (
         !Array.isArray(
           tournament.tournament_players
         )
       ) {
-        tournament.tournament_players =
-          [];
+        tournament.tournament_players = [];
       }
       const existingPlayers =
         new Map(
@@ -1658,8 +1533,8 @@ function urlBase64ToUint8Array(
   
   const base64 =
     (base64String + padding)
-      .replace(/-/g, "+")
-      .replace(/_/g, "/");
+    .replace(/-/g, "+")
+    .replace(/_/g, "/");
   
   const rawData =
     atob(base64);
@@ -1815,15 +1690,13 @@ async function getNotices(force = false) {
     Array.isArray(
       data.notices
     ) ?
-    data.notices :
-    [];
+    data.notices : [];
   
   const deleted =
     Array.isArray(
       data.deleted
     ) ?
-    data.deleted :
-    [];
+    data.deleted : [];
   
   const noticeMap =
     new Map(
@@ -2044,11 +1917,11 @@ async function createNotice() {
     let notices =
       Array.isArray(
         noticesMemoryCache
-      )
-        ? noticesMemoryCache
-        : await getCachedData(
-            "notices"
-          );
+      ) ?
+      noticesMemoryCache :
+      await getCachedData(
+        "notices"
+      );
     if (!Array.isArray(notices)) {
       notices = [];
     }
@@ -2082,19 +1955,19 @@ async function createNotice() {
       notices =
         notices.filter(
           notice =>
-            !notice.expires_at ||
-            Number(
-              notice.expires_at
-            ) > Date.now()
+          !notice.expires_at ||
+          Number(
+            notice.expires_at
+          ) > Date.now()
         );
       notices.sort(
         (a, b) =>
-          Number(
-            b.created_at || 0
-          ) -
-          Number(
-            a.created_at || 0
-          )
+        Number(
+          b.created_at || 0
+        ) -
+        Number(
+          a.created_at || 0
+        )
       );
     }
     noticesMemoryCache =
@@ -2112,10 +1985,9 @@ async function createNotice() {
         "noticesSync",
         "",
         {
-          lastChangeId:
-            Number(
-              data.changeId
-            )
+          lastChangeId: Number(
+            data.changeId
+          )
         }
       );
     }
@@ -2856,11 +2728,255 @@ async function saveUpdatedProfile() {
   }
 }
 
+async function submitMatchResult(data) {
+  const token = getToken();
+  const res = await fetch(
+    `${API}/tournaments/${data.tournamentId}/matches/${data.matchId}/submission`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: token
+      },
+      body: JSON.stringify({
+        home_goals: data.homeGoals,
+        away_goals: data.awayGoals,
+        screenshot: data.screenshot,
+        stats: data.stats
+      })
+    }
+  );
+  const result = await res.json();
+  if (!res.ok || !result.success) {
+    throw new Error(
+      result.message ||
+      "Failed to submit result."
+    );
+  }
+  return result;
+}
+async function extractMatchStats(file) {
+  const image = new Image();
+  image.src = URL.createObjectURL(file);
+  await new Promise((resolve, reject) => {
+    image.onload = resolve;
+    image.onerror = reject;
+  });
+  const canvas =
+    document.createElement("canvas");
+  const ctx =
+    canvas.getContext("2d");
+  const scale = 2;
+  canvas.width =
+    image.width * scale;
+  canvas.height =
+    image.height * scale;
+  ctx.drawImage(
+    image,
+    0,
+    0,
+    canvas.width,
+    canvas.height
+  );
+  const result =
+    await Tesseract.recognize(
+      canvas,
+      "eng",
+      {
+        logger: m => {}
+      }
+    );
+  URL.revokeObjectURL(image.src);
+  const text =
+    result.data.text;
+  return parseMatchStats(text);
+}
 
-
-
-
-
+function parseMatchStats(text) {
+  const stats = {
+    possession: null,
+    shots: null,
+    shotsOnTarget: null
+  };
+  const lines =
+    text
+    .replace(/\r/g, "")
+    .split("\n")
+    .map(line => line.trim())
+    .filter(Boolean);
+  for (const line of lines) {
+    let match;
+    match =
+      line.match(
+        /(\d{1,3})%\s*Possession\s*(\d{1,3})%/i
+      );
+    if (match) {
+      stats.possession = [
+        Number(match[1]),
+        Number(match[2])
+      ];
+      continue;
+    }
+    match =
+      line.match(
+        /(\d{1,2})\s*Shots\s*on\s*Target\s*(\d{1,2})/i
+      );
+    if (match) {
+      stats.shotsOnTarget = [
+        Number(match[1]),
+        Number(match[2])
+      ];
+      continue;
+    }
+    match =
+      line.match(
+        /^(\d{1,2})\s*Shots\s*(\d{1,2})$/i
+      );
+    if (match) {
+      stats.shots = [
+        Number(match[1]),
+        Number(match[2])
+      ];
+    }
+  }
+  return stats;
+}
+async function sendMatchSubmission() {
+  closeResultRecord();
+  const tournament = getCurrentTournament();
+  if (!tournament || !currentMatch) {
+    return;
+  }
+  const homeGoals =
+    Number(
+      document.getElementById("homeGoals").value
+    );
+  const awayGoals =
+    Number(
+      document.getElementById("awayGoals").value
+    );
+  if (
+    isNaN(homeGoals) ||
+    isNaN(awayGoals)
+  ) {
+    openLeagueRecorder(currentMatch);
+    return showAlert(
+      "Enter both scores."
+    );
+  }
+  const file =
+    document
+    .getElementById("matchScreenshot")
+    .files[0];
+  if (!file) {
+    openLeagueRecorder(currentMatch);
+    return showAlert(
+      "Please upload a match screenshot."
+    );
+    
+  }
+  showLoader();
+  try {
+    const screenshot =
+      await fileToBase64(file);
+    let stats = null;
+    try {
+      stats =
+        await extractMatchStats(file);
+    } catch (err) {
+      console.error(
+        "Statistics detection failed:",
+        err
+      );
+    }
+    const hasStats =
+      stats &&
+      stats.possession &&
+      stats.shots &&
+      stats.shotsOnTarget;
+    hideLoader();
+    if (hasStats) {
+      const confirmationMessage =
+        "Detected Match Statistics:\n\n" +
+        "Possession: " +
+        stats.possession +
+        "\n" +
+        "Shots: " +
+        stats.shots +
+        "\n" +
+        "Shots on Target: " +
+        stats.shotsOnTarget +
+        "\n\n" +
+        "Are these statistics correct?";
+      const confirmed =
+        await showConfirmModal(
+          confirmationMessage,
+          "Yes, Submit",
+          "Cancel"
+        );
+      if (!confirmed) {
+        openLeagueRecorder(currentMatch);
+        return;
+      }
+    } else {
+      const submitWithoutStats =
+        await showConfirmModal(
+          "Match statistics could not be detected.\n\nDo you want to submit the result without statistics?",
+          "Yes, Submit",
+          "Cancel"
+        );
+      if (!submitWithoutStats) {
+        openLeagueRecorder(currentMatch);
+        return;
+      }
+      stats = null;
+    }
+    showLoader();
+    const submissionData = {
+      tournamentId: tournament.id,
+      matchId: currentMatch.id,
+      homeGoals,
+      awayGoals,
+      screenshot,
+      stats
+    };
+    await submitMatchResult(
+      submissionData
+    );
+    const matchIndex =
+      fixtures.findIndex(
+        match =>
+        String(match.id) ===
+        String(currentMatch.id)
+      );
+    if (matchIndex !== -1) {
+      fixtures[matchIndex] = {
+        ...fixtures[matchIndex],
+        submission_status: "pending"
+      };
+    }
+    currentMatch = {
+      ...currentMatch,
+      submission_status: "pending"
+    };
+    closeResultRecord();
+    showActionModal(
+      "Result submitted for admin approval.",
+      "success"
+    );
+    await renderFixtures();
+  } catch (err) {
+    console.error(
+      "Match submission error:",
+      err
+    );
+    showAlert(
+      err.message
+    );
+  } finally {
+    hideLoader();
+  }
+}
 
 
 
@@ -2899,4 +3015,12 @@ window.addEventListener(
     hideLoader();
   }
 );
+
+
+
+
+
+
+
+
 
