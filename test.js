@@ -4921,3 +4921,13 @@ async function renderTeams(
 
 
 
+
+function checkOpenCV() {
+  if (typeof cv !== "undefined") {
+    console.log("OpenCV loaded successfully");
+  } else {
+    console.log("OpenCV not loaded");
+  }
+}
+
+checkOpenCV();

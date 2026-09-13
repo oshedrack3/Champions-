@@ -1374,8 +1374,7 @@ async function joinTournament(
     }
     const updatedPlayers =
       Array.isArray(result.players) ?
-      result.players :
-      [];
+      result.players : [];
     const tournament =
       getCurrentTournament();
     if (
@@ -2755,92 +2754,7 @@ async function submitMatchResult(data) {
   }
   return result;
 }
-async function extractMatchStats(file) {
-  const image = new Image();
-  image.src = URL.createObjectURL(file);
-  await new Promise((resolve, reject) => {
-    image.onload = resolve;
-    image.onerror = reject;
-  });
-  const canvas =
-    document.createElement("canvas");
-  const ctx =
-    canvas.getContext("2d");
-  const scale = 2;
-  canvas.width =
-    image.width * scale;
-  canvas.height =
-    image.height * scale;
-  ctx.drawImage(
-    image,
-    0,
-    0,
-    canvas.width,
-    canvas.height
-  );
-  const result =
-    await Tesseract.recognize(
-      canvas,
-      "eng",
-      {
-        logger: m => {}
-      }
-    );
-  URL.revokeObjectURL(image.src);
-  const text =
-    result.data.text;
-  return parseMatchStats(text);
-}
 
-function parseMatchStats(text) {
-  const stats = {
-    possession: null,
-    shots: null,
-    shotsOnTarget: null
-  };
-  const lines =
-    text
-    .replace(/\r/g, "")
-    .split("\n")
-    .map(line => line.trim())
-    .filter(Boolean);
-  for (const line of lines) {
-    let match;
-    match =
-      line.match(
-        /(\d{1,3})%\s*Possession\s*(\d{1,3})%/i
-      );
-    if (match) {
-      stats.possession = [
-        Number(match[1]),
-        Number(match[2])
-      ];
-      continue;
-    }
-    match =
-      line.match(
-        /(\d{1,2})\s*Shots\s*on\s*Target\s*(\d{1,2})/i
-      );
-    if (match) {
-      stats.shotsOnTarget = [
-        Number(match[1]),
-        Number(match[2])
-      ];
-      continue;
-    }
-    match =
-      line.match(
-        /^(\d{1,2})\s*Shots\s*(\d{1,2})$/i
-      );
-    if (match) {
-      stats.shots = [
-        Number(match[1]),
-        Number(match[2])
-      ];
-    }
-  }
-  return stats;
-}
 async function sendMatchSubmission() {
   closeResultRecord();
   const tournament = getCurrentTournament();
@@ -2978,9 +2892,134 @@ async function sendMatchSubmission() {
   }
 }
 
+function waitForOpenCV() {
+  return new Promise(resolve => {
+    if (
+      typeof cv !== "undefined" &&
+      cv.Mat
+    ) {
+      resolve();
+      return;
+    }
+    
+    const check =
+      setInterval(() => {
+        if (
+          typeof cv !== "undefined" &&
+          cv.Mat
+        ) {
+          clearInterval(check);
+          resolve();
+        }
+      }, 100);
+  });
+}
 
+async function extractMatchStats(file) {
+  const image = new Image();
+  image.src = URL.createObjectURL(file);
 
+  await new Promise((resolve, reject) => {
+    image.onload = resolve;
+    image.onerror = reject;
+  });
 
+  const minDimension = 1600;
+  const scale = Math.max(1, minDimension / Math.min(image.width, image.height));
+
+  const canvas = document.createElement("canvas");
+  const ctx = canvas.getContext("2d", { willReadFrequently: true });
+
+  canvas.width = Math.round(image.width * scale);
+  canvas.height = Math.round(image.height * scale);
+
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = "high";
+  ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+  URL.revokeObjectURL(image.src);
+
+ 
+  const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  const data = imgData.data;
+
+  for (let i = 0; i < data.length; i += 4) {
+    const luminance = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
+    // Gentle contrast stretch: dark text gets darker, yellow background stays bright
+    const contrastVal = luminance < 140 ? Math.max(0, luminance - 40) : Math.min(255, luminance + 30);
+    data[i] = contrastVal;
+    data[i + 1] = contrastVal;
+    data[i + 2] = contrastVal;
+  }
+  ctx.putImageData(imgData, 0, 0);
+
+ 
+  const result = await Tesseract.recognize(canvas, "eng", {
+    logger: () => {},
+    tessedit_pageseg_mode: 6
+  });
+
+  const lines = result.data.lines || [];
+  const stats = { possession: null, shots: null, shotsOnTarget: null };
+
+  const targets = [
+    { key: "possession", regex: /poss(?:ession)?/i },
+    { key: "shotsOnTarget", regex: /shots?\s*(?:on|0n|in)?\s*target|shotson|target/i },
+    { key: "shots", regex: /(?:^|\s)shots?(?:\s|$)|total\s*shots?/i }
+  ];
+
+  for (const line of lines) {
+    const lineText = (line.text || "").trim();
+    if (!lineText) continue;
+
+    for (const target of targets) {
+      if (stats[target.key] !== null) continue;
+
+      if (target.regex.test(lineText)) {
+        // Collect all words on this specific line that contain numbers
+        const numericWords = [];
+
+        for (const word of line.words || []) {
+          const digitsOnly = String(word.text || "").replace(/[^0-9]/g, "");
+          if (digitsOnly && word.bbox) {
+            numericWords.push({
+              value: Number(digitsOnly),
+              x: (word.bbox.x0 + word.bbox.x1) / 2
+            });
+          }
+        }
+
+        // 3. Sort numbers from LEFT to RIGHT visually across the screen
+        numericWords.sort((a, b) => a.x - b.x);
+
+        if (numericWords.length >= 2) {
+          const home = numericWords[0].value;
+          const away = numericWords[numericWords.length - 1].value;
+          stats[target.key] = [home, away];
+        }
+      }
+    }
+  }
+
+  
+  if (stats.possession) {
+    let [home, away] = stats.possession;
+    if (home >= 0 && away >= 0 && home <= 100 && away <= 100) {
+      if (home + away !== 100) {
+        away = 100 - home;
+        stats.possession = [home, away];
+      }
+    } else {
+      stats.possession = null;
+    }
+  }
+
+  if (stats.shots && stats.shotsOnTarget) {
+    if (stats.shotsOnTarget[0] > stats.shots[0]) stats.shotsOnTarget[0] = stats.shots[0];
+    if (stats.shotsOnTarget[1] > stats.shots[1]) stats.shotsOnTarget[1] = stats.shots[1];
+  }
+
+  return stats;
+}
 
 
 window.addEventListener(
@@ -3015,11 +3054,6 @@ window.addEventListener(
     hideLoader();
   }
 );
-
-
-
-
-
 
 
 
