@@ -456,6 +456,7 @@ function handleMenuAction(action) {
   closeMenu();
   
   const actions = {
+    showRank:showGlobalRankings,
     openHOF: openHallOfFame,
     openProfile: openProfileModal,
     joinTour: handleJoinTournament,
@@ -534,13 +535,13 @@ const menuConfig = {
       action: "openHOF",
       roles: ["admin", "player"]
     },
-    /*
-    {
-      label: "Delete Tournament",
-      action: "deleteTournament",
-      roles: ["admin"]
-    },
     
+    {
+      label: "Ranking",
+      action: "showRank",
+      roles: ["admin", "player"]
+    },
+    /*
     {
       label: "Setup POTS Tournaments",
       action: "openPOTS",

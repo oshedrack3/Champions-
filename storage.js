@@ -4,6 +4,7 @@ let APP_MODE = "view";
 let myCompetitions = [];
 let currentCompetition = null;
 myTournaments = null;
+let globalRankings = null;
 let currentKnockoutRoundIndex = 1;
 const STORE = "tournaments";
 let noticeScrollTimer = null;

@@ -51,7 +51,7 @@
   
   
   
-  <!-- Table Page Head -->
+  <!--  Page Head -->
   <div id="tablePageHead" style="display:none">
     <button class="menu-btn" onclick="setPageAndToggleMenu('league')">
       ☰
@@ -207,12 +207,45 @@
         </div>
       </section>
       <div id="mySection">
-        
-        <div id="competitionList"></div>
+             <div id="competitionList"></div>
         
       </div>
       
-      
+      <div id="globalRankingsSection" style="display:none;">
+  
+  <button
+    type="button"
+    class="hall-of-fame-back-btn"
+    onclick="closeGlobalRankings()"
+  >
+    ← Back
+  </button>
+  
+  <div class="rankings-header">
+    
+    <h2>Global Rankings</h2>
+    
+    <p>
+      Global Rankings measure your performance across official
+      Galatico Tournament matches. Every player starts with a rating of 1500.
+    </p>
+    
+    <p>
+      Winning increases your rating, while losing decreases it.
+      Beating a higher-rated player earns more points, while
+      losing to a lower-rated player can cost more.
+    </p>
+    
+    <p>
+      Your rating belongs to your user account, so it remains with
+      you even if you change teams.
+    </p>
+    
+  </div>
+  
+  <div id="globalRankingsList"></div>
+  
+</div>
       <div id="publicSection" style="display:none;">
         
         <div id="publicTournaments"></div>
@@ -636,7 +669,19 @@
           <div id="longestWinningRun"></div>
           
           <div id="longestUnbeatenRun"></div>
+          <div id="mostDraws"></div>
+          <div id="fewestLosses"></div>
+          <div id="mostGoalsConceded"></div>
+          <div id="mostCleanSheets"></div>
+          <div id="mostGoalsByTeamInMatch"></div>
           
+          <div id="longestScoringRun"></div>
+          <div id="longestCleanSheetRun"></div>
+          <div id="longestScoringDrought"></div>
+          
+          <div id="highestPossession"></div>
+          <div id="mostShots"></div>
+          <div id="mostShotsOnTarget"></div>
         </div>
         </div>
         </div>
@@ -1892,7 +1937,7 @@
   
   
   <script src="https://docs.opencv.org/4.x/opencv.js"></script>
-
+  
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   
   <script src="storage.js"></script>

@@ -314,21 +314,6 @@ function getPlayedMatches(matches) {
 }
 
 
-function getRecords(matches) {
-  return {
-    bestAttack: getBestAttack(matches),
-    bestDefense: getBestDefense(matches),
-    goalDifference: getGoalDifference(matches),
-    mostWins: getMostWins(matches),
-    
-    biggestWins: getBiggestWins(matches),
-    highestScoringMatches: getHighestScoringMatches(matches),
-    mostGoalsInMatch: getMostGoalsInMatch(matches),
-    
-    longestWinningRuns: getLongestWinningRuns(matches),
-    longestUnbeatenRuns: getLongestUnbeatenRuns(matches)
-  };
-}
 
 function getBestAttack(matches) {
   const playedMatches = getPlayedMatches(matches);
@@ -420,14 +405,20 @@ function getMostGoalsInMatch(matches) {
 }
 
 function getLongestWinningRuns(matches) {
-  const playedMatches = getPlayedMatches(matches);
+  const playedMatches = getPlayedMatches(matches)
+    .sort((a, b) => {
+      return new Date(a.playedAt) - new Date(b.playedAt);
+    });
   
   const streaks = {};
   
   playedMatches.forEach(m => {
     [m.home, m.away].forEach(team => {
       if (!streaks[team]) {
-        streaks[team] = { current: 0, best: 0 };
+        streaks[team] = {
+          current: 0,
+          best: 0
+        };
       }
     });
     
@@ -457,110 +448,6 @@ function getLongestWinningRuns(matches) {
     .map(([team, data]) => [team, data.best])
     .sort((a, b) => b[1] - a[1]);
 }
-
-async function renderRecords() {
-  const tournament =
-    getCurrentTournament();
-  
-  if (!tournament) return;
-  
-  try {
-    showLoader();
-    
-    await loadTournamentFixtures(
-      tournament.id
-    );
-    
-    await rebuildTableFromMatches(
-      false
-    );
-    
-    const records =
-      getRecords(fixtures);
-    
-    renderChampionPodium();
-    
-    renderTeamPerformance(
-      fixtures
-    );
-    
-    renderTop5(
-      "bestAttack",
-      records.bestAttack,
-      "⚽ Top Scorers",
-      "goals"
-    );
-    
-    renderTop5(
-      "bestDefense",
-      records.bestDefense,
-      "🛡 Best Defensive Teams",
-      "conceded"
-    );
-    
-    renderTop5(
-      "goalDifference",
-      records.goalDifference,
-      "📈 Best Goal Difference"
-    );
-    
-    renderTop5(
-      "mostWins",
-      records.mostWins,
-      "👑 Most Wins",
-      "wins"
-    );
-    
-    renderMatchCard(
-      "biggestWin",
-      records.biggestWins[0],
-      "💥 Biggest Win",
-      `Margin: +${
-        records.biggestWins[0]?.margin || 0
-      }`
-    );
-    
-    renderMatchCard(
-      "highestScoringMatch",
-      records.highestScoringMatches[0],
-      "🔥 Highest Scoring Match",
-      `Total Goals: ${
-        records
-          .highestScoringMatches[0]
-          ?.totalGoals || 0
-      }`
-    );
-    
-    renderStreakCard(
-      "longestWinningRun",
-      records.longestWinningRuns,
-      "👑 Longest Winning Run",
-      "wins"
-    );
-    
-    renderStreakCard(
-      "longestUnbeatenRun",
-      records.longestUnbeatenRuns,
-      "🚧 Longest Unbeaten Run",
-      "matches"
-    );
-    
-  } catch (err) {
-    console.error(
-      "[renderRecords]",
-      err
-    );
-    
-    showAlert(
-      err.message ||
-      "Failed to load records."
-    );
-    
-  } finally {
-    hideLoader();
-  }
-}
-
 
 function getLeagueWinnerFinal() {
   const tournament =
@@ -951,6 +838,131 @@ function renderStreakCard(
         ${rowsHtml}
       </div>
 
+    </div>
+  `;
+}
+
+function renderStatRecord(
+  containerId,
+  record,
+  title,
+  suffix = ""
+) {
+  const el =
+    document.getElementById(
+      containerId
+    );
+  
+  if (!el) return;
+  
+  if (!record) {
+    el.innerHTML = "";
+    return;
+  }
+  
+  const team =
+    record.team;
+  
+  const value =
+    record.value ?? 0;
+  
+  const logo =
+    getRecordTeamLogo(team);
+  
+  el.innerHTML = `
+    <div class="record-card hero streak-card">
+      <div
+        class="record-title"
+        style="
+          margin-bottom:12px;
+          font-weight:bold;
+        "
+      >
+        ${title}
+      </div>
+      <div class="streak-list">
+        <div
+          class="streak-row streak-row-item-0"
+          style="
+            display:flex;
+            align-items:center;
+            justify-content:space-between;
+            margin-bottom:8px;
+          "
+        >
+          <div
+            class="team-side"
+            style="
+              display:flex;
+              align-items:center;
+              gap:8px;
+            "
+          >
+            <span class="medal">
+              🥇
+            </span>
+            ${
+              logo
+                ? `
+                  <img
+                    src="${logo}"
+                    class="team-logo"
+                    alt=""
+                    style="
+                      width:24px;
+                      height:24px;
+                      min-width:24px;
+                      min-height:24px;
+                      display:inline-block;
+                      object-fit:contain;
+                    "
+                  >
+                `
+                : `
+                  <div
+                    class="team-logo-placeholder"
+                    style="
+                      width:24px;
+                      height:24px;
+                      display:flex;
+                      align-items:center;
+                      justify-content:center;
+                      background:#eee;
+                      border-radius:50%;
+                    "
+                  >
+                    ?
+                  </div>
+                `
+            }
+            <span>
+              ${escapeHtml(
+                String(team)
+              )}
+            </span>
+          </div>
+          <div class="record-sub">
+            <b>${value}${suffix}</b>
+          </div>
+        </div>
+        <div
+          style="
+            margin-top:8px;
+            font-size:12px;
+            opacity:0.7;
+            text-align:right;
+          "
+        >
+          vs ${escapeHtml(
+            String(record.opponent)
+          )}
+          ${
+            record.opponentValue != null
+              ? ` (${record.opponentValue})`
+              : ""
+          }
+        </div>
+      </div>
     </div>
   `;
 }
@@ -1409,7 +1421,190 @@ function renderMatchCard(
   `;
 }
 ''
-
+async function renderRecords() {
+  const tournament =
+    getCurrentTournament();
+  
+  if (!tournament) return;
+  
+  try {
+    showLoader();
+    
+    await loadTournamentFixtures(
+      tournament.id
+    );
+    
+    await rebuildTableFromMatches(
+      false
+    );
+    
+    const records =
+      getRecords(fixtures);
+    
+    renderChampionPodium();
+    
+    renderTeamPerformance(
+      fixtures
+    );
+    
+    renderTop5(
+      "bestAttack",
+      records.bestAttack,
+      "⚽ Top Scorers",
+      "goals"
+    );
+    
+    renderTop5(
+      "bestDefense",
+      records.bestDefense,
+      "🛡 Best Defensive Teams",
+      "conceded"
+    );
+    
+    renderTop5(
+      "goalDifference",
+      records.goalDifference,
+      "📈 Best Goal Difference"
+    );
+    
+    renderTop5(
+      "mostWins",
+      records.mostWins,
+      "👑 Most Wins",
+      "wins"
+    );
+    
+    renderMatchCard(
+      "biggestWin",
+      records.biggestWins[0],
+      "💥 Biggest Win",
+      `Margin: +${
+        records.biggestWins[0]?.margin || 0
+      }`
+    );
+    
+    renderMatchCard(
+      "highestScoringMatch",
+      records.highestScoringMatches[0],
+      "🔥 Highest Scoring Match",
+      `Total Goals: ${
+        records
+          .highestScoringMatches[0]
+          ?.totalGoals || 0
+      }`
+    );
+    
+    renderStreakCard(
+      "longestWinningRun",
+      records.longestWinningRuns,
+      "👑 Longest Winning Run",
+      "wins"
+    );
+    
+    renderStreakCard(
+      "longestUnbeatenRun",
+      records.longestUnbeatenRuns,
+      "🚧 Longest Unbeaten Run",
+      "matches"
+    );
+    
+    renderTop5(
+      "mostDraws",
+      records.mostDraws,
+      "🤝 Most Draws",
+      "draws"
+    );
+    
+    renderTop5(
+      "fewestLosses",
+      records.fewestLosses,
+      "🛡 Fewest Losses",
+      "losses"
+    );
+    
+    renderTop5(
+      "mostGoalsConceded",
+      records.mostGoalsConceded,
+      "😬 Most Goals Conceded",
+      "goals"
+    );
+    
+    renderTop5(
+      "mostCleanSheets",
+      records.mostCleanSheets,
+      "🧤 Most Clean Sheets",
+      "clean sheets"
+    );
+    
+    const mostGoals =
+      records.mostGoalsByTeamInMatch[0];
+    
+    if (mostGoals) {
+      renderMatchCard(
+        "mostGoalsByTeamInMatch",
+        mostGoals.match,
+        "🔥 Most Goals by One Team",
+        `${mostGoals.team}: ${mostGoals.goals} goals`
+      );
+    }
+    
+    renderStreakCard(
+      "longestScoringRun",
+      records.longestScoringRuns,
+      "🎯 Longest Scoring Run",
+      "matches"
+    );
+    
+    renderStreakCard(
+      "longestCleanSheetRun",
+      records.longestCleanSheetRuns,
+      "🧱 Longest Clean-Sheet Run",
+      "matches"
+    );
+    
+    renderStreakCard(
+      "longestScoringDrought",
+      records.longestScoringDroughts,
+      "🚫 Longest Scoring Drought",
+      "matches"
+    );
+    
+    renderStatRecord(
+      "highestPossession",
+      records.highestPossession[0],
+      "🧠 Highest Possession",
+      "%"
+    );
+    
+    renderStatRecord(
+      "mostShots",
+      records.mostShots[0],
+      "🎯 Most Shots",
+      ""
+    );
+    
+    renderStatRecord(
+      "mostShotsOnTarget",
+      records.mostShotsOnTarget[0],
+      "🎯 Most Shots on Target",
+      ""
+    );
+    
+  } catch (err) {
+    console.error(
+      "[renderRecords]",
+      err
+    );
+    
+    showAlert(
+      err.message ||
+      "Failed to load records."
+    );
+    
+  } finally {
+    hideLoader();
+  }
+}
 
 
 function getTeamPerformance(matches) {
@@ -1808,3 +2003,509 @@ function renderTeamPerformance(
     </div>
   `;
 }
+
+
+function getRecords(matches) {
+  return {
+    bestAttack: getBestAttack(matches),
+    bestDefense: getBestDefense(matches),
+    goalDifference: getGoalDifference(matches),
+    mostWins: getMostWins(matches),
+    
+    biggestWins: getBiggestWins(matches),
+    highestScoringMatches: getHighestScoringMatches(matches),
+    mostGoalsInMatch: getMostGoalsInMatch(matches),
+    
+    longestWinningRuns: getLongestWinningRuns(matches),
+    longestUnbeatenRuns: getLongestUnbeatenRuns(matches),
+    
+    mostDraws: getMostDraws(matches),
+    fewestLosses: getFewestLosses(matches),
+    mostGoalsConceded: getMostGoalsConceded(matches),
+    mostCleanSheets: getMostCleanSheets(matches),
+    mostGoalsByTeamInMatch: getMostGoalsByTeamInMatch(matches),
+    longestScoringRuns: getLongestScoringRuns(matches),
+    longestCleanSheetRuns: getLongestCleanSheetRuns(matches),
+    longestScoringDroughts: getLongestScoringDroughts(matches),
+    highestPossession: getHighestPossession(matches),
+    mostShots: getMostShots(matches),
+    mostShotsOnTarget: getMostShotsOnTarget(matches)
+  };
+}
+
+
+function getMostDraws(matches) {
+  const playedMatches =
+    getPlayedMatches(matches);
+  
+  const draws = {};
+  
+  playedMatches.forEach(m => {
+    if (m.homeGoals === m.awayGoals) {
+      draws[m.home] =
+        (draws[m.home] || 0) + 1;
+      
+      draws[m.away] =
+        (draws[m.away] || 0) + 1;
+    }
+  });
+  
+  return Object.entries(draws)
+    .sort((a, b) => b[1] - a[1]);
+}
+
+
+function getFewestLosses(matches) {
+  const playedMatches =
+    getPlayedMatches(matches);
+  
+  const teams = {};
+  
+  playedMatches.forEach(m => {
+    if (!teams[m.home]) {
+      teams[m.home] = 0;
+    }
+    
+    if (!teams[m.away]) {
+      teams[m.away] = 0;
+    }
+    
+    if (m.homeGoals > m.awayGoals) {
+      teams[m.away]++;
+    } else if (m.awayGoals > m.homeGoals) {
+      teams[m.home]++;
+    }
+  });
+  
+  return Object.entries(teams)
+    .sort((a, b) => a[1] - b[1]);
+}
+
+
+function getMostGoalsConceded(matches) {
+  const playedMatches =
+    getPlayedMatches(matches);
+  
+  const conceded = {};
+  
+  playedMatches.forEach(m => {
+    conceded[m.home] =
+      (conceded[m.home] || 0) +
+      m.awayGoals;
+    
+    conceded[m.away] =
+      (conceded[m.away] || 0) +
+      m.homeGoals;
+  });
+  
+  return Object.entries(conceded)
+    .sort((a, b) => b[1] - a[1]);
+}
+
+
+function getMostCleanSheets(matches) {
+  const playedMatches =
+    getPlayedMatches(matches);
+  
+  const cleanSheets = {};
+  
+  playedMatches.forEach(m => {
+    if (!cleanSheets[m.home]) {
+      cleanSheets[m.home] = 0;
+    }
+    
+    if (!cleanSheets[m.away]) {
+      cleanSheets[m.away] = 0;
+    }
+    
+    if (m.awayGoals === 0) {
+      cleanSheets[m.home]++;
+    }
+    
+    if (m.homeGoals === 0) {
+      cleanSheets[m.away]++;
+    }
+  });
+  
+  return Object.entries(cleanSheets)
+    .sort((a, b) => b[1] - a[1]);
+}
+
+
+function getMostGoalsByTeamInMatch(matches) {
+  const playedMatches =
+    getPlayedMatches(matches);
+  
+  return playedMatches
+    .map(m => {
+      if (m.homeGoals >= m.awayGoals) {
+        return {
+          team: m.home,
+          goals: m.homeGoals,
+          opponent: m.away,
+          opponentGoals: m.awayGoals,
+          match: m
+        };
+      }
+      
+      return {
+        team: m.away,
+        goals: m.awayGoals,
+        opponent: m.home,
+        opponentGoals: m.homeGoals,
+        match: m
+      };
+    })
+    .sort((a, b) => b.goals - a.goals);
+}
+
+
+function getLongestScoringRuns(matches) {
+  const playedMatches =
+    getPlayedMatches(matches)
+    .sort((a, b) => {
+      return Number(a.played_at) -
+        Number(b.played_at);
+    });
+  
+  const streaks = {};
+  
+  playedMatches.forEach(m => {
+    [m.home, m.away].forEach(team => {
+      if (!streaks[team]) {
+        streaks[team] = {
+          current: 0,
+          best: 0
+        };
+      }
+    });
+    
+    if (m.homeGoals > 0) {
+      streaks[m.home].current++;
+    } else {
+      streaks[m.home].current = 0;
+    }
+    
+    if (m.awayGoals > 0) {
+      streaks[m.away].current++;
+    } else {
+      streaks[m.away].current = 0;
+    }
+    
+    streaks[m.home].best =
+      Math.max(
+        streaks[m.home].best,
+        streaks[m.home].current
+      );
+    
+    streaks[m.away].best =
+      Math.max(
+        streaks[m.away].best,
+        streaks[m.away].current
+      );
+  });
+  
+  return Object.entries(streaks)
+    .map(([team, data]) => [
+      team,
+      data.best
+    ])
+    .sort((a, b) => b[1] - a[1]);
+}
+
+
+function getLongestCleanSheetRuns(matches) {
+  const playedMatches =
+    getPlayedMatches(matches)
+    .sort((a, b) => {
+      return Number(a.played_at) -
+        Number(b.played_at);
+    });
+  
+  const streaks = {};
+  
+  playedMatches.forEach(m => {
+    [m.home, m.away].forEach(team => {
+      if (!streaks[team]) {
+        streaks[team] = {
+          current: 0,
+          best: 0
+        };
+      }
+    });
+    
+    if (m.awayGoals === 0) {
+      streaks[m.home].current++;
+    } else {
+      streaks[m.home].current = 0;
+    }
+    
+    if (m.homeGoals === 0) {
+      streaks[m.away].current++;
+    } else {
+      streaks[m.away].current = 0;
+    }
+    
+    streaks[m.home].best =
+      Math.max(
+        streaks[m.home].best,
+        streaks[m.home].current
+      );
+    
+    streaks[m.away].best =
+      Math.max(
+        streaks[m.away].best,
+        streaks[m.away].current
+      );
+  });
+  
+  return Object.entries(streaks)
+    .map(([team, data]) => [
+      team,
+      data.best
+    ])
+    .sort((a, b) => b[1] - a[1]);
+}
+
+
+function getLongestScoringDroughts(matches) {
+  const playedMatches =
+    getPlayedMatches(matches)
+    .sort((a, b) => {
+      return Number(a.played_at) -
+        Number(b.played_at);
+    });
+  
+  const droughts = {};
+  
+  playedMatches.forEach(m => {
+    [m.home, m.away].forEach(team => {
+      if (!droughts[team]) {
+        droughts[team] = {
+          current: 0,
+          best: 0
+        };
+      }
+    });
+    
+    if (m.homeGoals === 0) {
+      droughts[m.home].current++;
+      
+      droughts[m.home].best =
+        Math.max(
+          droughts[m.home].best,
+          droughts[m.home].current
+        );
+    } else {
+      droughts[m.home].current = 0;
+    }
+    
+    if (m.awayGoals === 0) {
+      droughts[m.away].current++;
+      
+      droughts[m.away].best =
+        Math.max(
+          droughts[m.away].best,
+          droughts[m.away].current
+        );
+    } else {
+      droughts[m.away].current = 0;
+    }
+  });
+  
+  return Object.entries(droughts)
+    .map(([team, data]) => [
+      team,
+      data.best
+    ])
+    .sort((a, b) => b[1] - a[1]);
+}
+
+
+function getMatchStats(match) {
+  if (!match || !match.stats) {
+    return null;
+  }
+  
+  try {
+    const stats =
+      typeof match.stats === "string"
+        ? JSON.parse(match.stats)
+        : match.stats;
+    
+    if (!stats) {
+      return null;
+    }
+    
+    if (
+      !Array.isArray(stats.possession) ||
+      !Array.isArray(stats.shots) ||
+      !Array.isArray(stats.shotsOnTarget)
+    ) {
+      return null;
+    }
+    
+    if (
+      stats.possession.length < 2 ||
+      stats.shots.length < 2 ||
+      stats.shotsOnTarget.length < 2
+    ) {
+      return null;
+    }
+    
+    return stats;
+  } catch {
+    return null;
+  }
+}
+
+
+function getHighestPossession(matches) {
+  const playedMatches =
+    getPlayedMatches(matches);
+  
+  return playedMatches
+    .map(m => {
+      const stats =
+        getMatchStats(m);
+      
+      if (!stats) {
+        return null;
+      }
+      
+      const homePossession =
+        Number(stats.possession[0]);
+      
+      const awayPossession =
+        Number(stats.possession[1]);
+      
+      if (
+        !Number.isFinite(homePossession) ||
+        !Number.isFinite(awayPossession)
+      ) {
+        return null;
+      }
+      
+      if (homePossession >= awayPossession) {
+        return {
+          team: m.home,
+          value: homePossession,
+          opponent: m.away,
+          opponentValue: awayPossession,
+          match: m
+        };
+      }
+      
+      return {
+        team: m.away,
+        value: awayPossession,
+        opponent: m.home,
+        opponentValue: homePossession,
+        match: m
+      };
+    })
+    .filter(Boolean)
+    .sort((a, b) => b.value - a.value);
+}
+
+
+function getMostShots(matches) {
+  const playedMatches =
+    getPlayedMatches(matches);
+  
+  return playedMatches
+    .map(m => {
+      const stats =
+        getMatchStats(m);
+      
+      if (!stats) {
+        return null;
+      }
+      
+      const homeShots =
+        Number(stats.shots[0]);
+      
+      const awayShots =
+        Number(stats.shots[1]);
+      
+      if (
+        !Number.isFinite(homeShots) ||
+        !Number.isFinite(awayShots)
+      ) {
+        return null;
+      }
+      
+      if (homeShots >= awayShots) {
+        return {
+          team: m.home,
+          value: homeShots,
+          opponent: m.away,
+          opponentValue: awayShots,
+          match: m
+        };
+      }
+      
+      return {
+        team: m.away,
+        value: awayShots,
+        opponent: m.home,
+        opponentValue: homeShots,
+        match: m
+      };
+    })
+    .filter(Boolean)
+    .sort((a, b) => b.value - a.value);
+}
+
+
+function getMostShotsOnTarget(matches) {
+  const playedMatches =
+    getPlayedMatches(matches);
+  
+  return playedMatches
+    .map(m => {
+      const stats =
+        getMatchStats(m);
+      
+      if (!stats) {
+        return null;
+      }
+      
+      const homeShotsOnTarget =
+        Number(stats.shotsOnTarget[0]);
+      
+      const awayShotsOnTarget =
+        Number(stats.shotsOnTarget[1]);
+      
+      if (
+        !Number.isFinite(homeShotsOnTarget) ||
+        !Number.isFinite(awayShotsOnTarget)
+      ) {
+        return null;
+      }
+      
+      if (
+        homeShotsOnTarget >=
+        awayShotsOnTarget
+      ) {
+        return {
+          team: m.home,
+          value: homeShotsOnTarget,
+          opponent: m.away,
+          opponentValue: awayShotsOnTarget,
+          match: m
+        };
+      }
+      
+      return {
+        team: m.away,
+        value: awayShotsOnTarget,
+        opponent: m.home,
+        opponentValue: homeShotsOnTarget,
+        match: m
+      };
+    })
+    .filter(Boolean)
+    .sort((a, b) => b.value - a.value);
+}
+

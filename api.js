@@ -3022,6 +3022,195 @@ async function extractMatchStats(file) {
 }
 
 
+async function loadGlobalRankings() {
+  if (globalRankings !== null) {
+    return globalRankings;
+  }
+  
+  const token = getToken();
+  
+  if (!token) {
+    throw new Error("Authentication required.");
+  }
+  
+  const res = await apiRequest(
+    `${API}/rankings/global`,
+    {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    },
+    () => loadGlobalRankings()
+  );
+  
+  if (!res) {
+    return [];
+  }
+  
+  const result = await res.json();
+  
+  if (!res.ok || !result.success) {
+    throw new Error(
+      result.message ||
+      "Failed to load global rankings."
+    );
+  }
+  
+  globalRankings =
+    result.rankings || [];
+  
+  return globalRankings;
+}
+
+async function showGlobalRankings() {
+  document
+    .querySelectorAll(
+      "#mySection, #noticeSection, #publicSection, #hallOfFameSection"
+    )
+    .forEach(section => {
+      section.style.display = "none";
+    });
+  
+  const rankingsSection =
+    document.getElementById(
+      "globalRankingsSection"
+    );
+  
+  if (!rankingsSection) {
+    return;
+  }
+  
+  rankingsSection.style.display = "block";
+  
+  const list =
+    document.getElementById(
+      "globalRankingsList"
+    );
+  
+  if (list) {
+    list.innerHTML =
+      "<p>Loading rankings...</p>";
+  }
+  
+  try {
+    const rankings =
+      await loadGlobalRankings();
+    
+    renderGlobalRankings(rankings);
+    
+  } catch (error) {
+    console.error(
+      "Failed to load global rankings:",
+      error
+    );
+    
+    if (list) {
+      list.innerHTML =
+        "<p>Failed to load rankings.</p>";
+    }
+  }
+}
+
+function closeGlobalRankings() {
+  const rankingsSection =
+    document.getElementById(
+      "globalRankingsSection"
+    );
+  
+  if (rankingsSection) {
+    rankingsSection.style.display = "none";
+  }
+  
+  const mySection =
+    document.getElementById("mySection");
+    const noticeSection =
+  document.getElementById("noticeSection");
+  
+  if (mySection) {
+    mySection.style.display = "block";
+  }
+  
+  if (noticeSection) {
+  noticeSection.style.display = "block";
+}
+  
+}
+
+function renderGlobalRankings(rankings) {
+  const list =
+    document.getElementById(
+      "globalRankingsList"
+    );
+  
+  if (!list) {
+    return;
+  }
+  
+  if (!rankings.length) {
+    list.innerHTML =
+      "<p>No rankings available yet.</p>";
+    return;
+  }
+  
+  const currentUser =
+    getCurrentUser();
+  
+  list.innerHTML =
+    rankings
+    .map((player, index) => {
+      const position =
+        index + 1;
+      
+      const isCurrentUser =
+        currentUser &&
+        player.id === currentUser.id;
+      
+      let positionDisplay;
+      
+      if (position === 1) {
+        positionDisplay = "🥇";
+      } else if (position === 2) {
+        positionDisplay = "🥈";
+      } else if (position === 3) {
+        positionDisplay = "🥉";
+      } else {
+        positionDisplay = position;
+      }
+      
+      return `
+          <div
+            class="global-ranking-row ${
+              isCurrentUser
+                ? "current-ranking-user"
+                : ""
+            }"
+          >
+            <div class="ranking-position">
+              ${positionDisplay}
+            </div>
+
+            <div class="ranking-player">
+              ${escapeHtml(
+                player.username || "Unknown Player"
+              )}
+            </div>
+
+            <div class="ranking-rating">
+              ${player.rating ?? 1500}
+            </div>
+          </div>
+        `;
+    })
+    .join("");
+}
+
+
+
+
+
+
+
+
 window.addEventListener(
   "load",
   async () => {
