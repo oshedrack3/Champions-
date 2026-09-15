@@ -1542,6 +1542,14 @@ function renderTable(data) {
       index
     );
     
+    if (index < 4) {
+      tr.classList.add("champions-league");
+    }
+    
+    if (index >= data.length - 3) {
+      tr.classList.add("relegation");
+    }
+    
     const played =
       Number(team.played) || 0;
     
@@ -1578,9 +1586,7 @@ function renderTable(data) {
     const indicator =
       typeof getChangeIndicator ===
       "function" ?
-      getChangeIndicator(
-        team.change
-      ) :
+      getChangeIndicator(team.change) :
       "";
     
     tr.innerHTML = `
@@ -1622,9 +1628,7 @@ function renderTable(data) {
     `;
     
     const teamName =
-      tr.querySelector(
-        ".team-name"
-      );
+      tr.querySelector(".team-name");
     
     if (teamName) {
       teamName.textContent =
@@ -1633,9 +1637,7 @@ function renderTable(data) {
     
     if (team.logo) {
       const teamCell =
-        tr.querySelector(
-          ".table-team-cell"
-        );
+        tr.querySelector(".table-team-cell");
       
       const placeholder =
         teamCell?.querySelector(

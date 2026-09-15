@@ -332,6 +332,10 @@ async function openTournament(id) {
       document.getElementById(
         "leagueName"
       ).textContent = name;
+      document.getElementById(
+        "tableTournamentName"
+      ).textContent = name;
+      
       
       goToTournamentPage();
       

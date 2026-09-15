@@ -207,45 +207,41 @@
         </div>
       </section>
       <div id="mySection">
-             <div id="competitionList"></div>
+        <div id="competitionList"></div>
         
       </div>
       
       <div id="globalRankingsSection" style="display:none;">
-  
-  <button
-    type="button"
-    class="hall-of-fame-back-btn"
-    onclick="closeGlobalRankings()"
-  >
-    ← Back
-  </button>
-  
-  <div class="rankings-header">
-    
-    <h2>Global Rankings</h2>
-    
-    <p>
-      Global Rankings measure your performance across official
-      Galatico Tournament matches. Every player starts with a rating of 1500.
-    </p>
-    
-    <p>
-      Winning increases your rating, while losing decreases it.
-      Beating a higher-rated player earns more points, while
-      losing to a lower-rated player can cost more.
-    </p>
-    
-    <p>
-      Your rating belongs to your user account, so it remains with
-      you even if you change teams.
-    </p>
-    
-  </div>
-  
-  <div id="globalRankingsList"></div>
-  
-</div>
+        
+        <button type="button" class="hall-of-fame-back-btn" onclick="closeGlobalRankings()">
+          ← Back
+        </button>
+        
+        <div class="rankings-header">
+          
+          <h2>Global Rankings</h2>
+          
+          <p>
+            Global Rankings measure your performance across official
+            Galatico Tournament matches. Every player starts with a rating of 1500.
+          </p>
+          
+          <p>
+            Winning increases your rating, while losing decreases it.
+            Beating a higher-rated player earns more points, while
+            losing to a lower-rated player can cost more.
+          </p>
+          
+          <p>
+            Your rating belongs to your user account, so it remains with
+            you even if you change teams.
+          </p>
+          
+        </div>
+        
+        <div id="globalRankingsList"></div>
+        
+      </div>
       <div id="publicSection" style="display:none;">
         
         <div id="publicTournaments"></div>
@@ -614,29 +610,52 @@
       <!-- League TABLE PAGE -->
       <section id="tablePage" style="display:none">
         
-        <div id="tableView">
-          <div class="table-wrapper">
-            <table id="leagueTable">
-              <thead>
-                <tr>
-                  <th>#</th>
-                  <th>Team</th>
-                  <th>P</th>
-                  <th>W</th>
-                  <th>D</th>
-                  <th>L</th>
-                  <th>GF</th>
-                  <th>GA</th>
-                  <th>GD</th>
-                  <th>Pts</th>
-                </tr>
-              </thead>
-              
-              <tbody id="tableBody"></tbody>
-            </table>
-          </div>
-        </div>
-        <div id="teamView" style="display:none">
+<div id="tableView">
+  
+  <div class="table-wrapper">
+    
+    <div class="table-tournament-name" id="tableTournamentName"></div>
+    
+    <div class="table-zones">
+      
+      <div class="table-zone">
+        <span class="zone-indicator champions-zone"></span>
+        <span>Champions League Qualification</span>
+      </div>
+      
+      <div class="table-zone">
+        <span class="zone-indicator relegation-zone"></span>
+        <span>Relegation</span>
+      </div>
+      
+    </div>
+    
+    <table id="leagueTable">
+      
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Team</th>
+          <th>P</th>
+          <th>W</th>
+          <th>D</th>
+          <th>L</th>
+          <th>GF</th>
+          <th>GA</th>
+          <th>GD</th>
+          <th>Pts</th>
+        </tr>
+      </thead>
+      
+      <tbody id="tableBody"></tbody>
+      
+    </table>
+    
+  </div>
+  
+</div>
+
+<div id="teamView" style="display:none">
           <div id="teamList"></div>
         </div>
         
