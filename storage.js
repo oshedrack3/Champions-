@@ -321,7 +321,7 @@ async function openTournament(id) {
     
     const name =
       tournament.name;
-    
+    const season = tournament.season;
     const formatType =
       (
         tournament.format ||
@@ -335,7 +335,10 @@ async function openTournament(id) {
       document.getElementById(
         "tableTournamentName"
       ).textContent = name;
-      
+      document.getElementById(
+        "tournamentSeason"
+      ).textContent = season;
+ 
       
       goToTournamentPage();
       
