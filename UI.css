@@ -1543,6 +1543,7 @@ body.admin-mode .data-admin {
   width: fit-content;
   max-width: 100%;
   overflow-x: auto;
+  padding: 10px;
   margin: 0 auto 25px;
   border-radius: 12px;
   border: 1px solid #2d333b;
@@ -1752,6 +1753,23 @@ tbody tr.relegation td:first-child {
   text-align: left !important;
 }
 
+th:first-child,
+td:first-child {
+  position: sticky;
+  left: 0;
+  z-index: 20;
+  background: white;
+  border-left: 2px solid #2d333b;
+}
+
+th:nth-child(2),
+td:nth-child(2) {
+  position: sticky;
+  left: 48px;
+  z-index: 20;
+  background: white;
+}
+
 .team-name {
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1759,6 +1777,12 @@ tbody tr.relegation td:first-child {
   text-align: left !important;
   display: inline-block;
 }
+.table-form-cell {
+  min-width: 120px;
+  padding-left: 10px;
+  padding-right: 20px;
+}
+
 
 .compToggle {
   position: sticky;
@@ -5099,4 +5123,7 @@ button.knockout-score-cell:hover {
   font-weight: 500;
   color: #666;
 }
+
+
+
 

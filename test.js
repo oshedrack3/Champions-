@@ -1471,174 +1471,6 @@ async function sharePOTSTable() {
 }
 
 
-function renderTable(data) {
-  const tbody =
-    document.getElementById("tableBody");
-  
-  if (!tbody) {
-    return;
-  }
-  
-  tbody.innerHTML = "";
-  
-  if (
-    !Array.isArray(data) ||
-    data.length === 0
-  ) {
-    tbody.innerHTML = `
-      <tr>
-        <td colspan="10" style="text-align:center;">
-          No table data
-        </td>
-      </tr>
-    `;
-    
-    return;
-  }
-  
-  data.forEach((team, index) => {
-    const tr =
-      document.createElement("tr");
-    
-    tr.setAttribute(
-      "data-row-index",
-      index
-    );
-    
-    if (index < 4) {
-      tr.classList.add("champions-league");
-    }
-    
-    if (index >= data.length - 3) {
-      tr.classList.add("relegation");
-    }
-    
-    const played =
-      Number(team.played) || 0;
-    
-    const wins =
-      Number(team.wins) || 0;
-    
-    const draws =
-      Number(team.draws) || 0;
-    
-    const losses =
-      Number(team.losses) || 0;
-    
-    const gf =
-      Number(team.gf) || 0;
-    
-    const ga =
-      Number(team.ga) || 0;
-    
-    const gd =
-      team.gd !== undefined &&
-      team.gd !== null ?
-      Number(team.gd) || 0 :
-      gf - ga;
-    
-    const pts =
-      team.pts !== undefined &&
-      team.pts !== null ?
-      Number(team.pts) || 0 :
-      Number(team.points) || 0;
-    
-    const gdClass =
-      gd < 0 ? "neg" : "";
-    
-    const indicator =
-      typeof getChangeIndicator ===
-      "function" ?
-      getChangeIndicator(team.change) :
-      "";
-    
-    tr.innerHTML = `
-      <td>
-        <div class="rank-cell">
-          <span class="rank-num">
-            ${index + 1}
-          </span>
-          ${indicator}
-        </div>
-      </td>
-
-      <td>
-        <div class="table-team-cell">
-          <div class="team-logo-placeholder">
-            ?
-          </div>
-
-          <strong class="team-name"></strong>
-        </div>
-      </td>
-
-      <td>${played}</td>
-      <td>${wins}</td>
-      <td>${draws}</td>
-      <td>${losses}</td>
-      <td>${gf}</td>
-      <td>${ga}</td>
-
-      <td class="${gdClass}">
-        ${gd >= 0 ? "+" + gd : gd}
-      </td>
-
-      <td>
-        <strong>
-          ${pts}
-        </strong>
-      </td>
-    `;
-    
-    const teamName =
-      tr.querySelector(".team-name");
-    
-    if (teamName) {
-      teamName.textContent =
-        team.name || "";
-    }
-    
-    if (team.logo) {
-      const teamCell =
-        tr.querySelector(".table-team-cell");
-      
-      const placeholder =
-        teamCell?.querySelector(
-          ".team-logo-placeholder"
-        );
-      
-      if (
-        teamCell &&
-        placeholder
-      ) {
-        const img =
-          document.createElement("img");
-        
-        img.className =
-          "table-team-logo";
-        
-        img.src =
-          team.logo;
-        
-        img.alt =
-          team.name || "Logo";
-        
-        img.onerror = () => {
-          img.replaceWith(
-            placeholder
-          );
-        };
-        
-        teamCell.replaceChild(
-          img,
-          placeholder
-        );
-      }
-    }
-    
-    tbody.appendChild(tr);
-  });
-}
 
 function getChangeIndicator(change) {
   if (change === 'up') {
@@ -4305,219 +4137,6 @@ function renderUserProfile(profile) {
 }
 
 
-async function renderFormView() {
-  const tournament =
-    getCurrentTournament();
-  
-  if (!tournament) return;
-  
-  const container =
-    document.getElementById(
-      "formContainer"
-    );
-  
-  if (!container) return;
-  
-  try {
-    showLoader();
-    
-    await loadTournamentFixtures(
-      tournament.id
-    );
-    
-    const table =
-      await rebuildTableFromMatches(
-        false
-      );
-    
-    if (
-      !Array.isArray(table) ||
-      !table.length
-    ) {
-      container.innerHTML = `
-        <div class="empty-state">
-          No team form available.
-        </div>
-      `;
-      
-      return;
-    }
-    
-    const sortedTable =
-      getSortedTable(
-        [...table]
-      );
-    
-    container.innerHTML = "";
-    
-    sortedTable.forEach(
-      (tableRow, index) => {
-        const teamId =
-          String(
-            tableRow.id || ""
-          );
-        
-        const teamName =
-          tableRow.name ||
-          "Unknown Team";
-        
-        const logoUrl =
-          tableRow.logo ||
-          null;
-        
-        const form =
-          getTeamForm(
-            teamId,
-            fixtures
-          );
-        
-        const row =
-          document.createElement(
-            "div"
-          );
-        
-        row.className =
-          "form-row";
-        
-        row.setAttribute(
-          "data-index",
-          index
-        );
-        
-        row.innerHTML = `
-          <div class="form-team">
-
-            <span class="form-position">
-              ${tableRow.pos || index + 1}
-            </span>
-
-            ${
-              logoUrl
-                ? `<img
-                    class="Form-team-logo"
-                    src="${logoUrl}"
-                    alt=""
-                    loading="lazy"
-                  >`
-                : `<div class="team-logo-placeholder">
-                    ⚽
-                  </div>`
-            }
-
-            <span>
-              ${escapeHtml(teamName)}
-            </span>
-
-          </div>
-
-          <div class="form-results">
-            ${form.map(result => `
-              <span class="form-badge ${result}">
-                ${result}
-              </span>
-            `).join("")}
-          </div>
-        `;
-        
-        container.appendChild(
-          row
-        );
-      }
-    );
-    
-  } catch (err) {
-    console.error(
-      "[renderFormView]",
-      err
-    );
-    
-    container.innerHTML = `
-      <div class="empty-state">
-        Failed to load team form.
-      </div>
-    `;
-    
-    showAlert(
-      err.message ||
-      "Failed to load team form."
-    );
-    
-  } finally {
-    hideLoader();
-  }
-}
-
-function getTeamForm(
-  teamId,
-  fixtures
-) {
-  const playedMatches =
-    (fixtures || [])
-    .filter(match =>
-      Number(match.played) === 1 &&
-      (
-        String(match.home_team_id) ===
-        String(teamId) ||
-        String(match.away_team_id) ===
-        String(teamId)
-      )
-    )
-    .sort(
-      (a, b) =>
-      Number(
-        a.playedAt ??
-        a.played_at ??
-        a.updated_at ??
-        a.created_at ??
-        0
-      ) -
-      Number(
-        b.playedAt ??
-        b.played_at ??
-        b.updated_at ??
-        b.created_at ??
-        0
-      )
-    );
-  
-  return playedMatches
-    .slice(-5)
-    .map(match => {
-      const isHome =
-        String(match.home_team_id) ===
-        String(teamId);
-      
-      const teamGoals =
-        Number(
-          isHome ?
-          match.homeGoals :
-          match.awayGoals
-        );
-      
-      const opponentGoals =
-        Number(
-          isHome ?
-          match.awayGoals :
-          match.homeGoals
-        );
-      
-      if (
-        teamGoals >
-        opponentGoals
-      ) {
-        return "W";
-      }
-      
-      if (
-        teamGoals <
-        opponentGoals
-      ) {
-        return "L";
-      }
-      
-      return "D";
-    });
-}
 
 
 async function renderTeams(
@@ -4823,3 +4442,378 @@ function checkOpenCV() {
 }
 
 checkOpenCV();
+
+
+
+function renderTable(data) {
+  const tbody =
+    document.getElementById("tableBody");
+
+  if (!tbody) {
+    return;
+  }
+
+  tbody.innerHTML = "";
+
+  if (
+    !Array.isArray(data) ||
+    data.length === 0
+  ) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="11" style="text-align:center;">
+          No table data
+        </td>
+      </tr>
+    `;
+
+    return;
+  }
+
+  data.forEach((team, index) => {
+    const tr =
+      document.createElement("tr");
+
+    tr.setAttribute(
+      "data-row-index",
+      index
+    );
+
+    if (index < 4) {
+      tr.classList.add("champions-league");
+    }
+
+    if (index >= data.length - 3) {
+      tr.classList.add("relegation");
+    }
+
+    const played =
+      Number(team.played) || 0;
+
+    const wins =
+      Number(team.wins) || 0;
+
+    const draws =
+      Number(team.draws) || 0;
+
+    const losses =
+      Number(team.losses) || 0;
+
+    const gf =
+      Number(team.gf) || 0;
+
+    const ga =
+      Number(team.ga) || 0;
+
+    const gd =
+      team.gd !== undefined &&
+      team.gd !== null
+        ? Number(team.gd) || 0
+        : gf - ga;
+
+    const pts =
+      team.pts !== undefined &&
+      team.pts !== null
+        ? Number(team.pts) || 0
+        : Number(team.points) || 0;
+
+    const gdClass =
+      gd < 0 ? "neg" : "";
+
+    const indicator =
+      typeof getChangeIndicator ===
+      "function"
+        ? getChangeIndicator(team.change)
+        : "";
+
+    const teamId =
+      String(team.id || "");
+
+    tr.innerHTML = `
+      <td>
+        <div class="rank-cell">
+          <span class="rank-num">
+            ${index + 1}
+          </span>
+          ${indicator}
+        </div>
+      </td>
+
+      <td>
+        <div class="table-team-cell">
+          <div class="team-logo-placeholder">
+            ?
+          </div>
+
+          <strong class="team-name"></strong>
+        </div>
+      </td>
+
+      <td>${played}</td>
+      <td>${wins}</td>
+      <td>${draws}</td>
+      <td>${losses}</td>
+      <td>${gf}</td>
+      <td>${ga}</td>
+
+      <td class="${gdClass}">
+        ${gd >= 0 ? "+" + gd : gd}
+      </td>
+
+      <td>
+        <strong>
+          ${pts}
+        </strong>
+      </td>
+
+      <td
+        class="table-form-cell"
+        data-team-id="${teamId}"
+      >
+        <div class="form-results"></div>
+      </td>
+    `;
+
+    const teamName =
+      tr.querySelector(".team-name");
+
+    if (teamName) {
+      teamName.textContent =
+        team.name || "";
+    }
+
+    if (team.logo) {
+      const teamCell =
+        tr.querySelector(".table-team-cell");
+
+      const placeholder =
+        teamCell?.querySelector(
+          ".team-logo-placeholder"
+        );
+
+      if (
+        teamCell &&
+        placeholder
+      ) {
+        const img =
+          document.createElement("img");
+
+        img.className =
+          "table-team-logo";
+
+        img.src =
+          team.logo;
+
+        img.alt =
+          team.name || "Logo";
+
+        img.onerror = () => {
+          img.replaceWith(
+            placeholder
+          );
+        };
+
+        teamCell.replaceChild(
+          img,
+          placeholder
+        );
+      }
+    }
+
+    tbody.appendChild(tr);
+  });
+
+  renderFormView();
+}
+
+
+async function renderFormView() {
+  const tournament =
+    getCurrentTournament();
+  
+  if (!tournament) return;
+  
+  const table =
+    document.getElementById(
+      "leagueTable"
+    );
+  
+  if (!table) return;
+  
+  try {
+    showLoader();
+    
+    await loadTournamentFixtures(
+      tournament.id
+    );
+    
+    const rebuiltTable =
+      await rebuildTableFromMatches(
+        false
+      );
+    
+    if (
+      !Array.isArray(rebuiltTable) ||
+      !rebuiltTable.length
+    ) {
+      document
+        .querySelectorAll(
+          ".table-form-cell"
+        )
+        .forEach(cell => {
+          cell.innerHTML = `
+            <div class="empty-state">
+              No team form available.
+            </div>
+          `;
+        });
+      
+      return;
+    }
+    
+    const sortedTable =
+      getSortedTable(
+        [...rebuiltTable]
+      );
+    
+    sortedTable.forEach(
+      tableRow => {
+        const teamId =
+          String(
+            tableRow.id || ""
+          );
+        
+        const form =
+          getTeamForm(
+            teamId,
+            fixtures
+          );
+        
+        const cell =
+          table.querySelector(
+            `.table-form-cell[data-team-id="${teamId}"]`
+          );
+        
+        if (!cell) {
+          return;
+        }
+        
+        const results =
+          cell.querySelector(
+            ".form-results"
+          );
+        
+        if (!results) {
+          return;
+        }
+        
+        results.innerHTML =
+          form.map(result => `
+            <span class="form-badge ${result}">
+              ${result}
+            </span>
+          `).join("");
+      }
+    );
+    
+  } catch (err) {
+    console.error(
+      "[renderFormView]",
+      err
+    );
+    
+    document
+      .querySelectorAll(
+        ".table-form-cell"
+      )
+      .forEach(cell => {
+        cell.innerHTML = `
+          <div class="empty-state">
+            Failed to load team form.
+          </div>
+        `;
+      });
+    
+    showAlert(
+      err.message ||
+      "Failed to load team form."
+    );
+    
+  } finally {
+    hideLoader();
+  }
+}
+
+
+function getTeamForm(
+  teamId,
+  fixtures
+) {
+  const playedMatches =
+    (fixtures || [])
+    .filter(match =>
+      Number(match.played) === 1 &&
+      (
+        String(match.home_team_id) ===
+        String(teamId) ||
+        String(match.away_team_id) ===
+        String(teamId)
+      )
+    )
+    .sort(
+      (a, b) =>
+      Number(
+        a.playedAt ??
+        a.played_at ??
+        a.updated_at ??
+        a.created_at ??
+        0
+      ) -
+      Number(
+        b.playedAt ??
+        b.played_at ??
+        b.updated_at ??
+        b.created_at ??
+        0
+      )
+    );
+  
+  return playedMatches
+    .slice(-5)
+    .map(match => {
+      const isHome =
+        String(match.home_team_id) ===
+        String(teamId);
+      
+      const teamGoals =
+        Number(
+          isHome ?
+          match.homeGoals :
+          match.awayGoals
+        );
+      
+      const opponentGoals =
+        Number(
+          isHome ?
+          match.awayGoals :
+          match.homeGoals
+        );
+      
+      if (
+        teamGoals >
+        opponentGoals
+      ) {
+        return "W";
+      }
+      
+      if (
+        teamGoals <
+        opponentGoals
+      ) {
+        return "L";
+      }
+      
+      return "D";
+    });
+}
+

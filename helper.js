@@ -1170,25 +1170,29 @@ document.getElementById("editLogoInput").addEventListener("change", function(e) 
   }
 });
 
-
-
 async function shareTable() {
   const wrapper = document.querySelector('.table-wrapper');
-  const wasInScreenshotMode = wrapper.classList.contains('screenshot-mode');
-  
-  wrapper.classList.add('screenshot-mode');
-  
-  await new Promise(resolve => setTimeout(resolve, 100));
   
   try {
+    const width = wrapper.scrollWidth;
+    const height = wrapper.scrollHeight;
+    
     const canvas = await html2canvas(wrapper, {
       backgroundColor: '#161b22',
       scale: 2,
-      useCORS: true
+      useCORS: true,
+      width: width,
+      height: height,
+      windowWidth: width,
+      windowHeight: height,
+      scrollX: 0,
+      scrollY: 0
     });
     
     canvas.toBlob(async (blob) => {
-      const file = new File([blob], 'league-table.png', { type: 'image/png' });
+      const file = new File([blob], 'league-table.png', {
+        type: 'image/png'
+      });
       
       if (navigator.canShare && navigator.canShare({ files: [file] })) {
         await navigator.share({
@@ -1199,23 +1203,26 @@ async function shareTable() {
       } else {
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
+        
         a.href = url;
         a.download = 'league-table.png';
         a.click();
+        
         URL.revokeObjectURL(url);
-        showActionModal('Image downloaded! Share it manually.', 'success');
+        
+        showActionModal(
+          'Image downloaded! Share it manually.',
+          'success'
+        );
       }
     });
     
   } catch (err) {
     console.error('Share failed:', err);
     showActionModal('Could not capture table', 'delete');
-  } finally {
-    if (!wasInScreenshotMode) {
-      wrapper.classList.remove('screenshot-mode');
-    }
   }
 }
+
 async function shareCupTable() {
   closeMenu();
   
