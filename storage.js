@@ -2072,23 +2072,11 @@ async function saveInlineEdit(e) {
       imageInput.files &&
       imageInput.files.length > 0
     ) {
-      
-      tournamentImage = await new Promise(
-        (resolve, reject) => {
-          
-          const reader = new FileReader();
-          
-          reader.onload = () => {
-            resolve(reader.result);
-          };
-          
-          reader.onerror = reject;
-          
-          reader.readAsDataURL(
-            imageInput.files[0]
-          );
-        }
-      );
+      tournamentImage =
+        await fileToBase64(
+          imageInput.files[0],
+          1200
+        );
     }
     
     const changes = {
@@ -2102,7 +2090,8 @@ async function saveInlineEdit(e) {
     };
     
     if (tournamentImage) {
-      changes.tournamentImage = tournamentImage;
+      changes.tournamentImage =
+        tournamentImage;
     }
     
     const updatedTournament =
@@ -2135,12 +2124,14 @@ async function saveInlineEdit(e) {
     
     window.editingTournamentId = null;
     
-    document.getElementById("createTour").style.display =
-      "none";
+    document.getElementById(
+      "createTour"
+    ).style.display = "none";
     
     document.getElementById(
-      "tournamentModalTitle"
-    ).textContent = "Create New Tournament";
+        "tournamentModalTitle"
+      ).textContent =
+      "Create New Tournament";
     
     document.getElementById(
       "tournamentModalSubmitBtn"
@@ -2155,8 +2146,9 @@ async function saveInlineEdit(e) {
     }
     
     document.getElementById(
-      "tournamentImagePreview"
-    ).src = "images/default-tournament.png";
+        "tournamentImagePreview"
+      ).src =
+      "images/default-tournament.png";
     
     renderTournamentList();
     
