@@ -1882,6 +1882,12 @@ async function openCompetition(id) {
         c => String(c.id) === String(id)
       );
     
+    const name = currentCompetition.name;
+    
+    document
+      .getElementById("competitionInViewName")
+      .textContent = name;
+    
     goToListOfTournamentPage();
     
     myTournaments =

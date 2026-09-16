@@ -56,7 +56,6 @@ main {
 .page-toggle {
   display: flex;
   gap: 8px;
-  padding-right: 30px;
 }
 
 .page-toggle button {
@@ -814,36 +813,22 @@ select:focus {
   height: 30px;
   box-sizing: border-box;
 }
-.groupCard {
-  background: white;
-  
-  border: 1px solid #30363d;
-  
-  border-radius: 18px;
-  
-  overflow: hidden;
-  
-  box-shadow:
-    0 4px 18px rgba(0, 0, 0, .25);
-}
 
 .groupHeader {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  
-  padding: 16px 18px;
-  
-  border-bottom: 1px solid #21262d;
+  width: 100%;
+  padding: 12px 14px;
+  background: #fff;
+  text-align: center;
+  box-sizing: border-box;
+ 
 }
 
 .groupHeader h3 {
-  color: #21262d;
-  
-  font-size: 1rem;
+  margin: 0;
+  color: #222;
+  font-size: 17px;
   font-weight: 700;
 }
-
 .groupMatches {
   display: flex;
   flex-direction: column;

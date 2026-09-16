@@ -3296,7 +3296,17 @@ async function renderCupTables() {
   
   if (!container) return;
   
-  container.innerHTML = "";
+  container.innerHTML = `
+    <div class="cup-tables-header">
+      <div class="cup-tables-name">
+        ${tournament.name || ""}
+      </div>
+      
+      <div class="cup-tables-season">
+        ${tournament.season || ""}
+      </div>
+    </div>
+  `;
   
   const fixtures =
     await loadTournamentFixtures(
@@ -3310,7 +3320,7 @@ async function renderCupTables() {
     );
   
   if (!groupMatches.length) {
-    container.innerHTML = `
+    container.innerHTML += `
       <p class="emptyText">
         No table for direct Knockout Cups
         <br>
@@ -3327,7 +3337,7 @@ async function renderCupTables() {
     );
   
   if (!Array.isArray(table)) {
-    container.innerHTML = `
+    container.innerHTML += `
       <p class="emptyText">
         Unable to load table.
       </p>
@@ -3627,7 +3637,17 @@ async function renderCupTables() {
   
   if (!container) return;
   
-  container.innerHTML = "";
+  container.innerHTML = `
+    <div class="cup-tables-header">
+      <div class="cup-tables-name">
+        ${tournament.name || ""}
+      </div>
+      
+      <div class="cup-tables-season">
+        ${tournament.season || ""}
+      </div>
+    </div>
+  `;
   
   const fixtures =
     await loadTournamentFixtures(
@@ -3642,7 +3662,7 @@ async function renderCupTables() {
     );
   
   if (!groupMatches.length) {
-    container.innerHTML = `
+    container.innerHTML += `
       <p class="emptyText">
         No table for direct Knockout Cups
         <br>
@@ -3875,42 +3895,7 @@ function renderCupTableRow(
   }
 }
 
-function createCupTableGroupCard(
-  groupName
-) {
-  const groupCard =
-    document.createElement("div");
-  
-  groupCard.className =
-    "groupCard";
-  
-  groupCard.innerHTML = `
-    <div class="groupHeader">
-      <h3>${groupName}</h3>
-    </div>
 
-    <div class="table-wrapper groupTableWrap">
-      <table>
-        <thead>
-          <tr>
-            <th>#</th>
-            <th>Team</th>
-            <th>P</th>
-            <th>W</th>
-            <th>D</th>
-            <th>L</th>
-            <th>GD</th>
-            <th>Pts</th>
-          </tr>
-        </thead>
-
-        <tbody></tbody>
-      </table>
-    </div>
-  `;
-  
-  return groupCard;
-}
 
 function renderCupTableRow(
   tbody,
@@ -6257,4 +6242,172 @@ function shareKnockoutFixtures() {
     console.error(err);
     showAlert('Could not take screenshot');
   });
+}
+
+
+function renderCupTableGroup(
+  container,
+  tournament,
+  group,
+  table
+) {
+  const groupCard =
+    createCupTableGroupCard(
+      group.name
+    );
+  
+  const tbody =
+    groupCard.querySelector(
+      "tbody"
+    );
+  
+  if (!table.length) {
+    renderEmptyCupTable(
+      tbody
+    );
+  } else {
+    table.forEach(
+      (team, index) => {
+        renderCupTableRow(
+          tbody,
+          tournament,
+          {
+            ...team,
+            pos: index + 1
+          }
+        );
+      }
+    );
+  }
+  
+  container.appendChild(
+    groupCard
+  );
+}
+
+function createCupTableGroupCard(
+  groupName
+) {
+  const groupCard =
+    document.createElement("div");
+  
+  groupCard.className =
+    "groupCard";
+  
+  groupCard.innerHTML = `
+    <div class="groupHeader">
+      <h3>${groupName}</h3>
+    </div>
+
+    <div class="table-wrapper groupTableWrap">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Team</th>
+            <th>P</th>
+            <th>GD</th>
+            <th>Pts</th>
+          </tr>
+        </thead>
+
+        <tbody></tbody>
+      </table>
+    </div>
+  `;
+  
+  return groupCard;
+}
+
+function renderCupTableRow(
+  tbody,
+  tournament,
+  team
+) {
+  const tr =
+    document.createElement("tr");
+  
+  tr.innerHTML = `
+    <td>${team.pos}</td>
+
+    <td>
+      <div class="table-team-cell">
+        <div class="team-logo-placeholder">
+          ?
+        </div>
+
+        <strong class="team-name">
+          ${team.name}
+        </strong>
+      </div>
+    </td>
+
+    <td>${team.played}</td>
+    <td>${team.gd}</td>
+    <td>${team.pts}</td>
+  `;
+  
+  tbody.appendChild(tr);
+  
+  if (team.logo) {
+    const placeholder =
+      tr.querySelector(
+        ".team-logo-placeholder"
+      );
+    
+    if (placeholder) {
+      const img =
+        document.createElement("img");
+      
+      img.className =
+        "fixture-team-logo";
+      
+      img.src =
+        team.logo;
+      
+      img.alt =
+        `${team.name} logo`;
+      
+      img.onerror = () => {
+        img.remove();
+      };
+      
+      placeholder.replaceWith(
+        img
+      );
+    }
+  }
+}
+
+
+function createCupTableGroupCard(
+  groupName
+) {
+  const groupCard =
+    document.createElement("div");
+  
+  groupCard.className =
+    "table-wrapper groupTableWrap";
+  
+  groupCard.innerHTML = `
+    <div class="groupHeader">
+      <h3>${groupName}</h3>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Team</th>
+          <th>P</th>
+          <th>GD</th>
+          <th>Pts</th>
+        </tr>
+      </thead>
+
+      <tbody></tbody>
+    </table>
+  `;
+  
+  return groupCard;
 }

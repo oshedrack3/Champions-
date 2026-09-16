@@ -298,6 +298,7 @@ async function updateTournamentDetails(id, data) {
   
   return result.tournament;
 }
+
 async function uploadTeamLogo(tournamentId, teamId, teamName, logo) {
   const token = getToken();
   

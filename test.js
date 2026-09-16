@@ -187,29 +187,7 @@ function replaceTeamLogo(container, selector, logoUrl, teamName, fallbackUrl = "
   teamEl.replaceChild(img, placeholder);
 }
 
-function onFixtureClick(match, submission) {
-  
-  if (APP_MODE === "view") return;
-  
-  if (APP_MODE === "admin") {
-    
-    if (submission) {
-      return openSubmissionReview(match, submission);
-    }
-    
-    return openLeagueRecorder(match);
-  }
-  
-  if (APP_MODE === "player") {
-    
-    if (submission) {
-      return openSubmissionReview(match, submission);
-    }
-    
-    return openLeagueRecorder(match);
-  }
-  
-}
+
 
 function toggleRoundCarousel(searchQuery) {
   const roundCarousel = document.getElementById("roundCarousel");
@@ -305,32 +283,7 @@ function replaceTeamLogo(
   );
 }
 
-function onFixtureClick(
-  match,
-  submission
-) {
-  if (APP_MODE === "view") {
-    return;
-  }
-  if (APP_MODE === "admin") {
-    if (submission) {
-      return openSubmissionReview(
-        match,
-        submission
-      );
-    }
-    return openLeagueRecorder(match);
-  }
-  if (APP_MODE === "player") {
-    if (submission) {
-      return openSubmissionReview(
-        match,
-        submission
-      );
-    }
-    return openLeagueRecorder(match);
-  }
-}
+
 
 function getSubmissionBadge(
   match,
@@ -1797,9 +1750,7 @@ document.addEventListener("touchend", (e) => {
 
 
 function showPOTSView() {
-  document.getElementById("viewIndicator").textContent = "POTS Rankings";
-  
-  populateTournamentMapping();
+   populateTournamentMapping();
   loadPOTConfig();
   setupPOTListeners();
   calculatePOT();
@@ -1807,7 +1758,7 @@ function showPOTSView() {
 
 
 function showTournamentView() {
-  document.getElementById("viewIndicator").textContent = "Tournaments";
+
 }
 
 function enableSwipeForRounds() {
@@ -3116,6 +3067,23 @@ function createTournamentCard(tournament, currentUser) {
       ${tournament.name}
     </h3>
 
+    ${
+      status === "completed" &&
+      tournament.champion_name
+        ? `
+          <div class="tournament-champion">
+            <span class="tournament-champion-label">
+              Champion
+            </span>
+
+            <span class="tournament-champion-name">
+              ${tournament.champion_name}
+            </span>
+          </div>
+        `
+        : ""
+    }
+
     <div
       class="menu-dropdown hidden"
       id="menu-${tournament.id}"
@@ -3809,103 +3777,6 @@ function closeTeamSelectionModal(
   }
 }
 
-async function onFixtureClick(match) {
-  if (APP_MODE === "view") {
-    return;
-  }
-  
-  const status =
-    String(
-      match.submission_status || ""
-    ).toLowerCase();
-  
-  const user =
-    getCurrentUser();
-  
-  const isAdmin =
-    user?.role === "admin";
-  
-  if (
-    !isAdmin &&
-    status === "approved"
-  ) {
-    return;
-  }
-  
-  if (
-    !isAdmin &&
-    status !== "pending" &&
-    status !== "rejected"
-  ) {
-    return openLeagueRecorder(match);
-  }
-  
-  if (
-    isAdmin &&
-    status !== "pending" &&
-    status !== "rejected" &&
-    status !== "approved"
-  ) {
-    return openLeagueRecorder(match);
-  }
-  
-  try {
-    showLoader();
-    
-    const tournament =
-      getCurrentTournament();
-    
-    if (!tournament) return;
-    
-    let submission;
-    
-    if (isAdmin) {
-      const submissions =
-        await getMatchSubmissions(
-          tournament.id,
-          match.id
-        );
-      
-      submission =
-        Array.isArray(submissions) ?
-        submissions[0] :
-        null;
-    } else {
-      submission =
-        await getMatchSubmission(
-          tournament.id,
-          match.id
-        );
-    }
-    
-    if (!submission) {
-      showAlert(
-        "Submission not found."
-      );
-      return;
-    }
-    
-    openSubmissionReview(
-      match,
-      submission
-    );
-    
-  } catch (err) {
-    console.error(
-      "[onFixtureClick]",
-      err
-    );
-    
-    showAlert(
-      err.message ||
-      "Failed to load submission."
-    );
-    
-  } finally {
-    hideLoader();
-  }
-}
-
 
 function getMatchSubmissionStatus(match) {
   return String(
@@ -3937,6 +3808,21 @@ async function onFixtureClick(match) {
     return;
   }
   
+  const tournament =
+    getCurrentTournament();
+  
+  if (!tournament) {
+    return;
+  }
+  
+  if (
+    String(
+      tournament.season_status || ""
+    ).toLowerCase() === "completed"
+  ) {
+    return;
+  }
+  
   const status =
     String(
       match.submission_status || ""
@@ -3974,11 +3860,6 @@ async function onFixtureClick(match) {
   
   try {
     showLoader();
-    
-    const tournament =
-      getCurrentTournament();
-    
-    if (!tournament) return;
     
     let submission;
     
@@ -4028,7 +3909,6 @@ async function onFixtureClick(match) {
     hideLoader();
   }
 }
-
 function createFixtureCard(
   tournament,
   match

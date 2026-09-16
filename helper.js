@@ -1215,67 +1215,117 @@ async function shareTable() {
     }
   }
 }
-
-
 async function shareCupTable() {
   closeMenu();
-  const wrapper = document.getElementById('cupTables');
+  
+  const wrapper =
+    document.getElementById(
+      'cupTables'
+    );
   
   if (!wrapper) {
-    showActionModal('Screenshot target area not found!', 'delete');
+    showActionModal(
+      'Screenshot target area not found!',
+      'delete'
+    );
     return;
   }
   
-  const wasInScreenshotMode = wrapper.classList.contains('screenshot-mode');
-  wrapper.classList.add('screenshot-mode');
+  const wasInScreenshotMode =
+    wrapper.classList.contains(
+      'screenshot-mode'
+    );
   
-  await new Promise(resolve => setTimeout(resolve, 100));
+  wrapper.classList.add(
+    'screenshot-mode'
+  );
+  
+  await new Promise(
+    resolve =>
+    setTimeout(resolve, 100)
+  );
   
   try {
-    const canvas = await html2canvas(wrapper, {
-      backgroundColor: '#161b22',
-      scale: 2,
-      useCORS: true
-    });
+    const canvas =
+      await html2canvas(
+        wrapper,
+        {
+          backgroundColor: '#ffffff',
+          scale: 2,
+          useCORS: true
+        }
+      );
     
-    canvas.toBlob(async (blob) => {
-      if (!blob) {
-        showActionModal('Failed to process screenshot image.', 'delete');
-        return;
-      }
-      
-      const file = new File([blob], 'match-records.png', {
-        type: 'image/png'
-      });
-      
-      if (navigator.canShare && navigator.canShare({ files: [file] })) {
-        await navigator.share({
-          title: 'eFootball Match Records',
-          text: 'Group Stage Matches',
-          files: [file]
-        });
-      } else {
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'match-records.png';
-        a.click();
-        URL.revokeObjectURL(url);
+    canvas.toBlob(
+      async (blob) => {
+        if (!blob) {
+          showActionModal(
+            'Failed to process screenshot image.',
+            'delete'
+          );
+          return;
+        }
         
-        showActionModal('Image downloaded! Share it manually.', 'success');
+        const file =
+          new File(
+            [blob],
+            'cup-table.png',
+            {
+              type: 'image/png'
+            }
+          );
+        
+        if (
+          navigator.canShare &&
+          navigator.canShare({
+            files: [file]
+          })
+        ) {
+          await navigator.share({
+            title: 'eFootball Cup Table',
+            text: 'Cup Group Stage Table',
+            files: [file]
+          });
+        } else {
+          const url =
+            URL.createObjectURL(blob);
+          
+          const a =
+            document.createElement('a');
+          
+          a.href = url;
+          a.download = 'cup-table.png';
+          a.click();
+          
+          URL.revokeObjectURL(url);
+          
+          showActionModal(
+            'Image downloaded! Share it manually.',
+            'success'
+          );
+        }
       }
-    });
+    );
     
   } catch (err) {
-    console.error('Share failed:', err);
-    showActionModal('Could not capture records', 'delete');
+    console.error(
+      'Share failed:',
+      err
+    );
+    
+    showActionModal(
+      'Could not capture table',
+      'delete'
+    );
+    
   } finally {
     if (!wasInScreenshotMode) {
-      wrapper.classList.remove('screenshot-mode');
+      wrapper.classList.remove(
+        'screenshot-mode'
+      );
     }
   }
 }
-
 
 async function shareCupFixture() {
   closeMenu();
@@ -1286,56 +1336,96 @@ async function shareCupFixture() {
     return;
   }
   
-  const wasInScreenshotMode = wrapper.classList.contains('screenshot-mode');
+  const wasInScreenshotMode =
+    wrapper.classList.contains('screenshot-mode');
+  
   wrapper.classList.add('screenshot-mode');
   
-  await new Promise(resolve => setTimeout(resolve, 100));
+  await new Promise(
+    resolve => setTimeout(resolve, 100)
+  );
   
   try {
-    const canvas = await html2canvas(wrapper, {
-      backgroundColor: '#161b22',
-      scale: 2,
-      useCORS: true
-    });
+    const canvas =
+      await html2canvas(
+        wrapper,
+        {
+          backgroundColor: '#ffffff',
+          scale: 2,
+          useCORS: true
+        }
+      );
     
-    canvas.toBlob(async (blob) => {
-      if (!blob) {
-        showActionModal('Failed to process screenshot image.', 'delete');
-        return;
-      }
-      
-      const file = new File([blob], 'match-records.png', {
-        type: 'image/png'
-      });
-      
-      if (navigator.canShare && navigator.canShare({ files: [file] })) {
-        await navigator.share({
-          title: 'eFootball Match Records',
-          text: 'Group Stage Matches',
-          files: [file]
-        });
-      } else {
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'match-records.png';
-        a.click();
-        URL.revokeObjectURL(url);
+    canvas.toBlob(
+      async (blob) => {
+        if (!blob) {
+          showActionModal(
+            'Failed to process screenshot image.',
+            'delete'
+          );
+          return;
+        }
         
-        showActionModal('Image downloaded! Share it manually.', 'success');
+        const file =
+          new File(
+            [blob],
+            'match-records.png',
+            {
+              type: 'image/png'
+            }
+          );
+        
+        if (
+          navigator.canShare &&
+          navigator.canShare({
+            files: [file]
+          })
+        ) {
+          await navigator.share({
+            title: 'eFootball Match Records',
+            text: 'Group Stage Matches',
+            files: [file]
+          });
+        } else {
+          const url =
+            URL.createObjectURL(blob);
+          
+          const a =
+            document.createElement('a');
+          
+          a.href = url;
+          a.download = 'match-records.png';
+          a.click();
+          
+          URL.revokeObjectURL(url);
+          
+          showActionModal(
+            'Image downloaded! Share it manually.',
+            'success'
+          );
+        }
       }
-    });
+    );
     
   } catch (err) {
-    console.error('Share failed:', err);
-    showActionModal('Could not capture records', 'delete');
+    console.error(
+      'Share failed:',
+      err
+    );
+    
+    showActionModal(
+      'Could not capture records',
+      'delete'
+    );
+    
   } finally {
     if (!wasInScreenshotMode) {
-      wrapper.classList.remove('screenshot-mode');
+      wrapper.classList.remove(
+        'screenshot-mode'
+      );
     }
   }
 }
-
 
 
 const adminTools = [
