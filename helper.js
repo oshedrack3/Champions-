@@ -1054,6 +1054,7 @@ function goToListOfTournamentPage() {
   pageOrigin = "MyTour";
 }
 
+
 function closeListModal() {
   document.getElementById("listModal").style.display = "none";
 }
@@ -2461,3 +2462,7 @@ async function openEditTeam() {
 
 window.openEditTeam =
   openEditTeam;
+  
+  
+  
+  

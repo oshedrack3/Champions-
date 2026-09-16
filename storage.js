@@ -338,7 +338,7 @@ async function openTournament(id) {
       document.getElementById(
         "tournamentSeason"
       ).textContent = season;
- 
+      
       
       goToTournamentPage();
       
@@ -420,7 +420,7 @@ async function handleSave(tournament, newName, oldName) {
   updateMatches(tournament.knockoutMatches);
   
   
- 
+  
   tournament.table.forEach(team => {
     if (team?.name === oldName) {
       team.name = newName;
@@ -428,7 +428,7 @@ async function handleSave(tournament, newName, oldName) {
   });
   
   
-
+  
   if (
     oldName !== newName &&
     tournament.teamLogos[oldName]
@@ -540,70 +540,63 @@ function updateTableCacheFromPlayers(updatedPlayers) {
   ) {
     return;
   }
-
+  
   updatedPlayers.forEach(player => {
     if (!player || !player.team_id) return;
-
+    
     const tableIndex =
       tableCache.findIndex(
         team =>
-          String(team.id) ===
-          String(player.team_id)
+        String(team.id) ===
+        String(player.team_id)
       );
-
+    
     if (tableIndex === -1) return;
-
+    
     const gf =
       Number(player.gf) || 0;
-
+    
     const ga =
       Number(player.ga) || 0;
-
+    
     tableCache[tableIndex] = {
       ...tableCache[tableIndex],
       id: player.team_id,
-      name:
-        player.team_name ||
+      name: player.team_name ||
         player.team?.name ||
         tableCache[tableIndex].name ||
         "",
-      logo:
-        player.team_logo ||
+      logo: player.team_logo ||
         player.team?.logo ||
         tableCache[tableIndex].logo ||
         null,
-      played:
-        Number(player.played) || 0,
-      wins:
-        Number(player.wins) || 0,
-      draws:
-        Number(player.draws) || 0,
-      losses:
-        Number(player.losses) || 0,
+      played: Number(player.played) || 0,
+      wins: Number(player.wins) || 0,
+      draws: Number(player.draws) || 0,
+      losses: Number(player.losses) || 0,
       gf,
       ga,
       gd: gf - ga,
-      pts:
-        Number(player.points) || 0
+      pts: Number(player.points) || 0
     };
   });
-
+  
   tableCache.sort((a, b) => {
     if (b.pts !== a.pts) {
       return b.pts - a.pts;
     }
-
+    
     if (b.gd !== a.gd) {
       return b.gd - a.gd;
     }
-
+    
     if (b.gf !== a.gf) {
       return b.gf - a.gf;
     }
-
+    
     return a.name.localeCompare(b.name);
   });
-
+  
   tableCache.forEach((team, index) => {
     team.pos = index + 1;
   });
@@ -636,8 +629,8 @@ async function approveSubmission() {
       const matchIndex =
         fixtures.findIndex(
           match =>
-            String(match.id) ===
-            String(updatedMatch.id)
+          String(match.id) ===
+          String(updatedMatch.id)
         );
       
       if (matchIndex !== -1) {
@@ -645,18 +638,12 @@ async function approveSubmission() {
         fixtures[matchIndex] = {
           ...fixtures[matchIndex],
           ...updatedMatch,
-          homeGoals:
-            updatedMatch.home_score,
-          awayGoals:
-            updatedMatch.away_score,
-          played:
-            Number(updatedMatch.played) === 1,
-          playedAt:
-            updatedMatch.played_at,
-          scheduledAt:
-            updatedMatch.scheduled_at,
-          submission_status:
-            "approved"
+          homeGoals: updatedMatch.home_score,
+          awayGoals: updatedMatch.away_score,
+          played: Number(updatedMatch.played) === 1,
+          playedAt: updatedMatch.played_at,
+          scheduledAt: updatedMatch.scheduled_at,
+          submission_status: "approved"
         };
         
       }
@@ -686,8 +673,8 @@ async function approveSubmission() {
           const playerIndex =
             tournament.tournament_players.findIndex(
               player =>
-                String(player.id) ===
-                String(updatedPlayer.id)
+              String(player.id) ===
+              String(updatedPlayer.id)
             );
           
           if (playerIndex !== -1) {
@@ -711,8 +698,8 @@ async function approveSubmission() {
     const cached =
       myTournaments.find(
         t =>
-          String(t.id) ===
-          String(tournament.id)
+        String(t.id) ===
+        String(tournament.id)
       );
     
     if (cached) {
@@ -744,8 +731,8 @@ async function approveSubmission() {
             const playerIndex =
               cached.tournament_players.findIndex(
                 player =>
-                  String(player.id) ===
-                  String(updatedPlayer.id)
+                String(player.id) ===
+                String(updatedPlayer.id)
               );
             
             if (playerIndex !== -1) {
@@ -803,11 +790,11 @@ async function rejectSubmission() {
   
   const reason =
     document
-      .getElementById(
-        "reviewModalRejectReason"
-      )
-      .value
-      .trim();
+    .getElementById(
+      "reviewModalRejectReason"
+    )
+    .value
+    .trim();
   
   if (!reason) {
     return showAlert(
@@ -833,18 +820,17 @@ async function rejectSubmission() {
     const matchIndex =
       fixtures.findIndex(
         match =>
-          String(match.id) ===
-          String(
-            currentReviewSubmission.match_id
-          )
+        String(match.id) ===
+        String(
+          currentReviewSubmission.match_id
+        )
       );
     
     if (matchIndex !== -1) {
       
       fixtures[matchIndex] = {
         ...fixtures[matchIndex],
-        submission_status:
-          "rejected"
+        submission_status: "rejected"
       };
       
     }
@@ -856,8 +842,8 @@ async function rejectSubmission() {
     const cached =
       myTournaments.find(
         t =>
-          String(t.id) ===
-          String(tournament.id)
+        String(t.id) ===
+        String(tournament.id)
       );
     
     if (cached) {
@@ -985,6 +971,7 @@ async function loadMyCompetitions() {
     hideLoader();
   }
 }
+
 async function handleCreateCompetition() {
   
   const name =
@@ -994,41 +981,32 @@ async function handleCreateCompetition() {
     .trim();
   
   const logoInput =
-    document.getElementById("competitionLogoInput");
-  
+    document.getElementById(
+      "competitionLogoInput"
+    );
   
   if (!name) {
     showAlert("Enter competition name");
     return;
   }
   
-  
   showLoader();
-  
   
   try {
     
     let logo = null;
     
-    
-    if (logoInput.files.length > 0) {
-      
-      logo = await new Promise((resolve, reject) => {
-        
-        const reader = new FileReader();
-        
-        reader.onload = () => resolve(reader.result);
-        
-        reader.onerror = reject;
-        
-        reader.readAsDataURL(
-          logoInput.files[0]
+    if (
+      logoInput &&
+      logoInput.files &&
+      logoInput.files.length > 0
+    ) {
+      logo =
+        await fileToBase64(
+          logoInput.files[0],
+          1200
         );
-        
-      });
-      
     }
-    
     
     if (editingCompetitionId) {
       
@@ -1036,18 +1014,15 @@ async function handleCreateCompetition() {
         name
       };
       
-      
       if (logo) {
         changes.logo = logo;
       }
-      
       
       const updatedCompetition =
         await updateCompetition(
           editingCompetitionId,
           changes
         );
-      
       
       const index =
         myCompetitions.findIndex(
@@ -1056,40 +1031,35 @@ async function handleCreateCompetition() {
           String(editingCompetitionId)
         );
       
-      
       if (index !== -1) {
         myCompetitions[index] =
           updatedCompetition;
       }
       
-      
       editingCompetitionId = null;
-      
       
       renderCompetitionList();
       
-      
       document
-        .getElementById("competitionNameInput")
+        .getElementById(
+          "competitionNameInput"
+        )
         .value = "";
-      
       
       logoInput.value = "";
       
-      
       document
-        .getElementById("competitionLogoPreview")
+        .getElementById(
+          "competitionLogoPreview"
+        )
         .src =
         "images/default-tournament.png";
       
-      
       closeCreateCompetitionModal();
-      
       
       showAlert(
         "Competition updated successfully!"
       );
-      
       
     } else {
       
@@ -1099,51 +1069,45 @@ async function handleCreateCompetition() {
           logo
         });
       
-      
       myCompetitions.unshift(
         result.competition
       );
       
-      
       renderCompetitionList();
       
-      
       document
-        .getElementById("competitionNameInput")
+        .getElementById(
+          "competitionNameInput"
+        )
         .value = "";
-      
       
       logoInput.value = "";
       
-      
       document
-        .getElementById("competitionLogoPreview")
+        .getElementById(
+          "competitionLogoPreview"
+        )
         .src =
         "images/default-tournament.png";
       
-      
       closeCreateCompetitionModal();
-      
       
       showAlert(
         "Competition created successfully!"
       );
-      
     }
-    
     
   } catch (err) {
     
-    showAlert(err.message);
+    showAlert(
+      err.message
+    );
     
   } finally {
     
     hideLoader();
-    
   }
-  
 }
-
 
 function editCompetition(id) {
   const competition = myCompetitions.find(
@@ -1404,72 +1368,72 @@ async function saveEdit() {
     );
     return;
   }
-
+  
   const newName =
     document
-      .getElementById(
-        "editNameInput"
-      )
-      .value
-      .trim();
-
+    .getElementById(
+      "editNameInput"
+    )
+    .value
+    .trim();
+  
   const fileInput =
     document.getElementById(
       "editLogoInput"
     );
-
+  
   try {
     const profile =
       await getUserProfile();
-
+    
     const teams =
-      Array.isArray(profile?.teams)
-        ? profile.teams
-        : [];
-
+      Array.isArray(profile?.teams) ?
+      profile.teams :
+      [];
+    
     const team =
       teams[editingIndex];
-
+    
     if (!team) {
       showAlert(
         "Team not found"
       );
       return;
     }
-
+    
     if (!newName) {
       showAlert(
         "Team name cannot be empty"
       );
       return;
     }
-
+    
     const duplicate =
       teams.some(
         t =>
-          String(t.id) !==
-            String(team.id) &&
-          String(t.name || "")
-            .trim()
-            .toLowerCase() ===
-            newName.toLowerCase()
+        String(t.id) !==
+        String(team.id) &&
+        String(t.name || "")
+        .trim()
+        .toLowerCase() ===
+        newName.toLowerCase()
       );
-
+    
     if (duplicate) {
       showAlert(
         "A team with this name already exists"
       );
       return;
     }
-
+    
     let logo;
-
+    
     if (
       fileInput?.files?.length
     ) {
       const file =
         fileInput.files[0];
-
+      
       if (
         !file.type.startsWith(
           "image/"
@@ -1480,7 +1444,7 @@ async function saveEdit() {
         );
         return;
       }
-
+      
       if (
         file.size >
         500 * 1024
@@ -1490,34 +1454,34 @@ async function saveEdit() {
         );
         return;
       }
-
+      
       logo =
         await fileToBase64(
           file
         );
     }
-
+    
     showLoader();
-
+    
     const token =
       getToken();
-
+    
     if (!token) {
       throw new Error(
         "You are not logged in."
       );
     }
-
+    
     const updates = {
       name: newName
     };
-
+    
     if (
       logo !== undefined
     ) {
       updates.logo = logo;
     }
-
+    
     const res =
       await apiRequest(
         `${API}/teams/${encodeURIComponent(
@@ -1527,24 +1491,22 @@ async function saveEdit() {
           method: "PATCH",
           headers: {
             Authorization: token,
-            "Content-Type":
-              "application/json"
+            "Content-Type": "application/json"
           },
-          body:
-            JSON.stringify(updates)
+          body: JSON.stringify(updates)
         },
         saveEdit
       );
-
+    
     if (!res) {
       throw new Error(
         "No response from server."
       );
     }
-
+    
     const result =
       await res.json();
-
+    
     if (
       !res.ok ||
       !result.success
@@ -1554,30 +1516,30 @@ async function saveEdit() {
         "Failed to update team."
       );
     }
-
+    
     const updatedTeam =
       result.team;
-
+    
     if (!updatedTeam) {
       throw new Error(
         "Team updated but no team data was returned."
       );
     }
-
+    
     teams[editingIndex] =
       updatedTeam;
-
+    
     profile.teams =
       teams;
-
+    
     await saveCachedData(
       "profile",
       "",
       profile
     );
-
+    
     closeEditModal();
-
+    
     if (
       typeof renderUserProfile ===
       "function"
@@ -1586,18 +1548,18 @@ async function saveEdit() {
         profile
       );
     }
-
+    
     showActionModal(
       "✅ Team updated",
       "success"
     );
-
+    
   } catch (err) {
     console.error(
       "[saveEdit]",
       err
     );
-
+    
     showAlert(
       err.message ||
       "Failed to update team"
@@ -2419,19 +2381,19 @@ async function handleSetScore() {
     closeResultRecord();
     return;
   }
-
+  
   const hg =
     parseInt(
       document.getElementById("homeGoals").value,
       10
     );
-
+  
   const ag =
     parseInt(
       document.getElementById("awayGoals").value,
       10
     );
-
+  
   if (
     !currentMatch.home_team_id ||
     !currentMatch.away_team_id ||
@@ -2445,17 +2407,17 @@ async function handleSetScore() {
     );
     return;
   }
-
+  
   const tournament =
     getCurrentTournament();
-
+  
   if (!tournament) {
     showAlert(
       "Tournament not found."
     );
     return;
   }
-
+  
   await setMatchResult(
     currentMatch,
     hg,
@@ -2470,17 +2432,17 @@ async function setMatchResult(
 ) {
   const tournament =
     getCurrentTournament();
-
+  
   if (!tournament || !match) {
     return;
   }
-
+  
   const homeGoals =
     Number(hg);
-
+  
   const awayGoals =
     Number(ag);
-
+  
   if (
     !Number.isInteger(homeGoals) ||
     !Number.isInteger(awayGoals) ||
@@ -2492,7 +2454,7 @@ async function setMatchResult(
     );
     return;
   }
-
+  
   if (
     !match.id ||
     !match.home_team_id ||
@@ -2503,9 +2465,9 @@ async function setMatchResult(
     );
     return;
   }
-
+  
   showLoader();
-
+  
   try {
     const response =
       await apiRequest(
@@ -2517,10 +2479,8 @@ async function setMatchResult(
         {
           method: "PATCH",
           headers: {
-            "Content-Type":
-              "application/json",
-            Authorization:
-              `Bearer ${getToken()}`
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${getToken()}`
           },
           body: JSON.stringify({
             home_score: homeGoals,
@@ -2528,22 +2488,22 @@ async function setMatchResult(
           })
         },
         () =>
-          setMatchResult(
-            match,
-            hg,
-            ag
-          )
+        setMatchResult(
+          match,
+          hg,
+          ag
+        )
       );
-
+    
     if (!response) {
       throw new Error(
         "No response from server."
       );
     }
-
+    
     const data =
       await response.json();
-
+    
     if (
       !response.ok ||
       !data.success
@@ -2553,77 +2513,72 @@ async function setMatchResult(
         "Failed to save match result."
       );
     }
-
+    
     const updatedMatch =
       data.match;
-
+    
     const updatedPlayers =
-      Array.isArray(data.players)
-        ? data.players
-        : [];
-
+      Array.isArray(data.players) ?
+      data.players :
+      [];
+    
     if (updatedMatch) {
       const replaceMatch = array => {
         if (!Array.isArray(array)) {
           return;
         }
-
+        
         const index =
           array.findIndex(
             item =>
-              String(item.id) ===
-              String(updatedMatch.id)
+            String(item.id) ===
+            String(updatedMatch.id)
           );
-
+        
         if (index !== -1) {
           array[index] =
             updatedMatch;
         }
       };
-
+      
       replaceMatch(
         tournament.matches
       );
-
+      
       replaceMatch(
         tournament.groupMatches
       );
-
+      
       replaceMatch(
         tournament.knockoutMatches
       );
-
+      
       replaceMatch(
         tournament.thirdPlaceMatch
       );
-
+      
       const fixtureIndex =
         fixtures.findIndex(
           item =>
-            String(item.id) ===
-            String(updatedMatch.id)
+          String(item.id) ===
+          String(updatedMatch.id)
         );
-
+      
       if (fixtureIndex !== -1) {
         fixtures[fixtureIndex] = {
           ...fixtures[fixtureIndex],
           ...updatedMatch,
-          homeGoals:
-            updatedMatch.home_score,
-          awayGoals:
-            updatedMatch.away_score,
-          played:
-            Number(
-              updatedMatch.played
-            ) === 1,
-          playedAt:
-            updatedMatch.played_at,
-          scheduledAt:
-            updatedMatch.scheduled_at
+          homeGoals: updatedMatch.home_score,
+          awayGoals: updatedMatch.away_score,
+          played: Number(
+            updatedMatch.played
+          ) === 1,
+          playedAt: updatedMatch.played_at,
+          scheduledAt: updatedMatch.scheduled_at
         };
       }
     }
-
+    
     if (
       Array.isArray(
         tournament.tournament_players
@@ -2635,10 +2590,10 @@ async function setMatchResult(
         const index =
           tournament.tournament_players.findIndex(
             item =>
-              String(item.id) ===
-              String(player.id)
+            String(item.id) ===
+            String(player.id)
           );
-
+        
         if (index !== -1) {
           tournament.tournament_players[
             index
@@ -2646,14 +2601,14 @@ async function setMatchResult(
         }
       }
     }
-
+    
     const cached =
       myTournaments.find(
         item =>
-          String(item.id) ===
-          String(tournament.id)
+        String(item.id) ===
+        String(tournament.id)
       );
-
+    
     if (cached) {
       if (
         Array.isArray(
@@ -2663,7 +2618,7 @@ async function setMatchResult(
         cached.matches =
           tournament.matches;
       }
-
+      
       if (
         Array.isArray(
           tournament.groupMatches
@@ -2672,7 +2627,7 @@ async function setMatchResult(
         cached.groupMatches =
           tournament.groupMatches;
       }
-
+      
       if (
         Array.isArray(
           tournament.knockoutMatches
@@ -2681,7 +2636,7 @@ async function setMatchResult(
         cached.knockoutMatches =
           tournament.knockoutMatches;
       }
-
+      
       if (
         Array.isArray(
           tournament.tournament_players
@@ -2691,38 +2646,38 @@ async function setMatchResult(
           tournament.tournament_players;
       }
     }
-
+    
     tableCache = null;
     cachedTournamentId = null;
-
+    
     fixturesLoaded = false;
     fixturesTournamentId = null;
     fixtures = [];
-
+    
     const table =
       buildTableFromTournamentPlayers(
         tournament
       );
-
+    
     tournament.table =
       table;
-
+    
     if (cached) {
       cached.table =
         table;
     }
-
+    
     await loadTournamentFixtures(
       tournament.id
     );
-
+    
     if (
       tournament.type === "cup" ||
       tournament.format === "cup"
     ) {
       await renderCupFixtures();
       await renderCupTables();
-
+      
       if (
         typeof renderFullBracket ===
         "function"
@@ -2733,34 +2688,34 @@ async function setMatchResult(
       renderFixtures();
       renderTable(table);
     }
-
+    
     if (
       typeof renderRecords ===
       "function"
     ) {
       renderRecords();
     }
-
+    
     closeResultRecord();
-
+    
     showActionModal(
       "Result Saved",
       "success"
     );
-
+    
     return data;
-
+    
   } catch (error) {
     console.error(
       "Error saving match result:",
       error
     );
-
+    
     showAlert(
       error.message ||
       "Failed to save match result."
     );
-
+    
   } finally {
     hideLoader();
   }
@@ -2986,6 +2941,7 @@ function getSelectedMatchDays() {
   
   return Array.from(checkboxes).map(cb => Number(cb.value));
 }
+
 function getMatchDates(startDate, endDate, matchDays) {
   const dates = [];
   
@@ -3587,11 +3543,9 @@ async function importTournamentsData(jsonString) {
         new Date().toISOString().split("T")[0],
       matchDays: Array.isArray(tournament.matchDays) &&
         tournament.matchDays.length ?
-        tournament.matchDays :
-        [1],
+        tournament.matchDays : [1],
       tournamentImage: typeof tournament.tournamentImage === "string" ?
-        tournament.tournamentImage :
-        null
+        tournament.tournamentImage : null
     };
     
     const result = await createTournament(payload);
@@ -4107,9 +4061,9 @@ async function rebuildTableFromMatches(
 ) {
   const tournament =
     getCurrentTournament();
-
+  
   if (!tournament) return;
-
+  
   if (
     cachedTournamentId === tournament.id &&
     tableCache
@@ -4120,15 +4074,15 @@ async function rebuildTableFromMatches(
     ) {
       renderTable(tableCache);
     }
-
+    
     return tableCache;
   }
-
+  
   showLoader();
-
+  
   try {
     let table = null;
-
+    
     if (
       Array.isArray(
         tournament.tournament_players
@@ -4144,15 +4098,14 @@ async function rebuildTableFromMatches(
           `/tournaments/${tournament.id}/table`,
           {
             headers: {
-              Authorization:
-                `Bearer ${getToken()}`
+              Authorization: `Bearer ${getToken()}`
             }
           }
         );
-
+      
       const data =
         await response.json();
-
+      
       if (
         !response.ok ||
         !data.success
@@ -4162,39 +4115,39 @@ async function rebuildTableFromMatches(
           "Failed to load tournament table."
         );
       }
-
+      
       table =
         data.table || [];
     }
-
+    
     tableCache = table;
-
+    
     cachedTournamentId =
       tournament.id;
-
+    
     tournament.table =
       table;
-
+    
     if (
       shouldRender &&
       typeof renderTable === "function"
     ) {
       renderTable(table);
     }
-
+    
     return table;
-
+    
   } catch (err) {
     console.error(
       "[rebuildTableFromMatches]",
       err
     );
-
+    
     showAlert(
       err.message ||
       "Failed to rebuild table."
     );
-
+    
   } finally {
     hideLoader();
   }
@@ -4412,14 +4365,13 @@ async function openMatchContacts(match) {
                 {
                   method: "GET",
                   headers: {
-                    Authorization:
-                      token
+                    Authorization: token
                   }
                 },
                 () =>
-                  openMatchContacts(
-                    match
-                  )
+                openMatchContacts(
+                  match
+                )
               );
             if (!res) {
               return;
@@ -4447,10 +4399,10 @@ async function openMatchContacts(match) {
             if (phone) {
               let cleaned =
                 String(phone)
-                  .replace(
-                    /[^\d+]/g,
-                    ""
-                  );
+                .replace(
+                  /[^\d+]/g,
+                  ""
+                );
               if (
                 cleaned.startsWith("+")
               ) {
@@ -4641,19 +4593,19 @@ async function importTeams() {
 
 document.addEventListener(
   "click",
-  function (e) {
+  function(e) {
     const btn =
       e.target.closest(
         ".list-item-btn[data-import-tournament]"
       );
-
+    
     if (!btn) {
       return;
     }
-
+    
     const sourceId =
       btn.dataset.importTournament;
-
+    
     importAllTeamsFromTournament(
       sourceId
     );
@@ -4665,21 +4617,21 @@ async function importAllTeamsFromTournament(
 ) {
   const current =
     getCurrentTournament();
-
+  
   if (!current?.id) {
     showAlert(
       "No tournament is currently selected."
     );
     return;
   }
-
+  
   if (!sourceId) {
     showAlert(
       "Source tournament is required."
     );
     return;
   }
-
+  
   if (
     String(sourceId) ===
     String(current.id)
@@ -4689,19 +4641,19 @@ async function importAllTeamsFromTournament(
     );
     return;
   }
-
+  
   const token =
     getToken();
-
+  
   if (!token) {
     showAlert(
       "You must be logged in."
     );
     return;
   }
-
+  
   showLoader();
-
+  
   try {
     const res =
       await apiRequest(
@@ -4712,29 +4664,27 @@ async function importAllTeamsFromTournament(
           method: "POST",
           headers: {
             Authorization: token,
-            "Content-Type":
-              "application/json"
+            "Content-Type": "application/json"
           },
           body: JSON.stringify({
-            source_tournament_id:
-              sourceId
+            source_tournament_id: sourceId
           })
         },
         () =>
-          importAllTeamsFromTournament(
-            sourceId
-          )
+        importAllTeamsFromTournament(
+          sourceId
+        )
       );
-
+    
     if (!res) {
       throw new Error(
         "No response from server."
       );
     }
-
+    
     const result =
       await res.json();
-
+    
     if (
       !res.ok ||
       !result.success
@@ -4744,29 +4694,28 @@ async function importAllTeamsFromTournament(
         "Failed to import teams."
       );
     }
-
+    
     const updatedPlayers =
-      Array.isArray(result.players)
-        ? result.players
-        : [];
-
+      Array.isArray(result.players) ?
+      result.players :
+      [];
+    
     const tournament =
       getCurrentTournament();
-
+    
     if (
       tournament &&
       String(tournament.id) ===
-        String(current.id)
+      String(current.id)
     ) {
       if (
         !Array.isArray(
           tournament.tournament_players
         )
       ) {
-        tournament.tournament_players =
-          [];
+        tournament.tournament_players = [];
       }
-
+      
       const existingPlayers =
         new Map(
           tournament.tournament_players.map(
@@ -4778,7 +4727,7 @@ async function importAllTeamsFromTournament(
             ]
           )
         );
-
+      
       updatedPlayers.forEach(
         player => {
           existingPlayers.set(
@@ -4789,15 +4738,15 @@ async function importAllTeamsFromTournament(
           );
         }
       );
-
+      
       tournament.tournament_players =
         Array.from(
           existingPlayers.values()
         );
-
+      
       tableCache = null;
       cachedTournamentId = null;
-
+      
       if (
         tournament.format ===
         "league"
@@ -4806,7 +4755,7 @@ async function importAllTeamsFromTournament(
       } else {
         await renderFullBracket();
       }
-
+      
       if (
         typeof renderTeams ===
         "function"
@@ -4814,26 +4763,26 @@ async function importAllTeamsFromTournament(
         renderTeams();
       }
     }
-
+    
     closeListModal();
-
+    
     showActionModal(
       result.message ||
-        "Teams imported successfully.",
+      "Teams imported successfully.",
       "success"
     );
-
+    
   } catch (err) {
     console.error(
       "[importAllTeamsFromTournament]",
       err
     );
-
+    
     showAlert(
       err.message ||
       "Failed to import teams."
     );
-
+    
   } finally {
     hideLoader();
   }
@@ -4843,62 +4792,62 @@ async function removeTournamentPlayer(
 ) {
   const current =
     getCurrentTournament();
-
+  
   if (!current?.id) {
     showAlert(
       "No tournament is currently selected."
     );
     return;
   }
-
+  
   if (!playerId) {
     showAlert(
       "Player is required."
     );
     return;
   }
-
+  
   const player =
     Array.isArray(
       current.tournament_players
-    )
-      ? current.tournament_players.find(
-          item =>
-            String(item.id) ===
-            String(playerId)
-        )
-      : null;
-
+    ) ?
+    current.tournament_players.find(
+      item =>
+      String(item.id) ===
+      String(playerId)
+    ) :
+    null;
+  
   const teamName =
     player?.team_name ||
     player?.team?.name ||
     "this team";
-
+  
   showConfirmModal(
     `Are you sure you want to remove ${teamName} from this tournament?`,
     "Remove",
     "Cancel"
   );
-
+  
   confirmYes = async () => {
     closeConfirmModal();
-
+    
     const token =
       getToken();
-
+    
     if (!token) {
       showAlert(
         "You must be logged in."
       );
       return;
     }
-
+    
     showLoader();
-
+    
     try {
       const tournamentId =
         current.id;
-
+      
       const res =
         await apiRequest(
           `${API}/tournaments/${encodeURIComponent(
@@ -4913,20 +4862,20 @@ async function removeTournamentPlayer(
             }
           },
           () =>
-            removeTournamentPlayer(
-              playerId
-            )
+          removeTournamentPlayer(
+            playerId
+          )
         );
-
+      
       if (!res) {
         throw new Error(
           "No response from server."
         );
       }
-
+      
       const result =
         await res.json();
-
+      
       if (
         !res.ok ||
         !result.success
@@ -4936,32 +4885,31 @@ async function removeTournamentPlayer(
           "Failed to remove player."
         );
       }
-
+      
       const tournament =
         getCurrentTournament();
-
+      
       if (
         tournament &&
         String(tournament.id) ===
-          String(tournamentId)
+        String(tournamentId)
       ) {
         if (
           !Array.isArray(
             tournament.tournament_players
           )
         ) {
-          tournament.tournament_players =
-            [];
+          tournament.tournament_players = [];
         }
-
+        
         tournament.tournament_players =
           tournament.tournament_players.filter(
             player =>
-              String(player.id) !==
-              String(playerId)
+            String(player.id) !==
+            String(playerId)
           );
       }
-
+      
       if (
         teamsByTournament &&
         Array.isArray(
@@ -4971,22 +4919,22 @@ async function removeTournamentPlayer(
         )
       ) {
         teamsByTournament[
-          tournamentId
-        ] =
+            tournamentId
+          ] =
           teamsByTournament[
             tournamentId
           ].filter(
             team =>
-              String(team.id) !==
-              String(
-                result.player?.team_id
-              )
+            String(team.id) !==
+            String(
+              result.player?.team_id
+            )
           );
       }
-
+      
       tableCache = null;
       cachedTournamentId = null;
-
+      
       if (
         tournament?.format ===
         "league"
@@ -5001,29 +4949,29 @@ async function removeTournamentPlayer(
         );
         await renderFullBracket();
       }
-
+      
       showActionModal(
         result.message ||
-          "Player removed successfully.",
+        "Player removed successfully.",
         "success"
       );
-
+      
     } catch (error) {
       console.error(
         "[removeTournamentPlayer]",
         error
       );
-
+      
       showAlert(
         error.message ||
-          "Failed to remove player."
+        "Failed to remove player."
       );
-
+      
     } finally {
       hideLoader();
     }
   };
-
+  
   confirmNo = () => {
     closeConfirmModal();
   };
