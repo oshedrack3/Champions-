@@ -27,6 +27,7 @@ async function renderFixtures() {
     await loadTournamentFixtures(
       tournament.id
     );
+    
     checkSubmissionAlerts(
       tournament
     );
@@ -40,7 +41,16 @@ async function renderFixtures() {
         search
       );
     
-    container.innerHTML = "";
+    container.innerHTML = `
+      <div class="fixtures-tournament-header">
+        <div class="fixtures-tournament-name">
+          ${tournament.name || ""}
+        </div>
+        <div class="fixtures-tournament-season">
+          ${tournament.season || ""}
+        </div>
+      </div>
+    `;
     
     if (!visibleMatches.length) {
       renderEmptyFixtures(

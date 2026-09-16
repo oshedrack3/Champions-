@@ -5057,4 +5057,45 @@ button.knockout-score-cell:hover {
   font-weight: 500;
 }
 
+.cup-fixtures-header {
+  width: 100%;
+  text-align: center;
+  padding: 14px 12px 10px;
+  background: #fff;
+}
 
+.cup-fixtures-tournament-name {
+  font-size: 20px;
+  font-weight: 800;
+  line-height: 1.2;
+  color: #111;
+}
+
+.cup-fixtures-season {
+  margin-top: 3px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #666;
+}
+
+.fixtures-tournament-header {
+  width: 100%;
+  padding: 14px 12px 10px;
+  text-align: center;
+  background: #fff;
+  box-sizing: border-box;
+}
+
+.fixtures-tournament-name {
+  font-size: 20px;
+  font-weight: 800;
+  line-height: 1.2;
+  color: #111;
+}
+
+.fixtures-tournament-season {
+  margin-top: 3px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #666;
+}

@@ -400,46 +400,6 @@ function updateCupRoundLabel(round) {
   }
 }
 
-function renderCupFixtures() {
-  const tournament = getCurrentTournament();
-  if (!tournament) return;
-  
-  const container =
-    document.getElementById("cupFixtures");
-  
-  if (!container) return;
-  
-  container.innerHTML = "";
-  
-  if (!tournament.groups?.length) {
-    container.innerHTML = `
-      <p class="emptyText">
-        No Group Stage matches for Direct Knockout Cups
-        <br>
-        Check the bracket Section to see The KnockOut matches
-      </p>
-    `;
-    return;
-  }
-  
-  const currentRound =
-    getCupRound();
-  
-  updateCupRoundLabel(
-    currentRound
-  );
-  
-  tournament.groups.forEach(
-    group => {
-      renderCupFixtureGroup(
-        container,
-        tournament,
-        group,
-        currentRound
-      );
-    }
-  );
-}
 
 function renderCupFixtureGroup(
   container,
@@ -2957,103 +2917,6 @@ function loadCupFixtureLogo(
   );
 }
 
-async function renderCupFixtures() {
-  const tournament =
-    getCurrentTournament();
-  
-  if (!tournament) {
-    return;
-  }
-  
-  const container =
-    document.getElementById(
-      "cupFixtures"
-    );
-  
-  if (!container) {
-    return;
-  }
-  
-  container.innerHTML = "";
-  
-  const fixtures =
-    await loadTournamentFixtures(
-      tournament.id
-    );
-  
-  const currentRound =
-    getCupRound();
-  
-  updateCupRoundLabel(
-    currentRound
-  );
-  
-  const groupFixtures =
-    fixtures.filter(
-      match =>
-      match.match_type === "group" &&
-      String(match.round).includes(
-        `Round ${currentRound}`
-      )
-    );
-  
-  if (!groupFixtures.length) {
-    container.innerHTML = `
-      <p class="emptyText">
-        No Group Stage matches for Round ${currentRound}
-      </p>
-    `;
-    
-    return;
-  }
-  
-  const groupsMap =
-    new Map();
-  
-  groupFixtures.forEach(
-    match => {
-      const groupId =
-        match.group_id;
-      
-      if (!groupId) {
-        return;
-      }
-      
-      if (!groupsMap.has(groupId)) {
-        let groupName =
-          String(match.round || "")
-          .match(
-            /Group (.+?) - Round/i
-          )?.[1];
-        
-        if (!groupName) {
-          groupName =
-            `Group ${groupsMap.size + 1}`;
-        }
-        
-        groupsMap.set(
-          groupId,
-          {
-            id: groupId,
-            name: groupName
-          }
-        );
-      }
-    }
-  );
-  
-  groupsMap.forEach(
-    group => {
-      renderCupFixtureGroup(
-        container,
-        tournament,
-        group,
-        currentRound,
-        groupFixtures
-      );
-    }
-  );
-}
 
 function renderCupFixtureGroup(
   container,
@@ -6410,4 +6273,111 @@ function createCupTableGroupCard(
   `;
   
   return groupCard;
+}
+
+async function renderCupFixtures() {
+  const tournament =
+    getCurrentTournament();
+  
+  if (!tournament) {
+    return;
+  }
+  
+  const container =
+    document.getElementById(
+      "cupFixtures"
+    );
+  
+  if (!container) {
+    return;
+  }
+  
+  container.innerHTML = `
+    <div class="cup-fixtures-header">
+      <div class="cup-fixtures-tournament-name">
+        ${tournament.name || ""}
+      </div>
+      <div class="cup-fixtures-season">
+        ${tournament.season || ""}
+      </div>
+    </div>
+  `;
+  
+  const fixtures =
+    await loadTournamentFixtures(
+      tournament.id
+    );
+  
+  const currentRound =
+    getCupRound();
+  
+  updateCupRoundLabel(
+    currentRound
+  );
+  
+  const groupFixtures =
+    fixtures.filter(
+      match =>
+      match.match_type === "group" &&
+      String(match.round).includes(
+        `Round ${currentRound}`
+      )
+    );
+  
+  if (!groupFixtures.length) {
+    container.innerHTML += `
+      <p class="emptyText">
+        No Group Stage matches for Round ${currentRound}
+      </p>
+    `;
+    
+    return;
+  }
+  
+  const groupsMap =
+    new Map();
+  
+  groupFixtures.forEach(
+    match => {
+      const groupId =
+        match.group_id;
+      
+      if (!groupId) {
+        return;
+      }
+      
+      if (!groupsMap.has(groupId)) {
+        let groupName =
+          String(match.round || "")
+          .match(
+            /Group (.+?) - Round/i
+          )?.[1];
+        
+        if (!groupName) {
+          groupName =
+            `Group ${groupsMap.size + 1}`;
+        }
+        
+        groupsMap.set(
+          groupId,
+          {
+            id: groupId,
+            name: groupName
+          }
+        );
+      }
+    }
+  );
+  
+  groupsMap.forEach(
+    group => {
+      renderCupFixtureGroup(
+        container,
+        tournament,
+        group,
+        currentRound,
+        groupFixtures
+      );
+    }
+  );
 }

@@ -738,17 +738,17 @@ const menuConfig = {
       action: "importTeams",
       roles: ["admin"]
     },
-    
+    /*
     {
       label: "Delete or Edit Team",
       action: "deleteCupTeam",
       roles: ["admin", "player"]
     },
-    
+    */
     {
       label: "Share Group Table",
       action: "shareGroupTable",
-      roles: ["admin", "player"]
+      roles: ["admin"]
     }
     
   ]
