@@ -750,12 +750,24 @@ async function approveSubmission() {
     
     closeReviewModal();
     
-    await renderFixtures();
-    
-    renderTable(
-      tableCache
-    );
-    
+    if (
+      tournament.type === "cup" ||
+      tournament.format === "cup"
+    ) {
+      await renderCupFixtures();
+      
+      if (
+        typeof renderFullBracket ===
+        "function"
+      ) {
+        await renderFullBracket();
+      }
+    } else {
+      renderFixtures();
+      renderTable(
+        tableCache
+      );
+    }
     if (
       typeof renderRecords ===
       "function"
@@ -853,16 +865,30 @@ async function rejectSubmission() {
     
     closeReviewModal();
     
-    await renderFixtures();
-    
     if (
-      tournament.table
+      tournament.type === "cup" ||
+      tournament.format === "cup"
     ) {
-      renderTable(
+      await renderCupFixtures();
+      await renderCupTables();
+      
+      if (
+        typeof renderFullBracket ===
+        "function"
+      ) {
+        await renderFullBracket();
+      }
+    } else {
+      renderFixtures();
+      
+      if (
         tournament.table
-      );
+      ) {
+        renderTable(
+          tournament.table
+        );
+      }
     }
-    
     if (
       typeof renderRecords ===
       "function"
@@ -1388,8 +1414,7 @@ async function saveEdit() {
     
     const teams =
       Array.isArray(profile?.teams) ?
-      profile.teams :
-      [];
+      profile.teams : [];
     
     const team =
       teams[editingIndex];
@@ -2519,8 +2544,7 @@ async function setMatchResult(
     
     const updatedPlayers =
       Array.isArray(data.players) ?
-      data.players :
-      [];
+      data.players : [];
     
     if (updatedMatch) {
       const replaceMatch = array => {
@@ -4697,8 +4721,7 @@ async function importAllTeamsFromTournament(
     
     const updatedPlayers =
       Array.isArray(result.players) ?
-      result.players :
-      [];
+      result.players : [];
     
     const tournament =
       getCurrentTournament();

@@ -2875,11 +2875,28 @@ async function sendMatchSubmission() {
       submission_status: "pending"
     };
     closeResultRecord();
+    
+    if (
+      tournament.type === "cup" ||
+      tournament.format === "cup"
+    ) {
+      await renderCupFixtures();
+      await renderCupTables();
+      
+      if (
+        typeof renderFullBracket ===
+        "function"
+      ) {
+        await renderFullBracket();
+      }
+    } else {
+      await renderFixtures();
+    }
+    
     showActionModal(
       "Result submitted for admin approval.",
       "success"
     );
-    await renderFixtures();
   } catch (err) {
     console.error(
       "Match submission error:",
@@ -2919,30 +2936,30 @@ function waitForOpenCV() {
 async function extractMatchStats(file) {
   const image = new Image();
   image.src = URL.createObjectURL(file);
-
+  
   await new Promise((resolve, reject) => {
     image.onload = resolve;
     image.onerror = reject;
   });
-
+  
   const minDimension = 1600;
   const scale = Math.max(1, minDimension / Math.min(image.width, image.height));
-
+  
   const canvas = document.createElement("canvas");
   const ctx = canvas.getContext("2d", { willReadFrequently: true });
-
+  
   canvas.width = Math.round(image.width * scale);
   canvas.height = Math.round(image.height * scale);
-
+  
   ctx.imageSmoothingEnabled = true;
   ctx.imageSmoothingQuality = "high";
   ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
   URL.revokeObjectURL(image.src);
-
- 
+  
+  
   const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
   const data = imgData.data;
-
+  
   for (let i = 0; i < data.length; i += 4) {
     const luminance = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
     // Gentle contrast stretch: dark text gets darker, yellow background stays bright
@@ -2952,33 +2969,33 @@ async function extractMatchStats(file) {
     data[i + 2] = contrastVal;
   }
   ctx.putImageData(imgData, 0, 0);
-
- 
+  
+  
   const result = await Tesseract.recognize(canvas, "eng", {
     logger: () => {},
     tessedit_pageseg_mode: 6
   });
-
+  
   const lines = result.data.lines || [];
   const stats = { possession: null, shots: null, shotsOnTarget: null };
-
+  
   const targets = [
     { key: "possession", regex: /poss(?:ession)?/i },
     { key: "shotsOnTarget", regex: /shots?\s*(?:on|0n|in)?\s*target|shotson|target/i },
     { key: "shots", regex: /(?:^|\s)shots?(?:\s|$)|total\s*shots?/i }
   ];
-
+  
   for (const line of lines) {
     const lineText = (line.text || "").trim();
     if (!lineText) continue;
-
+    
     for (const target of targets) {
       if (stats[target.key] !== null) continue;
-
+      
       if (target.regex.test(lineText)) {
         // Collect all words on this specific line that contain numbers
         const numericWords = [];
-
+        
         for (const word of line.words || []) {
           const digitsOnly = String(word.text || "").replace(/[^0-9]/g, "");
           if (digitsOnly && word.bbox) {
@@ -2988,10 +3005,10 @@ async function extractMatchStats(file) {
             });
           }
         }
-
+        
         // 3. Sort numbers from LEFT to RIGHT visually across the screen
         numericWords.sort((a, b) => a.x - b.x);
-
+        
         if (numericWords.length >= 2) {
           const home = numericWords[0].value;
           const away = numericWords[numericWords.length - 1].value;
@@ -3000,7 +3017,7 @@ async function extractMatchStats(file) {
       }
     }
   }
-
+  
   
   if (stats.possession) {
     let [home, away] = stats.possession;
@@ -3013,12 +3030,12 @@ async function extractMatchStats(file) {
       stats.possession = null;
     }
   }
-
+  
   if (stats.shots && stats.shotsOnTarget) {
     if (stats.shotsOnTarget[0] > stats.shots[0]) stats.shotsOnTarget[0] = stats.shots[0];
     if (stats.shotsOnTarget[1] > stats.shots[1]) stats.shotsOnTarget[1] = stats.shots[1];
   }
-
+  
   return stats;
 }
 
@@ -3124,16 +3141,16 @@ function closeGlobalRankings() {
   
   const mySection =
     document.getElementById("mySection");
-    const noticeSection =
-  document.getElementById("noticeSection");
+  const noticeSection =
+    document.getElementById("noticeSection");
   
   if (mySection) {
     mySection.style.display = "block";
   }
   
   if (noticeSection) {
-  noticeSection.style.display = "block";
-}
+    noticeSection.style.display = "block";
+  }
   
 }
 
@@ -3244,7 +3261,3 @@ window.addEventListener(
     hideLoader();
   }
 );
-
-
-
-
