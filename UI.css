@@ -2181,7 +2181,6 @@ td:nth-child(2) {
 .modal-overlay.alert {
   z-index: 999999;
 }
-
 #submissionDeadlineCountdown {
   width: 100%;
   margin: 14px 0;
@@ -2198,7 +2197,6 @@ td:nth-child(2) {
   box-sizing: border-box;
   z-index: 1000;
 }
-
 #submissionDeadlineCountdown::before {
   content: "⏱";
   display: inline-block;
@@ -5084,7 +5082,7 @@ button.knockout-score-cell:hover {
 .cup-fixtures-header {
   width: 100%;
   text-align: center;
-  padding: 14px 12px 10px;
+  padding: 14px 0 10px;
   background: #fff;
 }
 
@@ -5124,6 +5122,84 @@ button.knockout-score-cell:hover {
   color: #666;
 }
 
+.cupRoundBar {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  padding: 8px 16px 12px;
+  margin-bottom: 12px;
+  box-sizing: border-box;
+  background: #fff;
+  border-bottom: 1px solid #e5e5e5;
+}
 
+.cupRoundBar .roundbarNav {
+  display: flex;
+  align-items: center;
+  width: 80%;
+  gap: 6px;
+  margin: 0 auto;
+}
 
+.cupRoundBar .roundbarNav button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 32px;
+  flex-shrink: 0;
+  border: 1px solid #ddd;
+  padding: 5px;
+  border-radius: 7px;
+  background: #f7f7f7;
+  color: #444;
+  font-size: 1rem;
+  font-weight: 600;
+  transition: transform .12s ease, background .12s ease;
+}
 
+.cupRoundBar .roundbarNav button:active {
+  transform: scale(.95);
+}
+
+.cupRoundBar .roundbarNav button:hover {
+  background: #f0f0f0;
+}
+
+#cupRoundLabel {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  font-size: 14px;
+  padding: 5px 10px;
+  color: #333;
+  background: #f7f7f7;
+  border: 1px solid #e2e2e2;
+  border-radius: 8px;
+  height: 32px;
+  box-sizing: border-box;
+}
+
+#cupSubmissionDeadlineCountdown {
+  display: none;
+  width: 100%;
+  margin: 10px 0 0;
+  padding: 10px 14px;
+  box-sizing: border-box;
+  border-radius: 8px;
+  background: #fff;
+  border: 1px solid #e2e2e2;
+  color: #555;
+  font-size: 13px;
+  font-weight: 600;
+  text-align: center;
+}
+
+#cupFixtures {
+  padding-top: 0 !important;
+  padding-bottom: 40px;
+  overflow: auto;
+  
+}

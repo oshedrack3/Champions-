@@ -744,75 +744,6 @@ select:focus {
 
 
 
-.cupRoundBar {
-  display: flex;
-  align-items: center;
-  position: fixed;
-  width: 100%;
-  z-index: 100;
-  top: 0;
-  left: 0;
-  right: 0;
-  background: rgba(128, 128, 128, 0.3);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  height: 50px;
-  padding: 10px 20px;
-  margin-bottom: 18px;
-  box-sizing: border-box;
-}
-
-.cupRoundBar .roundbarNav {
-  display: flex;
-  align-items: center;
-  width: 80%;
-  gap: 5px;
-  margin: auto;
-}
-
-.cupRoundBar .roundbarNav button {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 36px;
-  height: auto;
-  flex-shrink: 0;
-  border: none;
-  padding: 5px;
-  border-radius: 6px;
-  background: linear-gradient(145deg,
-      #2383e2,
-      #0969da);
-  color: white;
-  font-size: 1rem;
-  font-weight: 700;
-  box-shadow:
-    0 6px 18px rgba(9, 105, 218, .25);
-  transition:
-    transform .12s ease,
-    opacity .12s ease;
-}
-
-.cupRoundBar button:active {
-  transform: scale(.95);
-}
-
-#cupRoundLabel {
-  display: flex;
-  flex: 1;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  font-size: 14px;
-  padding: 5px;
-  color: #f0f6fc;
-  background: linear-gradient(145deg,
-      #2383e2,
-      #0969da);
-  border-radius: 14px;
-  height: 30px;
-  box-sizing: border-box;
-}
 
 .groupHeader {
   width: 100%;
@@ -932,12 +863,6 @@ select:focus {
   padding-bottom: 40px;
 }
 
-#cupFixtures {
-  padding-top: 80px;
-  padding-bottom: 40px;
-  overflow: auto;
-  
-}
 
 
 

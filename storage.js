@@ -316,7 +316,9 @@ async function openTournament(id) {
     
     currentTournament =
       tournament;
-    
+    loadSubmissionDeadlineCountdown(
+        tournament
+      );
     startTournamentEvents(id);
     
     const name =
@@ -344,10 +346,7 @@ async function openTournament(id) {
       
       await rebuildTableFromMatches();
       
-      loadSubmissionDeadlineCountdown(
-        tournament
-      );
-      
+            
     } else {
       document.getElementById(
         "cupName"
@@ -3784,10 +3783,16 @@ function loadSubmissionDeadlineSettings(tournament) {
   }
 }
 
-
 function loadSubmissionDeadlineCountdown(tournament) {
+  const isCup =
+    tournament?.format === "cup";
+  
   const countdownElement =
-    document.getElementById("submissionDeadlineCountdown");
+    document.getElementById(
+      isCup ?
+      "cupSubmissionDeadlineCountdown" :
+      "submissionDeadlineCountdown"
+    );
   
   const settings =
     tournament?.settings?.submissionDeadline;
@@ -3795,7 +3800,10 @@ function loadSubmissionDeadlineCountdown(tournament) {
   if (!countdownElement) return;
   
   if (submissionDeadlineInterval) {
-    clearInterval(submissionDeadlineInterval);
+    clearInterval(
+      submissionDeadlineInterval
+    );
+    
     submissionDeadlineInterval = null;
   }
   
@@ -3808,9 +3816,14 @@ function loadSubmissionDeadlineCountdown(tournament) {
     return;
   }
   
-  const deadline = Number(settings.deadline);
-  const fromRound = Number(settings.fromRound);
-  const toRound = Number(settings.toRound);
+  const deadline =
+    Number(settings.deadline);
+  
+  const fromRound =
+    Number(settings.fromRound);
+  
+  const toRound =
+    Number(settings.toRound);
   
   if (
     !Number.isFinite(deadline) ||
@@ -3821,7 +3834,8 @@ function loadSubmissionDeadlineCountdown(tournament) {
     return;
   }
   
-  countdownElement.style.display = "block";
+  countdownElement.style.display =
+    "block";
   
   const roundText =
     fromRound === toRound ?
@@ -3829,33 +3843,48 @@ function loadSubmissionDeadlineCountdown(tournament) {
     `Rounds ${fromRound}–${toRound}`;
   
   function updateCountdown() {
-    const remaining = deadline - Date.now();
+    const remaining =
+      deadline - Date.now();
     
     if (remaining <= 0) {
       countdownElement.textContent =
         `${roundText} submission deadline has passed.`;
       
-      clearInterval(submissionDeadlineInterval);
+      clearInterval(
+        submissionDeadlineInterval
+      );
+      
       submissionDeadlineInterval = null;
       return;
     }
     
-    const totalSeconds = Math.floor(remaining / 1000);
+    const totalSeconds =
+      Math.floor(
+        remaining / 1000
+      );
     
-    const days = Math.floor(totalSeconds / 86400);
-    const hours = Math.floor((totalSeconds % 86400) / 3600);
-    const minutes = Math.floor((totalSeconds % 3600) / 60);
-    const seconds = totalSeconds % 60;
+    const days =
+      Math.floor(
+        totalSeconds / 86400
+      );
     
-    let timeText;
+    const hours =
+      Math.floor(
+        (totalSeconds % 86400) / 3600
+      );
     
-    if (days > 0) {
-      timeText =
-        `${days}d ${hours}h ${minutes}m ${seconds}s`;
-    } else {
-      timeText =
-        `${hours}h ${minutes}m ${seconds}s`;
-    }
+    const minutes =
+      Math.floor(
+        (totalSeconds % 3600) / 60
+      );
+    
+    const seconds =
+      totalSeconds % 60;
+    
+    const timeText =
+      days > 0 ?
+      `${days}d ${hours}h ${minutes}m ${seconds}s` :
+      `${hours}h ${minutes}m ${seconds}s`;
     
     countdownElement.textContent =
       `${roundText} submission deadline: ${timeText}`;
@@ -3864,7 +3893,10 @@ function loadSubmissionDeadlineCountdown(tournament) {
   updateCountdown();
   
   submissionDeadlineInterval =
-    setInterval(updateCountdown, 1000);
+    setInterval(
+      updateCountdown,
+      1000
+    );
 }
 
 async function loadNotices() {
