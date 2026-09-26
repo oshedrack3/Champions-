@@ -6381,3 +6381,299 @@ async function renderCupFixtures() {
     }
   );
 }
+
+
+function createBracketTwoLegMatchCard(
+  roundMatch,
+  roundName,
+  tournament,
+  leg1,
+  leg2
+) {
+  const card =
+    document.createElement("div");
+  card.className =
+    "match-card";
+  card.dataset.roundIndex =
+    roundMatch.roundIndex;
+  card.dataset.slot =
+    roundMatch.slot;
+  const homeName =
+    getBracketTeamName(
+      leg1?.home ||
+      leg2?.away
+    );
+  const awayName =
+    getBracketTeamName(
+      leg1?.away ||
+      leg2?.home
+    );
+  const homeLeg1 =
+    Number.isFinite(
+      leg1?.homeGoals
+    ) ?
+    leg1.homeGoals :
+    null;
+  const awayLeg1 =
+    Number.isFinite(
+      leg1?.awayGoals
+    ) ?
+    leg1.awayGoals :
+    null;
+  const homeLeg2 =
+    Number.isFinite(
+      leg2?.awayGoals
+    ) ?
+    leg2.awayGoals :
+    null;
+  const awayLeg2 =
+    Number.isFinite(
+      leg2?.homeGoals
+    ) ?
+    leg2.homeGoals :
+    null;
+  const homeAggregate =
+    (homeLeg1 ?? 0) +
+    (homeLeg2 ?? 0);
+  const awayAggregate =
+    (awayLeg1 ?? 0) +
+    (awayLeg2 ?? 0);
+  const hasResult =
+    homeLeg1 !== null ||
+    awayLeg1 !== null ||
+    homeLeg2 !== null ||
+    awayLeg2 !== null;
+  if (!hasResult) {
+    card.classList.add(
+      "pending-match"
+    );
+  }
+  card.innerHTML =
+    createBracketMatchHTML(
+      leg1,
+      leg2,
+      roundName,
+      tournament,
+      homeName,
+      awayName,
+      homeLeg1,
+      awayLeg1,
+      homeLeg2,
+      awayLeg2,
+      homeAggregate,
+      awayAggregate
+    );
+  card.onclick = () => {
+    if (leg1) {
+      onFixtureClick(leg1);
+      return;
+    }
+    if (leg2) {
+      onFixtureClick(leg2);
+    }
+  };
+  const homeLogo =
+    leg1?.homeLogo ||
+    leg2?.awayLogo;
+  const awayLogo =
+    leg1?.awayLogo ||
+    leg2?.homeLogo;
+  if (homeLogo) {
+    loadBracketTeamLogo(
+      card,
+      homeLogo,
+      homeName,
+      ".home-row .team-side"
+    );
+  }
+  if (awayLogo) {
+    loadBracketTeamLogo(
+      card,
+      awayLogo,
+      awayName,
+      ".away-row .team-side"
+    );
+  }
+  const contactArea =
+    card.querySelector(
+      ".bracket-contact-area"
+    );
+  if (contactArea) {
+    contactArea.appendChild(
+      createBracketContactButton(
+        leg1 || leg2
+      )
+    );
+  }
+  const leg1Buttons =
+    card.querySelectorAll(
+      ".leg-1-score"
+    );
+  leg1Buttons.forEach(
+    button => {
+      button.onclick =
+        event => {
+          event.stopPropagation();
+          if (!leg1) {
+            return;
+          }
+          onFixtureClick(
+            leg1
+          );
+        };
+    }
+  );
+  const leg2Buttons =
+    card.querySelectorAll(
+      ".leg-2-score"
+    );
+  leg2Buttons.forEach(
+    button => {
+      button.onclick =
+        event => {
+          event.stopPropagation();
+          if (!leg2) {
+            return;
+          }
+          onFixtureClick(
+            leg2
+          );
+        };
+    }
+  );
+  return card;
+}
+function createBracketSingleMatchCard(
+  roundMatch,
+  roundName,
+  tournament,
+  match
+) {
+  const card =
+    document.createElement("div");
+  card.className =
+    "match-card single-leg-match-card";
+  card.dataset.roundIndex =
+    roundMatch.roundIndex;
+  card.dataset.slot =
+    roundMatch.slot;
+  const rawHomeName =
+    getBracketTeamName(
+      match?.home
+    );
+  const rawAwayName =
+    getBracketTeamName(
+      match?.away
+    );
+  const homeName =
+    rawHomeName &&
+    rawHomeName !== "BYE" ?
+    rawHomeName :
+    "TBD";
+  const awayName =
+    rawAwayName &&
+    rawAwayName !== "BYE" ?
+    rawAwayName :
+    "TBD";
+  const homeGoals =
+    match?.homeGoals !== null &&
+    match?.homeGoals !== undefined &&
+    match?.homeGoals !== "" ?
+    Number(match.homeGoals) :
+    null;
+  const awayGoals =
+    match?.awayGoals !== null &&
+    match?.awayGoals !== undefined &&
+    match?.awayGoals !== "" ?
+    Number(match.awayGoals) :
+    null;
+  const validHomeGoals =
+    Number.isFinite(homeGoals) ?
+    homeGoals :
+    null;
+  const validAwayGoals =
+    Number.isFinite(awayGoals) ?
+    awayGoals :
+    null;
+  const hasResult =
+    validHomeGoals !== null &&
+    validAwayGoals !== null;
+  if (!hasResult) {
+    card.classList.add(
+      "pending-match"
+    );
+  }
+  card.innerHTML =
+    createBracketSingleMatchHTML(
+      match,
+      roundName,
+      tournament,
+      homeName,
+      awayName,
+      validHomeGoals,
+      validAwayGoals
+    );
+  card.onclick = () => {
+    if (!match) {
+      return;
+    }
+    onFixtureClick(
+      match
+    );
+  };
+  if (
+    match?.homeLogo &&
+    homeName !== "TBD"
+  ) {
+    loadBracketTeamLogo(
+      card,
+      match.homeLogo,
+      homeName,
+      ".single-leg-home-row .single-leg-team-side",
+      ".single-leg-team-logo-placeholder"
+    );
+  }
+  if (
+    match?.awayLogo &&
+    awayName !== "TBD"
+  ) {
+    loadBracketTeamLogo(
+      card,
+      match.awayLogo,
+      awayName,
+      ".single-leg-away-row .single-leg-team-side",
+      ".single-leg-team-logo-placeholder"
+    );
+  }
+  const contactArea =
+    card.querySelector(
+      ".single-leg-contact-area"
+    );
+  if (contactArea) {
+    contactArea.appendChild(
+      createBracketContactButton(
+        match
+      )
+    );
+  }
+  const scoreButtons =
+    card.querySelectorAll(
+      ".single-leg-score"
+    );
+  scoreButtons.forEach(
+    button => {
+      button.onclick =
+        event => {
+          event.stopPropagation();
+          if (!match) {
+            return;
+          }
+          onFixtureClick(
+            match
+          );
+        };
+    }
+  );
+  return card;
+}
+
