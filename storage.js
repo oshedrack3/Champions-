@@ -5332,7 +5332,123 @@ function showTournamentRulesModal(
   });
 }
 
-
+function searchTournamentRules() {
+  const input =
+    document.getElementById(
+      "tournamentRulesSearch"
+    );
+  
+  const content =
+    document.getElementById(
+      "tournamentRulesContent"
+    );
+  
+  const query =
+    input.value.trim().toLowerCase();
+  
+  content
+    .querySelectorAll(
+      ".rules-search-match"
+    )
+    .forEach(el => {
+      el.replaceWith(
+        document.createTextNode(
+          el.textContent
+        )
+      );
+    });
+  
+  if (!query) return;
+  
+  const walker =
+    document.createTreeWalker(
+      content,
+      NodeFilter.SHOW_TEXT
+    );
+  
+  let node;
+  
+  while (
+    node = walker.nextNode()
+  ) {
+    const text =
+      node.textContent.toLowerCase();
+    
+    const index =
+      text.indexOf(query);
+    
+    if (index === -1) continue;
+    
+    const before =
+      node.textContent.slice(
+        0,
+        index
+      );
+    
+    const match =
+      node.textContent.slice(
+        index,
+        index + query.length
+      );
+    
+    const after =
+      node.textContent.slice(
+        index + query.length
+      );
+    
+    const fragment =
+      document.createDocumentFragment();
+    
+    if (before) {
+      fragment.appendChild(
+        document.createTextNode(
+          before
+        )
+      );
+    }
+    
+    const highlight =
+      document.createElement("span");
+    
+    highlight.className =
+      "rules-search-match";
+    
+    highlight.textContent =
+      match;
+    
+    fragment.appendChild(
+      highlight
+    );
+    
+    if (after) {
+      fragment.appendChild(
+        document.createTextNode(
+          after
+        )
+      );
+    }
+    
+    node.parentNode.replaceChild(
+      fragment,
+      node
+    );
+    
+    highlight.scrollIntoView({
+      behavior: "smooth",
+      block: "center"
+    });
+    
+    break;
+  }
+}
+document
+  .getElementById(
+    "tournamentRulesSearch"
+  )
+  .addEventListener(
+    "input",
+    searchTournamentRules
+  );
 async function handleCreateCompetition() {
   
   const name =
@@ -5569,118 +5685,6 @@ function editCompetition(id) {
   ).style.display = "block";
 }
 
-
-
-function formatTournamentRules(rules) {
-  const lines =
-    rules
-    .split("\n")
-    .map(line => line.trim());
-  
-  let html = "";
-  let type = "";
-  
-  for (const line of lines) {
-    if (!line) continue;
-    
-    if (
-      [
-        "[TITLE]",
-        "[SUBTITLE]",
-        "[INTRO]",
-        "[SECTION]",
-        "[CODE]",
-        "[TEXT]",
-        "[POINT]",
-        "[NUMBER]",
-        "[FINAL]"
-      ].includes(line)
-    ) {
-      type = line;
-      continue;
-    }
-    
-    const text =
-      escapeHtml(line);
-    
-    if (type === "[TITLE]") {
-      html += `
-        <h1 class="rules-title">
-          ${text}
-        </h1>
-      `;
-    }
-    
-    else if (type === "[SUBTITLE]") {
-      html += `
-        <h2 class="rules-subtitle">
-          ${text}
-        </h2>
-      `;
-    }
-    
-    else if (type === "[INTRO]") {
-      html += `
-        <p class="rules-intro">
-          ${text}
-        </p>
-      `;
-    }
-    
-    else if (type === "[SECTION]") {
-      html += `
-        <h2 class="rules-main-section">
-          ${text}
-        </h2>
-      `;
-    }
-    
-    else if (type === "[CODE]") {
-      html += `
-        <h4 class="rules-code-heading">
-          ${text}
-        </h4>
-      `;
-    }
-    
-    else if (type === "[TEXT]") {
-      html += `
-        <p class="rules-paragraph">
-          ${text}
-        </p>
-      `;
-    }
-    
-    else if (type === "[POINT]") {
-      html += `
-        <div class="rules-point">
-          <span>•</span>
-          <div>${text}</div>
-        </div>
-      `;
-    }
-    
-    else if (type === "[NUMBER]") {
-      html += `
-        <div class="rules-number">
-          ${text}
-        </div>
-      `;
-    }
-    
-    else if (type === "[FINAL]") {
-      html += `
-        <p class="rules-final">
-          ${text}
-        </p>
-      `;
-    }
-    
-    type = "";
-  }
-  
-  return html;
-}
 
 
 function formatTournamentRules(rules) {

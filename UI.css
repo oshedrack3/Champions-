@@ -5467,3 +5467,38 @@ button.knockout-score-cell:hover {
   text-align: center;
   letter-spacing: 0.4px;
 }
+
+.tournament-rules-search {
+  padding: 14px 18px;
+  border-bottom: 1px solid #e5e5e5;
+  background: #fff;
+}
+
+.tournament-rules-search input {
+  width: 100%;
+  height: 42px;
+  padding: 0 13px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  background: #f7f7f7;
+  color: #171717;
+  font-size: 14px;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.tournament-rules-search input:focus {
+  border-color: #171717;
+  background: #fff;
+}
+
+.tournament-rules-search input::placeholder {
+  color: #888;
+}
+
+.rules-search-match {
+  background: #ffeb3b;
+  color: #171717;
+  border-radius: 2px;
+}
+
