@@ -371,7 +371,76 @@ async function deleteTournamentFixtures(id) {
   
 }
 
+async function getTournamentRules(tournamentId) {
+  const token = getToken();
+  
+  const res = await apiRequest(
+    `${API}/tournaments/${tournamentId}/rules`,
+    {
+      headers: {
+        Authorization: token
+      }
+    },
+    () =>
+    getTournamentRules(
+      tournamentId
+    )
+  );
+  
+  if (!res) return null;
+  
+  const result =
+    await res.json();
+  
+  if (
+    !res.ok ||
+    !result.success
+  ) {
+    throw new Error(
+      result.message ||
+      "Failed to load tournament rules."
+    );
+  }
+  
+  return result;
+}
 
+async function acceptTournamentRules(
+  tournamentId
+) {
+  const token = getToken();
+  
+  const res = await apiRequest(
+    `${API}/tournaments/${tournamentId}/rules/accept`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: token
+      }
+    },
+    () =>
+    acceptTournamentRules(
+      tournamentId
+    )
+  );
+  
+  if (!res) return null;
+  
+  const result =
+    await res.json();
+  
+  if (
+    !res.ok ||
+    !result.success
+  ) {
+    throw new Error(
+      result.message ||
+      "Failed to accept tournament rules."
+    );
+  }
+  
+  return result;
+}
 async function respondToInvitation(tournamentId, action) {
   showLoader();
   

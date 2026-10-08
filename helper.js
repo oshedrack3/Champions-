@@ -456,6 +456,7 @@ function handleMenuAction(action) {
   closeMenu();
   
   const actions = {
+    viewRules:viewTournamentRules,
     showRank:showGlobalRankings,
     openHOF: openHallOfFame,
     openProfile: openProfileModal,
@@ -626,7 +627,12 @@ const menuConfig = {
       label: "Edit or Delete Team",
       action: "deleteTeam",
       roles: ["admin"]
-    }
+    },
+      {
+    label: "View Rules and Regulations",
+    action: "viewRules",
+    roles: ["admin", "player"]
+  }
     
   ],
   group: [
@@ -731,7 +737,11 @@ const menuConfig = {
       action: "joinTour",
       roles: ["admin", "player"]
     },
-    
+         {
+    label: "View Rules and Regulations",
+    action: "viewRules",
+    roles: ["admin", "player"]
+  },
     
     {
       label: "Import Teams",

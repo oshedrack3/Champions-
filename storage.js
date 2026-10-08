@@ -314,16 +314,46 @@ async function openTournament(id) {
     const tournament =
       await getTournament(id);
     
+    const rules =
+      await getTournamentRules(id);
+    
+    if (
+      rules &&
+      rules.rules &&
+      !rules.accepted
+    ) {
+      hideLoader();
+      
+      const agreed =
+        await showTournamentRulesModal(
+          rules.rules,
+          true
+        );
+      
+      if (!agreed) {
+        return;
+      }
+      
+      showLoader();
+      
+      await acceptTournamentRules(id);
+    }
+    
     currentTournament =
       tournament;
+    
     loadSubmissionDeadlineCountdown(
-        tournament
-      );
+      tournament
+    );
+    
     startTournamentEvents(id);
     
     const name =
       tournament.name;
-    const season = tournament.season;
+    
+    const season =
+      tournament.season;
+    
     const formatType =
       (
         tournament.format ||
@@ -334,19 +364,19 @@ async function openTournament(id) {
       document.getElementById(
         "leagueName"
       ).textContent = name;
+      
       document.getElementById(
         "tableTournamentName"
       ).textContent = name;
+      
       document.getElementById(
         "tournamentSeason"
       ).textContent = season;
-      
       
       goToTournamentPage();
       
       await rebuildTableFromMatches();
       
-            
     } else {
       document.getElementById(
         "cupName"
@@ -376,6 +406,40 @@ async function openTournament(id) {
   }
 }
 
+async function viewTournamentRules() {
+  try {
+    const result =
+      await getTournamentRules(
+        currentTournament.id
+      );
+    
+    if (
+      !result ||
+      !result.rules
+    ) {
+      showAlert(
+        "No tournament rules available."
+      );
+      return;
+    }
+    
+    await showTournamentRulesModal(
+      result.rules,
+      false
+    );
+    
+  } catch (err) {
+    console.error(
+      "viewTournamentRules error:",
+      err
+    );
+    
+    showAlert(
+      err.message ||
+      "Failed to load tournament rules."
+    );
+  }
+}
 
 async function handleSave(tournament, newName, oldName) {
   tournament.matches = tournament.matches || [];
@@ -5165,4 +5229,567 @@ async function removeTournament(id) {
     
     throw err;
   }
+}
+
+
+
+function showTournamentRulesModal(
+  rules,
+  requireAgreement = true
+) {
+  return new Promise(resolve => {
+    const modal =
+      document.getElementById(
+        "tournamentRulesModal"
+      );
+    
+    const content =
+      document.getElementById(
+        "tournamentRulesContent"
+      );
+    
+    const agreeBtn =
+      document.getElementById(
+        "tournamentRulesAgreeBtn"
+      );
+    
+    const declineBtn =
+      document.getElementById(
+        "tournamentRulesDeclineBtn"
+      );
+    
+    const closeBtn =
+      document.getElementById(
+        "tournamentRulesCloseBtn"
+      );
+    
+    content.innerHTML =
+  formatTournamentRules(
+    rules || "No rules provided."
+  );
+  content.scrollTop = 0;
+    
+    if (requireAgreement) {
+      agreeBtn.style.display = "";
+      declineBtn.style.display = "";
+      closeBtn.style.display = "none";
+      
+      agreeBtn.disabled = true;
+      declineBtn.disabled = true;
+    } else {
+      agreeBtn.style.display = "none";
+      declineBtn.style.display = "none";
+      closeBtn.style.display = "";
+    }
+    
+    function checkScroll() {
+      if (!requireAgreement) return;
+      
+      const atBottom =
+        content.scrollTop +
+        content.clientHeight >=
+        content.scrollHeight - 5;
+      
+      agreeBtn.disabled = !atBottom;
+      declineBtn.disabled = !atBottom;
+    }
+    
+    content.addEventListener(
+      "scroll",
+      checkScroll
+    );
+    
+    modal.style.display = "flex";
+    
+    checkScroll();
+    
+    function finish(result) {
+      modal.style.display = "none";
+      
+      agreeBtn.onclick = null;
+      declineBtn.onclick = null;
+      closeBtn.onclick = null;
+      
+      content.removeEventListener(
+        "scroll",
+        checkScroll
+      );
+      
+      resolve(result);
+    }
+    
+    agreeBtn.onclick = () => {
+      finish(true);
+    };
+    
+    declineBtn.onclick = () => {
+      finish(false);
+    };
+    
+    closeBtn.onclick = () => {
+      finish(false);
+    };
+  });
+}
+
+
+async function handleCreateCompetition() {
+  
+  const name =
+    document
+    .getElementById("competitionNameInput")
+    .value
+    .trim();
+  const rulesInput =
+    document.getElementById(
+      "competitionRulesInput"
+    );
+  const rules =
+    rulesInput ?
+    rulesInput.value.trim() :
+    "";
+  
+  const logoInput =
+    document.getElementById(
+      "competitionLogoInput"
+    );
+  
+  if (!name) {
+    showAlert("Enter competition name");
+    return;
+  }
+  
+  showLoader();
+  
+  try {
+    
+    let logo = null;
+    
+    if (
+      logoInput &&
+      logoInput.files &&
+      logoInput.files.length > 0
+    ) {
+      logo =
+        await fileToBase64(
+          logoInput.files[0],
+          1200
+        );
+    }
+    
+    if (editingCompetitionId) {
+      
+      const changes = {
+        name,
+        rules
+      };
+      
+      if (logo) {
+        changes.logo = logo;
+      }
+      
+      const updatedCompetition =
+        await updateCompetition(
+          editingCompetitionId,
+          changes
+        );
+      
+      const index =
+        myCompetitions.findIndex(
+          competition =>
+          String(competition.id) ===
+          String(editingCompetitionId)
+        );
+      
+      if (index !== -1) {
+        myCompetitions[index] =
+          updatedCompetition;
+      }
+      
+      editingCompetitionId = null;
+      
+      renderCompetitionList();
+      
+      document
+        .getElementById(
+          "competitionNameInput"
+        )
+        .value = "";
+      
+      if (rulesInput) {
+        rulesInput.value = "";
+      }
+      
+      logoInput.value = "";
+      
+      document
+        .getElementById(
+          "competitionLogoPreview"
+        )
+        .src =
+        "images/default-tournament.png";
+      
+      closeCreateCompetitionModal();
+      
+      showAlert(
+        "Competition updated successfully!"
+      );
+      
+    } else {
+      
+      const result =
+        await createCompetition({
+          name,
+          logo
+        });
+      
+      myCompetitions.unshift(
+        result.competition
+      );
+      
+      renderCompetitionList();
+      
+      document
+        .getElementById(
+          "competitionNameInput"
+        )
+        .value = "";
+      if (rulesInput) {
+        rulesInput.value = "";
+      }
+      
+      logoInput.value = "";
+      
+      document
+        .getElementById(
+          "competitionLogoPreview"
+        )
+        .src =
+        "images/default-tournament.png";
+      
+      closeCreateCompetitionModal();
+      
+      showAlert(
+        "Competition created successfully!"
+      );
+    }
+    
+  } catch (err) {
+    
+    showAlert(
+      err.message
+    );
+    
+  } finally {
+    
+    hideLoader();
+  }
+}
+function editCompetition(id) {
+  const competition = myCompetitions.find(
+    c => String(c.id) === String(id)
+  );
+  
+  if (!competition) {
+    showAlert("Competition not found.");
+    return;
+  }
+  
+  editingCompetitionId = competition.id;
+  
+  const title = document.getElementById(
+    "competitionModalTitle"
+  );
+  
+  const submitBtn = document.getElementById(
+    "competitionModalSubmitBtn"
+  );
+  
+  const nameInput = document.getElementById(
+    "competitionNameInput"
+  );
+  
+  const logoInput = document.getElementById(
+    "competitionLogoInput"
+  );
+  
+  const logoPreview = document.getElementById(
+    "competitionLogoPreview"
+  );
+  const rulesInput = document.getElementById(
+    "competitionRulesInput"
+  );
+  
+  if (title) {
+    title.textContent = "Edit Competition";
+  }
+  
+  if (submitBtn) {
+    submitBtn.textContent = "Save Changes";
+  }
+  
+  if (nameInput) {
+    nameInput.value =
+      competition.name || "";
+  }
+  if (rulesInput) {
+    rulesInput.value =
+      competition.rules || "";
+  }
+  
+  if (logoInput) {
+    logoInput.value = "";
+    logoInput.style.display = "block";
+  }
+  
+  const rawLogo =
+    competition.logo ||
+    competition.competitionImage ||
+    competition.logo_url;
+  
+  const logoUrl =
+    typeof rawLogo === "object" &&
+    rawLogo !== null ?
+    (
+      rawLogo.url ||
+      rawLogo.src ||
+      rawLogo.href ||
+      ""
+    ) :
+    rawLogo;
+  
+  if (logoPreview) {
+    logoPreview.src =
+      logoUrl ||
+      "images/default-tournament.png";
+  }
+  
+  document.getElementById(
+    "createCompetitionModal"
+  ).style.display = "block";
+}
+
+
+
+function formatTournamentRules(rules) {
+  const lines =
+    rules
+    .split("\n")
+    .map(line => line.trim());
+  
+  let html = "";
+  let type = "";
+  
+  for (const line of lines) {
+    if (!line) continue;
+    
+    if (
+      [
+        "[TITLE]",
+        "[SUBTITLE]",
+        "[INTRO]",
+        "[SECTION]",
+        "[CODE]",
+        "[TEXT]",
+        "[POINT]",
+        "[NUMBER]",
+        "[FINAL]"
+      ].includes(line)
+    ) {
+      type = line;
+      continue;
+    }
+    
+    const text =
+      escapeHtml(line);
+    
+    if (type === "[TITLE]") {
+      html += `
+        <h1 class="rules-title">
+          ${text}
+        </h1>
+      `;
+    }
+    
+    else if (type === "[SUBTITLE]") {
+      html += `
+        <h2 class="rules-subtitle">
+          ${text}
+        </h2>
+      `;
+    }
+    
+    else if (type === "[INTRO]") {
+      html += `
+        <p class="rules-intro">
+          ${text}
+        </p>
+      `;
+    }
+    
+    else if (type === "[SECTION]") {
+      html += `
+        <h2 class="rules-main-section">
+          ${text}
+        </h2>
+      `;
+    }
+    
+    else if (type === "[CODE]") {
+      html += `
+        <h4 class="rules-code-heading">
+          ${text}
+        </h4>
+      `;
+    }
+    
+    else if (type === "[TEXT]") {
+      html += `
+        <p class="rules-paragraph">
+          ${text}
+        </p>
+      `;
+    }
+    
+    else if (type === "[POINT]") {
+      html += `
+        <div class="rules-point">
+          <span>•</span>
+          <div>${text}</div>
+        </div>
+      `;
+    }
+    
+    else if (type === "[NUMBER]") {
+      html += `
+        <div class="rules-number">
+          ${text}
+        </div>
+      `;
+    }
+    
+    else if (type === "[FINAL]") {
+      html += `
+        <p class="rules-final">
+          ${text}
+        </p>
+      `;
+    }
+    
+    type = "";
+  }
+  
+  return html;
+}
+
+
+function formatTournamentRules(rules) {
+  const lines =
+    rules
+    .split("\n")
+    .map(line => line.trim());
+  
+  let html = "";
+  
+  for (let i = 0; i < lines.length; i++) {
+    const marker = lines[i];
+    
+    if (!marker) continue;
+    
+    const text =
+      lines[i + 1] || "";
+    
+    if (marker === "[TITLE]") {
+      html += `
+        <h1 class="rules-title">
+          ${escapeHtml(text)}
+        </h1>
+      `;
+      i++;
+      continue;
+    }
+    
+    if (marker === "[SUBTITLE]") {
+      html += `
+        <h2 class="rules-subtitle">
+          ${escapeHtml(text)}
+        </h2>
+      `;
+      i++;
+      continue;
+    }
+    
+    if (marker === "[INTRO]") {
+      html += `
+        <p class="rules-intro">
+          ${escapeHtml(text)}
+        </p>
+      `;
+      i++;
+      continue;
+    }
+    
+    if (marker === "[SECTION]") {
+      html += `
+        <h2 class="rules-main-section">
+          ${escapeHtml(text)}
+        </h2>
+      `;
+      i++;
+      continue;
+    }
+    
+    if (marker === "[CODE]") {
+      html += `
+        <h4 class="rules-code-heading">
+          ${escapeHtml(text)}
+        </h4>
+      `;
+      i++;
+      continue;
+    }
+    
+    if (marker === "[TEXT]") {
+      html += `
+        <p class="rules-paragraph">
+          ${escapeHtml(text)}
+        </p>
+      `;
+      i++;
+      continue;
+    }
+    
+    if (marker === "[POINT]") {
+      html += `
+        <div class="rules-point">
+          <span>•</span>
+          <div>${escapeHtml(text)}</div>
+        </div>
+      `;
+      i++;
+      continue;
+    }
+    
+    if (marker === "[NUMBER]") {
+      html += `
+        <div class="rules-number">
+          ${escapeHtml(text)}
+        </div>
+      `;
+      i++;
+      continue;
+    }
+    
+    if (marker === "[FINAL]") {
+      html += `
+        <p class="rules-final">
+          ${escapeHtml(text)}
+        </p>
+      `;
+      i++;
+      continue;
+    }
+  }
+  
+  return html;
 }

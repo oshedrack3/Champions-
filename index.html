@@ -1452,8 +1452,47 @@
     
   </div>
   
-  
-  
+<div
+  id="tournamentRulesModal"
+  class="tournament-rules-modal"
+  style="display:none;"
+>
+  <div class="tournament-rules-container">
+
+    <div
+      id="tournamentRulesContent"
+      class="tournament-rules-content"
+    ></div>
+
+    <div class="tournament-rules-actions">
+
+      <button
+        id="tournamentRulesAgreeBtn"
+        class="tournament-rules-agree"
+      >
+        I Agree
+      </button>
+
+      <button
+        id="tournamentRulesDeclineBtn"
+        class="tournament-rules-decline"
+      >
+        I Don't Agree
+      </button>
+
+      <button
+        id="tournamentRulesCloseBtn"
+        class="tournament-rules-close"
+        style="display:none;"
+      >
+        Close
+      </button>
+
+    </div>
+
+  </div>
+</div>
+
   <div id="deleteAccountModal" class="modal-overlay">
     
     <div class="modal-content">
@@ -1510,62 +1549,90 @@
   </div>
   
   
-  <div id="createCompetitionModal" class="modal-overlay">
+<div id="createCompetitionModal" class="modal-overlay">
+  
+  <div class="modal-content">
     
-    <div class="modal-content">
+    <div class="modal-header">
       
-      <div class="modal-header">
+      <h3 id="competitionModalTitle">
+        Create Competition
+      </h3>
+      
+      <p>
+        Competition is a collection of tournament
+        <br>
+        belonging to the same User or Group of Users
+      </p>
+      
+    </div>
+    
+    <div class="modal-body">
+      
+      <label>
+        Competition Name
+      </label>
+      
+      <input
+        id="competitionNameInput"
+        type="text"
+        placeholder="Enter competition name"
+      >
+      
+      <label>
+        Competition Logo
+      </label>
+      
+      <input
+        id="competitionLogoInput"
+        type="file"
+        accept="image/*"
+      >
+      
+      <div class="competition-logo-preview">
         
-        <h3 id="competitionModalTitle">
-          Create Competition
-        </h3>
-        
-        <p>
-          Competition is a collection of tournament
-          <br>
-          belonging to the same User or Group of Users
-        </p>
+        <img
+          id="competitionLogoPreview"
+          src="images/default-tournament.png"
+          alt="Competition logo"
+        >
         
       </div>
+
+      <label>
+        Competition Rules
+      </label>
+
+      <textarea
+        id="competitionRulesInput"
+        rows="12"
+        placeholder="Enter the rules for this competition..."
+      ></textarea>
       
-      <div class="modal-body">
-        
-        <label>
-          Competition Name
-        </label>
-        
-        <input id="competitionNameInput" type="text" placeholder="Enter competition name">
-        
-        <label>
-          Competition Logo
-        </label>
-        
-        <input id="competitionLogoInput" type="file" accept="image/*">
-        
-        <div class="competition-logo-preview">
-          
-          <img id="competitionLogoPreview" src="images/default-tournament.png" alt="Competition logo">
-          
-        </div>
-        
-      </div>
+    </div>
+    
+    <div class="modal-actions">
       
-      <div class="modal-actions">
-        
-        <button class="secondary-btn" onclick="closeCreateCompetitionModal()">
-          Cancel
-        </button>
-        
-        <button id="competitionModalSubmitBtn" class="primary-btn" onclick="handleCreateCompetition()">
-          Create
-        </button>
-        
-      </div>
+      <button
+        class="secondary-btn"
+        onclick="closeCreateCompetitionModal()"
+      >
+        Cancel
+      </button>
+      
+      <button
+        id="competitionModalSubmitBtn"
+        class="primary-btn"
+        onclick="handleCreateCompetition()"
+      >
+        Create
+      </button>
       
     </div>
     
   </div>
   
+</div>  
   
   <div id="invitationModal" class="modal-overlay" style="display:none;">
     <div class="modal">
