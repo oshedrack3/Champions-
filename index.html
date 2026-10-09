@@ -765,27 +765,61 @@
       
       <h1>⭐️ CHAMPIONS⭐️</h1>
       
-      <!-- Login -->
-      <div id="loginSection">
-        
-        <h2>Login</h2>
-        
-        <input type="text" id="loginInput" placeholder="Username or Email">
-        
-        <input type="password" id="loginPassword" placeholder="Password">
-        
-        <button onclick="handleLogin()">
-          Login
-        </button>
-        
-        <p>
-          Don't have an account?
-          <span onclick="showRegister()">
-            Register
-          </span>
-        </p>
-        
-      </div>
+<!-- Login -->
+<div id="loginSection">
+  <h2>Login</h2>
+  <input type="text" id="loginInput" placeholder="Username or Email">
+  <input type="password" id="loginPassword" placeholder="Password">
+  <button onclick="handleLogin()">
+    Login
+  </button>
+  <p>
+    <span onclick="showForgotPassword()">
+      Forgot Password?
+    </span>
+  </p>
+  <p>
+    Don't have an account?
+    <span onclick="showRegister()">
+      Register
+    </span>
+  </p>
+</div>
+
+
+<!-- Forgot Password -->
+<div id="forgotPasswordSection" style="display: none;">
+  <h2>Reset Password</h2>
+  <p>Enter the email address and phone number linked to your account.</p>
+  <input
+    type="email"
+    id="resetEmail"
+    placeholder="Registered Email Address"
+  >
+  <input
+    type="tel"
+    id="resetPhone"
+    placeholder="Registered Phone Number"
+  >
+  <input
+    type="password"
+    id="resetPassword"
+    placeholder="New Password"
+  >
+  <input
+    type="password"
+    id="confirmResetPassword"
+    placeholder="Confirm New Password"
+  >
+  <button onclick="submitPasswordReset()">
+    Reset Password
+  </button>
+  <p>
+    <span onclick="showLogin()">
+      Back to Login
+    </span>
+  </p>
+</div>
       
       <!-- Register -->
       <div id="registerSection" style="display:none;">

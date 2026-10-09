@@ -35,6 +35,39 @@ async function handleLogin() {
     );
   }
 }
+async function handlePasswordReset(email, phone, password) {
+  showLoader();
+  try {
+    const res = await fetch(`${API}/auth/reset-password`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        email,
+        phone,
+        password
+      })
+    });
+    const result = await res.json();
+    if (!res.ok || !result.success) {
+      throw new Error(
+        result.message || "Password reset failed."
+      );
+    }
+    await showAlert(
+      result.message || "Password reset successfully."
+    );
+    return true;
+  } catch (error) {
+    await showAlert(
+      error.message || "Unable to reset password."
+    );
+    return false;
+  } finally {
+    hideLoader();
+  }
+}
 async function handleLogout() {
   closeMenu();
   const confirmed = await showConfirmModal("Are you sure you want to log out?", "Logout", "Cancel");
@@ -266,4 +299,39 @@ function switchAppMode() {
 }
 
 
+
+function showForgotPassword() {
+  document.getElementById("loginSection").style.display = "none";
+  document.getElementById("forgotPasswordSection").style.display = "block";
+}
+function showLogin() {
+  document.getElementById("forgotPasswordSection").style.display = "none";
+  document.getElementById("loginSection").style.display = "block";
+}
+async function submitPasswordReset() {
+  const email = document.getElementById("resetEmail").value.trim();
+  const phone = document.getElementById("resetPhone").value.trim();
+  const password = document.getElementById("resetPassword").value;
+  const confirmPassword = document.getElementById("confirmResetPassword").value;
+  if (!email || !phone || !password || !confirmPassword) {
+    showAlert("Please fill in all fields.");
+    return;
+  }
+  if (password.length < 6) {
+    showAlert("Password must be at least 6 characters.");
+    return;
+  }
+  if (password !== confirmPassword) {
+    showAlert("Passwords do not match.");
+    return;
+  }
+  const success = await handlePasswordReset(email, phone, password);
+  if (success) {
+    document.getElementById("resetEmail").value = "";
+    document.getElementById("resetPhone").value = "";
+    document.getElementById("resetPassword").value = "";
+    document.getElementById("confirmResetPassword").value = "";
+    showLogin();
+  }
+}
 
