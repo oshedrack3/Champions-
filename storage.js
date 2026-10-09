@@ -3,6 +3,7 @@ let pairingModalData = null;
 let APP_MODE = "view";
 let myCompetitions = [];
 let currentCompetition = null;
+let fixtureSquadRequestId = 0;
 myTournaments = null;
 let globalRankings = null;
 let currentKnockoutRoundIndex = 1;
@@ -3786,48 +3787,35 @@ async function buildFixturesFromMatches(
   matches,
   tournamentId
 ) {
-  const teams =
-    await getTeams(
-      tournamentId
-    );
+  const teams = await getTeams(tournamentId);
   
   const teamMap = {};
   
   teams.forEach(team => {
-    teamMap[String(team.id)] =
-      team;
+    teamMap[String(team.id)] = team;
   });
   
   return matches.map(match => {
     const homeTeam =
-      teamMap[
-        String(match.home_team_id)
-      ];
+      teamMap[String(match.home_team_id)];
     
     const awayTeam =
-      teamMap[
-        String(match.away_team_id)
-      ];
+      teamMap[String(match.away_team_id)];
     
     return {
       ...match,
-      home: homeTeam?.name ||
-        "Unknown Team",
-      away: awayTeam?.name ||
-        "Unknown Team",
+      home: homeTeam?.name || "Unknown Team",
+      away: awayTeam?.name || "Unknown Team",
       homeGoals: match.home_score,
       awayGoals: match.away_score,
       played: Number(match.played) === 1,
       playedAt: match.played_at,
       scheduledAt: match.scheduled_at,
-      homeLogo: homeTeam?.logo ||
-        null,
-      awayLogo: awayTeam?.logo ||
-        null
+      homeLogo: homeTeam?.logo || null,
+      awayLogo: awayTeam?.logo || null
     };
   });
 }
-
 async function loadTournamentFixtures(
   tournamentId
 ) {
@@ -5587,4 +5575,227 @@ function formatTournamentRules(rules) {
   }
   
   return html;
+}
+
+
+
+
+
+async function openFixtureSquads(match) {
+  const modal = document.getElementById("fixtureSquadModal");
+  const container = document.getElementById("fixtureSquadTeams");
+
+  if (!modal || !container) {
+    showAlert("Squad viewer is unavailable.");
+    return;
+  }
+
+  const tournament = getCurrentTournament();
+
+  if (!tournament) {
+    showAlert("Tournament not found.");
+    return;
+  }
+
+  const requestId = ++fixtureSquadRequestId;
+  const tournamentId = tournament.id;
+
+  container.innerHTML = "";
+
+  const teams = [
+    {
+      id: match.home_team_id,
+      name: match.home || "Home Team",
+      logo: match.homeLogo,
+      side: "Home"
+    },
+    {
+      id: match.away_team_id,
+      name: match.away || "Away Team",
+      logo: match.awayLogo,
+      side: "Away"
+    }
+  ];
+
+  modal.style.display = "flex";
+  modal.setAttribute("aria-hidden", "false");
+  document.body.style.overflow = "hidden";
+
+  teams.forEach(team => {
+    container.appendChild(
+      createFixtureSquadTeam(
+        team,
+        tournamentId,
+        requestId
+      )
+    );
+  });
+}
+
+function createFixtureSquadTeam(
+  team,
+  tournamentId,
+  requestId
+) {
+  const section = document.createElement("div");
+  section.className = "fixture-squad-team";
+  
+  const logo = document.createElement("div");
+  logo.className = "fixture-squad-team-logo";
+  
+  if (team.logo) {
+    const img = document.createElement("img");
+    img.src = team.logo;
+    img.alt = "";
+    img.onerror = () => {
+      logo.textContent = "⚽";
+    };
+    logo.appendChild(img);
+  } else {
+    logo.textContent = "⚽";
+  }
+  
+  const info = document.createElement("div");
+  info.className = "fixture-squad-team-info";
+  
+  const name = document.createElement("span");
+  name.className = "fixture-squad-team-name";
+  name.textContent = team.name;
+  
+  const label = document.createElement("span");
+  label.className = "fixture-squad-team-label";
+  label.textContent = `${team.side} team · Tap to view squad`;
+  
+  info.append(name, label);
+  
+  const chevron = document.createElement("span");
+  chevron.className = "fixture-squad-chevron";
+  chevron.textContent = "⌄";
+  
+  const toggle = document.createElement("button");
+  toggle.type = "button";
+  toggle.className = "fixture-squad-team-toggle";
+  toggle.setAttribute("aria-expanded", "false");
+  toggle.append(logo, info, chevron);
+  
+  const content = document.createElement("div");
+  content.className = "fixture-squad-team-content";
+  content.hidden = true;
+  
+  section.append(toggle, content);
+  
+  toggle.onclick = async () => {
+    if (!content.hidden) {
+      content.hidden = true;
+      section.classList.remove("expanded");
+      toggle.setAttribute("aria-expanded", "false");
+      label.textContent = `${team.side} team · Tap to view squad`;
+      return;
+    }
+    
+    content.hidden = false;
+    section.classList.add("expanded");
+    toggle.setAttribute("aria-expanded", "true");
+    label.textContent = `${team.side} team · Squad details`;
+    
+    if (content.dataset.loaded === "true") return;
+    
+    content.dataset.loaded = "true";
+    
+    if (!team.id) {
+      content.appendChild(
+        createSquadMessage("Team information is unavailable.", true)
+      );
+      return;
+    }
+    
+    const loading = createSquadMessage(
+      "Loading registered squad..."
+    );
+    
+    content.appendChild(loading);
+    
+    try {
+      const squad = await getTournamentTeamSquad(
+        tournamentId,
+        team.id
+      );
+      
+      if (
+        requestId !== fixtureSquadRequestId ||
+        !section.isConnected
+      ) {
+        return;
+      }
+      
+      loading.remove();
+      
+      if (!squad || !squad.image_url) {
+        content.appendChild(
+          createSquadMessage(
+            "This player has not registered a squad."
+          )
+        );
+        return;
+      }
+      
+      const image = document.createElement("img");
+      image.className = "fixture-squad-image";
+      image.src = squad.image_url;
+      image.alt = `${team.name} registered squad`;
+      image.loading = "lazy";
+      
+      image.onerror = () => {
+        image.remove();
+        content.appendChild(
+          createSquadMessage(
+            "The squad image could not be loaded.",
+            true
+          )
+        );
+      };
+      
+      content.appendChild(image);
+    } catch (err) {
+      if (
+        requestId !== fixtureSquadRequestId ||
+        !section.isConnected
+      ) {
+        return;
+      }
+      
+      loading.remove();
+      content.dataset.loaded = "false";
+      
+      content.appendChild(
+        createSquadMessage(
+          err.message || "Failed to load the registered squad.",
+          true
+        )
+      );
+    }
+  };
+  
+  return section;
+}
+function createSquadMessage(message, isError = false) {
+  const element = document.createElement("div");
+
+  element.className =
+    `fixture-squad-message${isError ? " fixture-squad-error" : ""}`;
+
+  element.textContent = message;
+
+  return element;
+}
+
+function closeFixtureSquads() {
+  const modal = document.getElementById("fixtureSquadModal");
+
+  if (!modal) return;
+
+  fixtureSquadRequestId++;
+  modal.style.display = "none";
+  modal.setAttribute("aria-hidden", "true");
+  document.body.style.overflow = "";
 }

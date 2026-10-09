@@ -2599,6 +2599,7 @@ function openUpdateProfile() {
     "aria-hidden",
     "false"
   );
+  loadProfileSquad();
   setTimeout(() => {
     usernameInput?.focus();
   }, 50);
@@ -2796,7 +2797,217 @@ async function saveUpdatedProfile() {
       "Save Changes";
   }
 }
+async function loadProfileSquad() {
+  const status =
+    document.getElementById(
+      "profileSquadStatus"
+    );
+  const image =
+    document.getElementById(
+      "profileSquadImage"
+    );
+  const eligibility =
+    document.getElementById(
+      "profileSquadEligibility"
+    );
+  const uploadSection =
+    document.getElementById(
+      "profileSquadUploadSection"
+    );
+  const submitButton =
+    document.getElementById(
+      "profileSquadSubmitBtn"
+    );
+  if (
+    !status ||
+    !image ||
+    !eligibility ||
+    !uploadSection
+  ) {
+    return;
+  }
+  status.textContent =
+    "Loading squad information...";
+  image.style.display = "none";
+  eligibility.textContent = "";
+  uploadSection.style.display = "none";
+  try {
+    const result = await getMySquad();
+    if (!result) {
+      status.textContent =
+        "Unable to load squad information. Please try again.";
+      return;
+    }
+    const squad = result.squad;
+    const pendingRequest =
+      result.pendingRequest;
+    const changeEligibility =
+      result.eligibility;
+    if (!squad) {
+      status.textContent =
+        "You have not registered a squad yet.";
+      uploadSection.style.display =
+        "block";
+      if (submitButton) {
+        submitButton.textContent =
+          "Register Squad";
+        submitButton.disabled = false;
+      }
+      return;
+    }
+    status.textContent =
+      "Your squad is registered.";
+    image.src = squad.image_url;
+    image.style.display = "block";
+    if (pendingRequest) {
+      eligibility.textContent =
+        "Your squad change request is awaiting admin review.";
+      uploadSection.style.display =
+        "none";
+      return;
+    }
+    if (
+      changeEligibility?.eligible
+    ) {
+      eligibility.textContent =
+        "You are eligible to request a squad change.";
+      uploadSection.style.display =
+        "block";
+      if (submitButton) {
+        submitButton.textContent =
+          "Request Squad Change";
+        submitButton.disabled = false;
+      }
+      return;
+    }
+    if (
+      changeEligibility?.reason ===
+      "cooldown"
+    ) {
+      const nextDate =
+        new Date(
+          changeEligibility.nextEligibleAt
+        ).toLocaleDateString();
+      eligibility.textContent =
+        `You can request a squad change from ${nextDate}.`;
+      uploadSection.style.display =
+        "none";
+      return;
+    }
+    eligibility.textContent =
+      "Squad change is currently unavailable.";
+  } catch (error) {
+    console.error(
+      "Failed to load profile squad:",
+      error
+    );
+    status.textContent =
+      error.message ||
+      "Failed to load squad information.";
+  }
+}
 
+async function submitProfileSquad() {
+  const input =
+    document.getElementById(
+      "profileSquadImageInput"
+    );
+  const button =
+    document.getElementById(
+      "profileSquadSubmitBtn"
+    );
+  if (!input || !button) {
+    return;
+  }
+  const file =
+    input.files?.[0];
+  if (!file) {
+    showAlert(
+      "Please select a squad screenshot."
+    );
+    return;
+  }
+  if (!file.type.startsWith("image/")) {
+    showAlert(
+      "Please select a valid image."
+    );
+    return;
+  }
+  const maxSize =
+    5 * 1024 * 1024;
+  if (file.size > maxSize) {
+    showAlert(
+      "The image must not exceed 5 MB."
+    );
+    return;
+  }
+  button.disabled = true;
+  button.textContent = "Uploading...";
+  showLoader();
+  try {
+    const result =
+      await getMySquad();
+    if (!result) {
+      throw new Error(
+        "Unable to verify your registered squad."
+      );
+    }
+    const image =
+      await fileToBase64(file);
+    let response;
+    if (result.squad) {
+      if (result.pendingRequest) {
+        throw new Error(
+          "You already have a pending squad change request."
+        );
+      }
+      if (!result.eligibility?.eligible) {
+        throw new Error(
+          result.eligibility?.reason === "cooldown" ?
+          "You are not yet eligible to change your squad." :
+          "You cannot request a squad change right now."
+        );
+      }
+      response =
+        await requestSquadChange(image);
+    } else {
+      response =
+        await registerSquad(image);
+    }
+    if (!response) {
+      return;
+    }
+    input.value = "";
+    showAlert(
+      result.squad ?
+      "Squad change request submitted for admin review." :
+      "Your squad has been registered successfully."
+    );
+    await loadProfileSquad();
+  } catch (error) {
+    console.error(
+      "Squad submission failed:",
+      error
+    );
+    showAlert(
+      error.message ||
+      "Failed to submit your squad."
+    );
+  } finally {
+    hideLoader();
+    button.disabled = false;
+    if (button.isConnected) {
+      const squad =
+        await getMySquad().catch(
+          () => null
+        );
+      button.textContent =
+        squad?.squad ?
+        "Request Squad Change" :
+        "Register Squad";
+    }
+  }
+}
 async function submitMatchResult(data) {
   const token = getToken();
   const res = await fetch(
@@ -3293,11 +3504,201 @@ function renderGlobalRankings(rankings) {
 
 
 
+async function getMySquad() {
+  const token = getToken();
+  const res = await apiRequest(
+    `${API}/squad`,
+    {
+      headers: {
+        Authorization: token
+      }
+    },
+    () => getMySquad()
+  );
+  if (!res) return null;
+  const result = await res.json();
+  if (!res.ok || !result.success) {
+    throw new Error(
+      result.message ||
+      "Failed to load your registered squad."
+    );
+  }
+  return result;
+}
 
+async function registerSquad(image) {
+  const token = getToken();
+  const res = await apiRequest(
+    `${API}/squad`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: token
+      },
+      body: JSON.stringify({
+        image
+      })
+    },
+    () => registerSquad(image)
+  );
+  if (!res) return null;
+  const result = await res.json();
+  if (!res.ok || !result.success) {
+    throw new Error(
+      result.message ||
+      "Failed to register your squad."
+    );
+  }
+  return result.squad;
+}
+async function requestSquadChange(image) {
+  const token = getToken();
+  const res = await apiRequest(
+    `${API}/squad/change-requests`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: token
+      },
+      body: JSON.stringify({
+        image
+      })
+    },
+    () => requestSquadChange(image)
+  );
+  if (!res) return null;
+  const result = await res.json();
+  if (!res.ok || !result.success) {
+    throw new Error(
+      result.message ||
+      "Failed to submit squad change request."
+    );
+  }
+  return result.request;
+}
+async function getAdminSquadChangeRequests() {
+  const token = getToken();
+  const res = await apiRequest(
+    `${API}/admin/squad-change-requests`,
+    {
+      headers: {
+        Authorization: token
+      }
+    },
+    () => getAdminSquadChangeRequests()
+  );
+  if (!res) return null;
+  const result = await res.json();
+  if (!res.ok || !result.success) {
+    throw new Error(
+      result.message ||
+      "Failed to load squad change requests."
+    );
+  }
+  return result.requests || [];
+}
+async function reviewSquadChangeRequest(
+  requestId,
+  decision,
+  rejectionReason = null
+) {
+  const token = getToken();
+  const res = await apiRequest(
+    `${API}/admin/squad-change-requests/${encodeURIComponent(requestId)}`,
+    {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: token
+      },
+      body: JSON.stringify({
+        decision,
+        rejection_reason: rejectionReason
+      })
+    },
+    () => reviewSquadChangeRequest(
+      requestId,
+      decision,
+      rejectionReason
+    )
+  );
+  if (!res) return null;
+  const result = await res.json();
+  if (!res.ok || !result.success) {
+    throw new Error(
+      result.message ||
+      "Failed to review squad change request."
+    );
+  }
+  return result;
+}
+async function getUserSquad(userId) {
+  const token = getToken();
+  const res = await apiRequest(
+    `${API}/users/${encodeURIComponent(userId)}/squad`,
+    {
+      headers: {
+        Authorization: token
+      }
+    },
+    () => getUserSquad(userId)
+  );
+  if (!res) return null;
+  const result = await res.json();
+  if (!res.ok || !result.success) {
+    throw new Error(
+      result.message ||
+      "Failed to load player's squad."
+    );
+  }
+  return result.squad;
+}
 
-
-
-
+async function getTournamentTeamSquad(
+  tournamentId,
+  teamId
+) {
+  const token = getToken();
+  
+  if (!token) {
+    throw new Error("You are not logged in.");
+  }
+  
+  const res = await apiRequest(
+    `${API}/tournaments/${encodeURIComponent(tournamentId)}/teams/${encodeURIComponent(teamId)}/squad`,
+    {
+      method: "GET",
+      headers: {
+        Authorization: token
+      }
+    },
+    () => getTournamentTeamSquad(
+      tournamentId,
+      teamId
+    )
+  );
+  
+  if (!res) {
+    throw new Error("No response from server.");
+  }
+  
+  const result = await res.json();
+  
+  if (!res.ok || !result.success) {
+    if (res.status === 404) {
+      return null;
+    }
+    
+    throw new Error(
+      result.message ||
+      "Failed to load the registered squad."
+    );
+  }
+  
+  return result.squad;
+}
 window.addEventListener(
   "load",
   async () => {

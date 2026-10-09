@@ -1924,6 +1924,44 @@
     </div>
   </div>
   
+  <div
+  id="fixtureSquadModal"
+  class="fixture-squad-modal"
+  style="display: none;"
+  aria-hidden="true"
+>
+  <div
+    class="fixture-squad-backdrop"
+    onclick="closeFixtureSquads()"
+  ></div>
+
+  <div
+    class="fixture-squad-dialog"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="fixtureSquadTitle"
+  >
+    <div class="fixture-squad-header">
+      <div>
+        <h3 id="fixtureSquadTitle">Match Squads</h3>
+        <p>View each player's registered squad.</p>
+      </div>
+
+      <button
+        type="button"
+        class="fixture-squad-close"
+        onclick="closeFixtureSquads()"
+        aria-label="Close squad viewer"
+      >×</button>
+    </div>
+
+    <div
+      id="fixtureSquadTeams"
+      class="fixture-squad-teams"
+    ></div>
+  </div>
+</div>
+  
   <div id="teamSelectionModal" class="team-selection-modal-overlay" style="display: none;">
     <div class="team-selection-modal-box">
       <div class="team-selection-modal-header">
@@ -2020,6 +2058,37 @@
             WhatsApp Number
           </label>
           <input type="tel" id="updateProfilePhone" class="update-profile-input" placeholder="e.g. 08012345678" autocomplete="tel">
+          </div>
+          <div class="update-profile-squad">
+            
+  <h4>Registered Squad</h4>
+  <div id="profileSquadStatus">
+    Loading squad information...
+  </div>
+  <img
+    id="profileSquadImage"
+    src=""
+    alt="Registered squad"
+    style="display:none;"
+  >
+  <div id="profileSquadEligibility"></div>
+  <div id="profileSquadUploadSection">
+    <label for="profileSquadImageInput">
+      Select Squad Screenshot
+    </label>
+    <input
+      type="file"
+      id="profileSquadImageInput"
+      accept="image/*"
+    >
+    <button
+      type="button"
+      id="profileSquadSubmitBtn"
+      onclick="submitProfileSquad()"
+    >
+      Register Squad
+    </button>
+  </div>
         </div>
         <p class="update-profile-description">
           Your WhatsApp number is used
@@ -2027,6 +2096,7 @@
         </p>
         <div id="updateProfileMessage" class="update-profile-status"></div>
       </div>
+      
       <div class="update-profile-modal-actions">
         <button type="button" class="update-profile-cancel-button" onclick="closeUpdateProfile()">
           Cancel
