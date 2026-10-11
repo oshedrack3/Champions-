@@ -1153,13 +1153,10 @@ function closeEditModal() {
   document.getElementById("editNameInput").value = "";
   document.getElementById("editLogoInput").value = "";
   const preview = document.getElementById("logoPreview");
-  
   preview.src = "";
-  renderTeams("cupTeamsContainer");
   preview.style.display = "none";
   openProfileModal();
 }
-
 
 document.getElementById("editLogoInput").addEventListener("change", function(e) {
   const file = e.target.files[0];

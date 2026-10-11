@@ -1241,214 +1241,102 @@ async function handleAddTeam() {
   }
 }
 async function saveEdit() {
-  if (
-    editingIndex === null
-  ) {
-    showAlert(
-      "Something went wrong. Please try again"
-    );
+  if (editingIndex === null) {
+    showAlert("Something went wrong. Please try again");
     return;
   }
-  
   const newName =
-    document
-    .getElementById(
-      "editNameInput"
-    )
-    .value
-    .trim();
-  
+    document.getElementById("editNameInput").value.trim();
   const fileInput =
-    document.getElementById(
-      "editLogoInput"
-    );
-  
+    document.getElementById("editLogoInput");
   try {
-    const profile =
-      await getUserProfile();
-    
+    const profile = await getUserProfile();
     const teams =
       Array.isArray(profile?.teams) ?
       profile.teams : [];
-    
-    const team =
-      teams[editingIndex];
-    
+    const team = teams[editingIndex];
     if (!team) {
-      showAlert(
-        "Team not found"
-      );
+      showAlert("Team not found");
       return;
     }
-    
     if (!newName) {
-      showAlert(
-        "Team name cannot be empty"
-      );
+      showAlert("Team name cannot be empty");
       return;
     }
-    
-    const duplicate =
-      teams.some(
-        t =>
-        String(t.id) !==
-        String(team.id) &&
-        String(t.name || "")
-        .trim()
-        .toLowerCase() ===
-        newName.toLowerCase()
-      );
-    
+    const duplicate = teams.some(
+      t =>
+      String(t.id) !== String(team.id) &&
+      String(t.name || "").trim().toLowerCase() ===
+      newName.toLowerCase()
+    );
     if (duplicate) {
-      showAlert(
-        "A team with this name already exists"
-      );
+      showAlert("A team with this name already exists");
       return;
     }
-    
     let logo;
-    
-    if (
-      fileInput?.files?.length
-    ) {
-      const file =
-        fileInput.files[0];
-      
-      if (
-        !file.type.startsWith(
-          "image/"
-        )
-      ) {
-        showAlert(
-          "Please select an image file"
-        );
+    if (fileInput?.files?.length) {
+      const file = fileInput.files[0];
+      if (!file.type.startsWith("image/")) {
+        showAlert("Please select an image file");
         return;
       }
-      
-      if (
-        file.size >
-        500 * 1024
-      ) {
-        showAlert(
-          "Logo size must not exceed 500KB"
-        );
-        return;
-      }
-      
-      logo =
-        await fileToBase64(
-          file
-        );
+      logo = await fileToBase64(file, 300);
     }
-    
     showLoader();
-    
-    const token =
-      getToken();
-    
+    const token = getToken();
     if (!token) {
-      throw new Error(
-        "You are not logged in."
-      );
+      throw new Error("You are not logged in.");
     }
-    
     const updates = {
       name: newName
     };
-    
-    if (
-      logo !== undefined
-    ) {
+    if (logo !== undefined) {
       updates.logo = logo;
     }
-    
-    const res =
-      await apiRequest(
-        `${API}/teams/${encodeURIComponent(
-          team.id
-        )}`,
-        {
-          method: "PATCH",
-          headers: {
-            Authorization: token,
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify(updates)
+    const res = await apiRequest(
+      `${API}/teams/${encodeURIComponent(team.id)}`,
+      {
+        method: "PATCH",
+        headers: {
+          Authorization: token,
+          "Content-Type": "application/json"
         },
-        saveEdit
-      );
-    
+        body: JSON.stringify(updates)
+      },
+      saveEdit
+    );
     if (!res) {
+      throw new Error("No response from server.");
+    }
+    const result = await res.json();
+    if (!res.ok || !result.success) {
       throw new Error(
-        "No response from server."
+        result.message || "Failed to update team."
       );
     }
-    
-    const result =
-      await res.json();
-    
-    if (
-      !res.ok ||
-      !result.success
-    ) {
-      throw new Error(
-        result.message ||
-        "Failed to update team."
-      );
-    }
-    
-    const updatedTeam =
-      result.team;
-    
+    const updatedTeam = result.team;
     if (!updatedTeam) {
       throw new Error(
         "Team updated but no team data was returned."
       );
     }
-    
-    teams[editingIndex] =
-      updatedTeam;
-    
-    profile.teams =
-      teams;
-    
-    await saveCachedData(
-      "profile",
-      "",
-      profile
-    );
-    
+    teams[editingIndex] = updatedTeam;
+    profile.teams = teams;
+    await saveCachedData("profile", "", profile);
     closeEditModal();
-    
-    if (
-      typeof renderUserProfile ===
-      "function"
-    ) {
-      renderUserProfile(
-        profile
-      );
+    if (typeof renderUserProfile === "function") {
+      renderUserProfile(profile);
     }
-    
-    showActionModal(
-      "✅ Team updated",
-      "success"
-    );
-    
+    showActionModal("✅ Team updated", "success");
   } catch (err) {
-    console.error(
-      "[saveEdit]",
-      err
-    );
-    
+    console.error("[saveEdit]", err);
     showAlert(
-      err.message ||
-      "Failed to update team"
+      err.message || "Failed to update team"
     );
   } finally {
     hideLoader();
   }
 }
-
 
 async function handleDeleteAccount() {
   console.log("Delete clicked");
