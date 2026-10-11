@@ -298,16 +298,6 @@ function switchAppMode() {
   }
 }
 
-
-
-function showForgotPassword() {
-  document.getElementById("loginSection").style.display = "none";
-  document.getElementById("forgotPasswordSection").style.display = "block";
-}
-function showLogin() {
-  document.getElementById("forgotPasswordSection").style.display = "none";
-  document.getElementById("loginSection").style.display = "block";
-}
 async function submitPasswordReset() {
   const email = document.getElementById("resetEmail").value.trim();
   const phone = document.getElementById("resetPhone").value.trim();
@@ -335,3 +325,21 @@ async function submitPasswordReset() {
   }
 }
 
+
+
+
+function showLogin() {
+  document.getElementById("loginSection").style.display = "block";
+  document.getElementById("registerSection").style.display = "none";
+  document.getElementById("forgotPasswordSection").style.display = "none";
+}
+function showRegister() {
+  document.getElementById("loginSection").style.display = "none";
+  document.getElementById("registerSection").style.display = "block";
+  document.getElementById("forgotPasswordSection").style.display = "none";
+}
+function showForgotPassword() {
+  document.getElementById("loginSection").style.display = "none";
+  document.getElementById("registerSection").style.display = "none";
+  document.getElementById("forgotPasswordSection").style.display = "block";
+}

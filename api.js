@@ -3699,6 +3699,10 @@ async function getTournamentTeamSquad(
   
   return result.squad;
 }
+
+
+
+
 window.addEventListener(
   "load",
   async () => {

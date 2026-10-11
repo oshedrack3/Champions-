@@ -1514,16 +1514,6 @@ function goToLoginPage() {
   clearSession();
 }
 
-function showLogin() {
-  document.getElementById("loginSection").style.display = "block";
-  document.getElementById("registerSection").style.display = "none";
-}
-
-function showRegister() {
-  document.getElementById("loginSection").style.display = "none";
-  document.getElementById("registerSection").style.display = "block";
-}
-
 function showLoader() {
   document.getElementById("loader").style.display = "flex";
 }
