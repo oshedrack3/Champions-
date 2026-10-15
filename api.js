@@ -801,99 +801,7 @@ function startTournamentEvents(tournamentId) {
   };
 }
 
-async function loadNotifications(forceRefresh = false) {
-  if (!forceRefresh) {
-    const cached = await getCachedData(
-      "notifications"
-    );
-    
-    if (cached) {
-      notifications = cached;
-      renderNotifications();
-      return cached;
-    }
-  }
-  
-  const res = await apiRequest(
-    `${API}/notifications`,
-    {
-      headers: {
-        Authorization: getToken()
-      }
-    },
-    () => loadNotifications(forceRefresh)
-  );
-  
-  if (!res) return [];
-  
-  const data = await res.json();
-  
-  if (!res.ok || !data.success) {
-    throw new Error(
-      data.message ||
-      "Failed to load notifications."
-    );
-  }
-  
-  notifications =
-    data.notifications || [];
-  
-  await saveCachedData(
-    "notifications",
-    "",
-    notifications
-  );
-  
-  renderNotifications();
-  
-  return notifications;
-}
 
-function startNotificationEvents() {
-  if (notificationEvents) {
-    notificationEvents.close();
-  }
-  
-  const token = getToken();
-  
-  notificationEvents = new EventSource(
-    `${API}/notifications/events?token=${token}`
-  );
-  
-  notificationEvents.addEventListener(
-    "connected",
-    (event) => {
-      console.log(
-        "Notification connected",
-        event.data
-      );
-    }
-  );
-  
-  notificationEvents.addEventListener(
-    "notification",
-    (event) => {
-      const notification =
-        JSON.parse(event.data);
-      
-      console.log(
-        "New notification:",
-        notification
-      );
-      
-      handleNewNotification(
-        notification
-      );
-    }
-  );
-  
-  notificationEvents.onerror = (err) => {
-    console.log(
-      "Notification connection lost",
-      err
-    );
-  };
-}
 
 async function handleNewNotification(
   notification
@@ -2457,82 +2365,6 @@ async function getUserProfile() {
   return profile;
 }
 
-function openUpdateProfile() {
-  const modal =
-    document.getElementById(
-      "updateProfileModal"
-    );
-  const usernameInput =
-    document.getElementById(
-      "updateProfileUsername"
-    );
-  const phoneInput =
-    document.getElementById(
-      "updateProfilePhone"
-    );
-  const message =
-    document.getElementById(
-      "updateProfileMessage"
-    );
-  if (!modal) {
-    return;
-  }
-  const username =
-    document.getElementById(
-      "profileUsername"
-    )?.textContent || "";
-  const phoneText =
-    document.getElementById(
-      "profilePhone"
-    )?.textContent || "";
-  if (usernameInput) {
-    usernameInput.value =
-      username === "Username" ?
-      "" :
-      username.trim();
-  }
-  if (phoneInput) {
-    phoneInput.value =
-      phoneText
-      .replace(/^WhatsApp:\s*/i, "")
-      .trim();
-    if (
-      phoneInput.value ===
-      "WhatsApp number not added"
-    ) {
-      phoneInput.value = "";
-    }
-  }
-  if (message) {
-    message.style.display = "none";
-    message.textContent = "";
-    message.className =
-      "update-profile-message";
-  }
-  modal.style.display = "flex";
-  modal.setAttribute(
-    "aria-hidden",
-    "false"
-  );
-  setTimeout(() => {
-    usernameInput?.focus();
-  }, 50);
-}
-
-function closeUpdateProfile() {
-  const modal =
-    document.getElementById(
-      "updateProfileModal"
-    );
-  if (!modal) {
-    return;
-  }
-  modal.style.display = "none";
-  modal.setAttribute(
-    "aria-hidden",
-    "true"
-  );
-}
 
 function openUpdateProfile() {
   const modal =
@@ -3331,36 +3163,42 @@ async function loadGlobalRankings() {
     throw new Error("Authentication required.");
   }
   
-  const res = await apiRequest(
-    `${API}/rankings/global`,
-    {
-      headers: {
-        Authorization: `Bearer ${token}`
-      }
-    },
-    () => loadGlobalRankings()
-  );
+  showLoader();
   
-  if (!res) {
-    return [];
-  }
-  
-  const result = await res.json();
-  
-  if (!res.ok || !result.success) {
-    throw new Error(
-      result.message ||
-      "Failed to load global rankings."
+  try {
+    const res = await apiRequest(
+      `${API}/rankings/global`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      },
+      () => loadGlobalRankings()
     );
+    
+    if (!res) {
+      return [];
+    }
+    
+    const result = await res.json();
+    
+    if (!res.ok || !result.success) {
+      throw new Error(
+        result.message ||
+        "Failed to load global rankings."
+      );
+    }
+    
+    globalRankings = result.rankings || [];
+    
+    return globalRankings;
+  } finally {
+    hideLoader();
   }
-  
-  globalRankings =
-    result.rankings || [];
-  
-  return globalRankings;
 }
 
 async function showGlobalRankings() {
+  goBackHome();
   document
     .querySelectorAll(
       "#mySection, #noticeSection, #publicSection, #hallOfFameSection"
@@ -3439,32 +3277,28 @@ function renderGlobalRankings(rankings) {
     document.getElementById(
       "globalRankingsList"
     );
-  
-  if (!list) {
-    return;
-  }
-  
+  if (!list) return;
   if (!rankings.length) {
     list.innerHTML =
       "<p>No rankings available yet.</p>";
     return;
   }
-  
   const currentUser =
     getCurrentUser();
-  
+  const currentUserId =
+    String(
+      currentUser?.id ||
+      currentUser?.user_id ||
+      ""
+    );
   list.innerHTML =
     rankings
     .map((player, index) => {
-      const position =
-        index + 1;
-      
+      const position = index + 1;
       const isCurrentUser =
-        currentUser &&
-        player.id === currentUser.id;
-      
+        currentUserId !== "" &&
+        String(player.id) === currentUserId;
       let positionDisplay;
-      
       if (position === 1) {
         positionDisplay = "🥇";
       } else if (position === 2) {
@@ -3474,35 +3308,70 @@ function renderGlobalRankings(rankings) {
       } else {
         positionDisplay = position;
       }
-      
+      const played =
+        Number(player.played) || 0;
+      const wins =
+        Number(player.wins) || 0;
+      const draws =
+        Number(player.draws) || 0;
+      const losses =
+        Number(player.losses) || 0;
+      const goalsFor =
+        Number(player.goals_for) || 0;
+      const goalsAgainst =
+        Number(player.goals_against) || 0;
+      const goalDifference =
+        Number(player.goal_difference) || 0;
+      const winPercentage =
+        Number(player.win_percentage) || 0;
       return `
-          <div
-            class="global-ranking-row ${
-              isCurrentUser
-                ? "current-ranking-user"
-                : ""
-            }"
-          >
-            <div class="ranking-position">
-              ${positionDisplay}
-            </div>
-
-            <div class="ranking-player">
+        <div class="global-ranking-row ${
+          isCurrentUser
+            ? "current-ranking-user"
+            : ""
+        }">
+          <div class="ranking-position">
+            ${positionDisplay}
+          </div>
+          <div class="ranking-player">
+            <div class="ranking-player-name">
               ${escapeHtml(
-                player.username || "Unknown Player"
+                player.username ||
+                "Unknown Player"
               )}
+              ${
+                isCurrentUser
+                  ? '<span class="you-badge">YOU</span>'
+                  : ""
+              }
             </div>
-
-            <div class="ranking-rating">
-              ${player.rating ?? 1500}
+            <div class="ranking-stats ${
+              isCurrentUser
+                ? "current-ranking-stats"
+                : ""
+            }">
+              <span>Played: ${played}</span>
+              <span>W: ${wins}</span>
+              <span>D: ${draws}</span>
+              <span>L: ${losses}</span>
+              <span>GF: ${goalsFor}</span>
+              <span>GA: ${goalsAgainst}</span>
+              <span>GD: ${
+                goalDifference > 0
+                  ? "+" + goalDifference
+                  : goalDifference
+              }</span>
+              <span>Win: ${winPercentage}%</span>
             </div>
           </div>
-        `;
+          <div class="ranking-rating">
+            ${player.rating ?? 1500}
+          </div>
+        </div>
+      `;
     })
     .join("");
 }
-
-
 
 async function getMySquad() {
   const token = getToken();
@@ -3720,9 +3589,8 @@ window.addEventListener(
       
       await renderCompetitionList();
       
-      startNotificationEvents();
-      
-      await loadNotifications();
+    
+    
       
       
       await registerSW();

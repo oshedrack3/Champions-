@@ -21,7 +21,8 @@ const PAGES = [
   "notificationPanel",
   "noficationSection",
   "bracketControl",
-  "compageToggle"
+  "compageToggle",
+  "homepageNav"
   
   
   
@@ -96,7 +97,11 @@ function showActionModal(message, type = "") {
   setTimeout(() => modal.classList.remove("show"), 1200);
 }
 
-
+function goBackHome() {
+  closeProfileModal();
+  closeHallOfFame();
+  closeGlobalRankings();
+}
 
 let confirmCallback = null;
 
@@ -457,9 +462,6 @@ function handleMenuAction(action) {
   
   const actions = {
     viewRules:viewTournamentRules,
-    showRank:showGlobalRankings,
-    openHOF: openHallOfFame,
-    openProfile: openProfileModal,
     joinTour: handleJoinTournament,
     newNotice: openNoticeBoardModal,
     deadlineEdit: openSubmissionDeadlineModal,
@@ -496,12 +498,12 @@ function handleMenuAction(action) {
 
 const menuConfig = {
   competition: [
-    {
+  /*  {
       label: "👤 My Profile",
       action: "openProfile",
       roles: ["admin", "player"]
     },
-    
+    */
     {
       label: "Create New Competition",
       action: "createComp",
@@ -530,7 +532,7 @@ const menuConfig = {
       action: "newNotice",
       roles: ["admin"]
     },
-    
+   /* 
     {
       label: "Hall of Fame",
       action: "openHOF",
@@ -542,6 +544,7 @@ const menuConfig = {
       action: "showRank",
       roles: ["admin", "player"]
     },
+    */
     /*
     {
       label: "Setup POTS Tournaments",
@@ -1109,13 +1112,12 @@ async function goToCompetitionPage() {
   
   hideAllPages();
   
-  setupCompetitionToggle();
+
   closeTournamentEvents();
   
   document.getElementById("competitionPage").style.display = "block";
   document.getElementById("compageToggle").style.display = "flex";
-  
-  document.getElementById("noficationSection").style.display = "block";
+  document.getElementById("homepageNav").style.display = "flex";
   
   document.getElementById("tourListPageHead").style.display = "none";
   document.getElementById("compPageHead").style.display = "block";
@@ -2148,6 +2150,7 @@ function setupCompetitionToggle() {
   );
 }
 async function openHallOfFame() {
+  goBackHome();
   const mySection =
     document.getElementById(
       "mySection"

@@ -4,43 +4,45 @@ const LOGO_STORE = "logos";
 async function renderFixtures() {
   const tournament =
     getCurrentTournament();
-  
   if (!tournament) return;
-  
   const container =
     document.getElementById(
       "fixtureList"
     );
-  
   if (!container) return;
-  
   const search =
     document.getElementById(
       "fixtureSearchInput"
     )?.value
     .toLowerCase()
     .trim() || "";
-  
   try {
     showLoader();
-    
     await loadTournamentFixtures(
       tournament.id
     );
-    
     checkSubmissionAlerts(
       tournament
     );
-    
     toggleRoundCarousel(
       search
     );
-    
     const visibleMatches =
-      getVisibleMatches(
-        search
-      );
-    
+      getVisibleMatches(search);
+    visibleMatches.sort((a, b) => {
+      const roundDiff =
+        (Number(a.round) || 1) -
+        (Number(b.round) || 1);
+      if (roundDiff !== 0) {
+        return roundDiff;
+      }
+      const aPending =
+        getMatchSubmissionStatus(a) === "pending";
+      const bPending =
+        getMatchSubmissionStatus(b) === "pending";
+      return Number(bPending) -
+        Number(aPending);
+    });
     container.innerHTML = `
       <div class="fixtures-tournament-header">
         <div class="fixtures-tournament-name">
@@ -51,35 +53,27 @@ async function renderFixtures() {
         </div>
       </div>
     `;
-    
     if (!visibleMatches.length) {
       renderEmptyFixtures(
         container,
         search
       );
-      
       renderRoundList();
-      
       return;
     }
-    
     let lastRound = null;
-    
     visibleMatches.forEach(
       match => {
         const round =
           Number(match.round) || 1;
-        
         if (round !== lastRound) {
           lastRound = round;
-          
           container.appendChild(
             createRoundHeader(
               round
             )
           );
         }
-        
         container.appendChild(
           createFixtureCard(
             tournament,
@@ -88,32 +82,25 @@ async function renderFixtures() {
         );
       }
     );
-    
     renderRoundList();
-    
   } catch (err) {
     console.error(
       "[renderFixtures]",
       err
     );
-    
     container.innerHTML = "";
-    
     renderEmptyFixtures(
       container,
       false
     );
-    
     showAlert(
       err.message ||
       "Failed to load fixtures."
     );
-    
   } finally {
     hideLoader();
   }
 }
-
 function getVisibleMatches(search = "") {
   const matches =
     Array.isArray(fixtures) ? [...fixtures] : [];
@@ -1592,7 +1579,7 @@ document.addEventListener("touchend", (e) => {
 
 
 function showPOTSView() {
-   populateTournamentMapping();
+  populateTournamentMapping();
   loadPOTConfig();
   setupPOTListeners();
   calculatePOT();
@@ -1600,7 +1587,7 @@ function showPOTSView() {
 
 
 function showTournamentView() {
-
+  
 }
 
 function enableSwipeForRounds() {
@@ -1976,72 +1963,6 @@ function previewTournamentImage(event) {
 
 
 
-function renderNotifications() {
-  
-  const list = document.getElementById(
-    "notificationList"
-  );
-  
-  const badge = document.getElementById(
-    "notificationBadge"
-  );
-  
-  
-  const unread = notifications.filter(
-    n => !n.read
-  );
-  
-  
-  badge.textContent = unread.length;
-  
-  badge.style.display =
-    unread.length > 0 ?
-    "flex" :
-    "none";
-  
-  
-  if (!notifications.length) {
-    
-    list.innerHTML = `
-      <p class="empty-notification">
-        No notifications
-      </p>
-    `;
-    
-    return;
-  }
-  
-  
-  list.innerHTML = notifications.map(n => `
-
-    <div 
-      class="
-        notification-item
-        ${n.read ? "" : "unread"}
-      "
-      onclick="openNotification('${n.id}')"
-    >
-
-      <div class="notification-title">
-        ${n.title}
-      </div>
-
-      <div class="notification-message">
-        ${n.message}
-      </div>
-
-      <div class="notification-time">
-        ${new Date(
-          n.createdAt
-        ).toLocaleString()}
-      </div>
-
-    </div>
-
-  `).join("");
-  
-}
-
 
 
 
@@ -2103,151 +2024,7 @@ function getSortedCompetitions(
 
 
 
-function getCompetitionTournamentCount(competition) {
-  return competition.tournament_count ?? 0;
-}
 
-function getCompetitionActiveSeasons(competition) {
-  return competition.active_seasons ?? 0;
-}
-
-function getActiveSeasonText(competition) {
-  const count =
-    competition.active_seasons ?? 0;
-  
-  return count === 1 ?
-    "1 Active Season" :
-    `${count} Active Seasons`;
-}
-
-function createCompetitionCard(competition) {
-  const div = document.createElement("div");
-  div.className = "competition-card";
-  div.dataset.id = competition.id;
-  
-  const imgId =
-    `competition-img-${competition.id}`;
-  
-  div.innerHTML = `
-    <div class="card-header">
-      <div class="competition-meta">
-      </div>
-
-      <div class="competition-menu-btn data-admin">
-        ☰
-      </div>
-    </div>
-
-    <div class="competition-body">
-      <div class="competition-info">
-        <h3>${competition.name}</h3>
-      </div>
-
-      <div class="competition-image">
-        <span
-          id="${imgId}"
-          class="competition-image-placeholder"
-        >
-          🏆
-        </span>
-      </div>
-    </div>
-
-    <div
-      class="menu-dropdown hidden"
-      id="menu-${competition.id}"
-    >
-      <div class="menu-itemList edit data-admin">
-        Edit
-      </div>
-
-      <div class="menu-itemList delete data-admin">
-        Delete
-      </div>
-    </div>
-  `;
-  
-  const menuBtn =
-    div.querySelector(".competition-menu-btn");
-  
-  const dropdown =
-    div.querySelector(".menu-dropdown");
-  
-  const editBtn =
-    div.querySelector(".menu-itemList.edit");
-  
-  const deleteBtn =
-    div.querySelector(".menu-itemList.delete");
-  
-  menuBtn?.addEventListener("click", e => {
-    e.stopPropagation();
-    
-    document
-      .querySelectorAll(".menu-dropdown")
-      .forEach(el => {
-        if (el !== dropdown) {
-          el.classList.add("hidden");
-        }
-      });
-    
-    dropdown.classList.toggle("hidden");
-  });
-  
-  editBtn?.addEventListener("click", e => {
-    e.stopPropagation();
-    
-    editCompetition(competition.id);
-    
-    dropdown.classList.add("hidden");
-  });
-  
-  deleteBtn?.addEventListener("click", e => {
-    e.stopPropagation();
-    
-    deleteCompetition(competition.id);
-    
-    dropdown.classList.add("hidden");
-  });
-  
-  div.addEventListener("click", e => {
-    if (e.target.closest(".menu-dropdown")) {
-      return;
-    }
-    
-    openCompetition(competition.id);
-  });
-  
-  const logoUrl =
-    competition.logo_url || "";
-  
-  if (logoUrl) {
-    const placeholder =
-      div.querySelector(`#${imgId}`);
-    
-    if (placeholder) {
-      const img =
-        document.createElement("img");
-      
-      img.src = logoUrl;
-      img.alt =
-        competition.name || "";
-      
-      img.className =
-        "competition-image-img";
-      
-      img.onerror = () => {
-        console.error(
-          "Failed to load competition logo:",
-          logoUrl
-        );
-      };
-      
-      placeholder.replaceWith(img);
-    }
-  }
-  
-  return div;
-}
 async function renderCompetitionList() {
   const container =
     document.getElementById(
@@ -2289,6 +2066,22 @@ async function renderCompetitionList() {
       );
     }
   );
+}
+
+function getCompetitionTournamentCount(competition) {
+  return competition.tournament_count ?? 0;
+}
+
+function getCompetitionActiveSeasons(competition) {
+  return competition.active_seasons ?? 0;
+}
+
+function getActiveSeasonText(competition) {
+  const count = getCompetitionActiveSeasons(competition);
+  
+  return count === 1 ?
+    "1 ACTIVE SEASON" :
+    `${count} ACTIVE SEASONS`;
 }
 
 
@@ -2334,6 +2127,216 @@ function getGroupedAndSortedTournaments(tournaments) {
     acc[name].push(tournament);
     return acc;
   }, {});
+}
+
+
+function createCompetitionCard(competition) {
+  const div = document.createElement("div");
+  
+  div.className = "competition-card";
+  div.dataset.id = competition.id;
+  
+  const imgId = `competition-img-${competition.id}`;
+  
+  const tournamentCount =
+    getCompetitionTournamentCount(competition);
+  
+  const isAdmin =
+    getCurrentUser()?.role !== "player";
+  
+  div.innerHTML = `
+    <div class="competition-card-content">
+      <div class="competition-info">
+        <h3 class="competition-name"></h3>
+      </div>
+
+      <div class="competition-card-top">
+        ${
+          isAdmin
+            ? `
+              <button
+                type="button"
+                class="competition-menu-btn data-admin"
+                aria-label="Competition options"
+                aria-expanded="false"
+              >
+                <span></span>
+                <span></span>
+                <span></span>
+              </button>
+            `
+            : ""
+        }
+      </div>
+
+      <div class="competition-image">
+        <span
+          id="${imgId}"
+          class="competition-image-placeholder"
+        >
+          🏆
+        </span>
+      </div>
+    </div>
+
+    <div class="competition-card-footer">
+      <div class="competition-footer-info">
+        <span class="competition-footer-icon">
+          ◈
+        </span>
+
+        <span class="competition-footer-label"></span>
+      </div>
+
+      <span class="competition-card-arrow">
+        &#8599;
+      </span>
+    </div>
+
+    <div
+      class="menu-dropdown hidden"
+      id="menu-${competition.id}"
+    >
+      <button
+        type="button"
+        class="menu-itemList edit data-admin"
+      >
+        Edit Competition
+      </button>
+
+      <button
+        type="button"
+        class="menu-itemList delete data-admin"
+      >
+        Delete Competition
+      </button>
+    </div>
+  `;
+  
+  div.querySelector(".competition-name").textContent =
+    competition.name || "Unnamed Competition";
+  
+  div.querySelector(".competition-footer-label").textContent =
+    `${tournamentCount} ${
+      tournamentCount === 1 ? "TOURNAMENT" : "TOURNAMENTS"
+    }`;
+  
+  const menuBtn =
+    div.querySelector(".competition-menu-btn");
+  
+  const dropdown =
+    div.querySelector(".menu-dropdown");
+  
+  const editBtn =
+    div.querySelector(".menu-itemList.edit");
+  
+  const deleteBtn =
+    div.querySelector(".menu-itemList.delete");
+  
+  menuBtn?.addEventListener("click", e => {
+    e.stopPropagation();
+    
+    document
+      .querySelectorAll(".menu-dropdown")
+      .forEach(menu => {
+        if (menu !== dropdown) {
+          menu.classList.add("hidden");
+          
+          const otherBtn = menu
+            .closest(".competition-card")
+            ?.querySelector(".competition-menu-btn");
+          
+          otherBtn?.setAttribute(
+            "aria-expanded",
+            "false"
+          );
+        }
+      });
+    
+    const isOpening =
+      dropdown.classList.contains("hidden");
+    
+    dropdown.classList.toggle("hidden");
+    
+    menuBtn.setAttribute(
+      "aria-expanded",
+      String(isOpening)
+    );
+  });
+  
+  editBtn?.addEventListener("click", e => {
+    e.stopPropagation();
+    
+    dropdown.classList.add("hidden");
+    
+    menuBtn?.setAttribute(
+      "aria-expanded",
+      "false"
+    );
+    
+    editCompetition(competition.id);
+  });
+  
+  deleteBtn?.addEventListener("click", e => {
+    e.stopPropagation();
+    
+    dropdown.classList.add("hidden");
+    
+    menuBtn?.setAttribute(
+      "aria-expanded",
+      "false"
+    );
+    
+    deleteCompetition(competition.id);
+  });
+  
+  div.addEventListener("click", e => {
+    if (
+      e.target.closest(".menu-dropdown") ||
+      e.target.closest(".competition-menu-btn")
+    ) {
+      return;
+    }
+    
+    openCompetition(competition.id);
+  });
+  
+  const logoUrl = competition.logo_url || "";
+  
+  if (logoUrl) {
+    const placeholder =
+      div.querySelector(`#${imgId}`);
+    
+    if (placeholder) {
+      const img = document.createElement("img");
+      
+      img.src = logoUrl;
+      
+      img.alt =
+        `${competition.name || "Competition"} logo`;
+      
+      img.className =
+        "competition-image-img";
+      
+      img.loading = "lazy";
+      
+      img.onerror = () => {
+        const fallback =
+          document.createElement("span");
+        
+        fallback.className =
+          "competition-image-placeholder";
+        
+        fallback.textContent = "🏆";
+        
+        img.replaceWith(fallback);
+      };
+      
+      placeholder.replaceWith(img);
+    }
+  }
+  
+  return div;
 }
 
 
@@ -3089,7 +3092,17 @@ function renderHallOfFame(hallOfFame) {
   if (!categories.length) {
     container.innerHTML = `
       <div class="empty-state">
-        No Hall of Fame records yet.
+        <div>
+          <div style="font-size: 38px; margin-bottom: 12px;">
+            🏆
+          </div>
+          <div style="font-size: 17px; font-weight: 700; color: #f7d98b; margin-bottom: 6px;">
+            The Hall of Fame
+          </div>
+          <div>
+            No records yet. Your champions will be celebrated here.
+          </div>
+        </div>
       </div>
     `;
     
@@ -3097,33 +3110,47 @@ function renderHallOfFame(hallOfFame) {
   }
   
   container.innerHTML = categories.map(category => {
-    
     const winners =
       Array.isArray(category.winners) ?
-      category.winners : [];
+      category.winners :
+      [];
     
     return `
-      <div class="hallOfFameCategory">
-        
-        <div class="hallOfFameTitle">
+      <section class="hallOfFameCategory">
+
+        <h3 class="hallOfFameTitle">
           ${escapeHtml(category.title)}
-        </div>
-        
+        </h3>
+
         <div class="hallOfFameWinners">
-          ${winners.map(winner => `
-            <span class="hallOfFameWinner">
-              ${escapeHtml(winner.name)}
-              ×${Number(winner.wins) || 0}
-              ${category.icon || "🏆"}
-            </span>
-          `).join("")}
+          ${
+            winners.length
+              ? winners.map(winner => `
+                  <div class="hallOfFameWinner">
+                    <span>
+                      ${escapeHtml(winner.name)}
+                    </span>
+
+                    <span>
+                      ${escapeHtml(category.icon || "🏆")}
+                      ×${Number(winner.wins) || 0}
+                    </span>
+                  </div>
+                `).join("")
+              : `
+                  <div class="empty-state">
+                    No champions recorded yet.
+                  </div>
+                `
+          }
         </div>
-        
-      </div>
+
+      </section>
     `;
-    
   }).join("");
 }
+
+
 document.addEventListener("DOMContentLoaded", enableSwipeForRounds);
 document.addEventListener('DOMContentLoaded', async () => {
   const urlParams = new URLSearchParams(window.location.search);
@@ -3647,6 +3674,7 @@ function getSubmissionBadge(match) {
 
 
 async function openProfileModal() {
+  goBackHome()
   const modal =
     document.getElementById(
       "profileModal"
@@ -4054,13 +4082,13 @@ checkOpenCV();
 function renderTable(data) {
   const tbody =
     document.getElementById("tableBody");
-
+  
   if (!tbody) {
     return;
   }
-
+  
   tbody.innerHTML = "";
-
+  
   if (
     !Array.isArray(data) ||
     data.length === 0
@@ -4072,69 +4100,69 @@ function renderTable(data) {
         </td>
       </tr>
     `;
-
+    
     return;
   }
-
+  
   data.forEach((team, index) => {
     const tr =
       document.createElement("tr");
-
+    
     tr.setAttribute(
       "data-row-index",
       index
     );
-
+    
     if (index < 4) {
       tr.classList.add("champions-league");
     }
-
+    
     if (index >= data.length - 3) {
       tr.classList.add("relegation");
     }
-
+    
     const played =
       Number(team.played) || 0;
-
+    
     const wins =
       Number(team.wins) || 0;
-
+    
     const draws =
       Number(team.draws) || 0;
-
+    
     const losses =
       Number(team.losses) || 0;
-
+    
     const gf =
       Number(team.gf) || 0;
-
+    
     const ga =
       Number(team.ga) || 0;
-
+    
     const gd =
       team.gd !== undefined &&
-      team.gd !== null
-        ? Number(team.gd) || 0
-        : gf - ga;
-
+      team.gd !== null ?
+      Number(team.gd) || 0 :
+      gf - ga;
+    
     const pts =
       team.pts !== undefined &&
-      team.pts !== null
-        ? Number(team.pts) || 0
-        : Number(team.points) || 0;
-
+      team.pts !== null ?
+      Number(team.pts) || 0 :
+      Number(team.points) || 0;
+    
     const gdClass =
       gd < 0 ? "neg" : "";
-
+    
     const indicator =
       typeof getChangeIndicator ===
-      "function"
-        ? getChangeIndicator(team.change)
-        : "";
-
+      "function" ?
+      getChangeIndicator(team.change) :
+      "";
+    
     const teamId =
       String(team.id || "");
-
+    
     tr.innerHTML = `
       <td>
         <div class="rank-cell">
@@ -4179,56 +4207,56 @@ function renderTable(data) {
         <div class="form-results"></div>
       </td>
     `;
-
+    
     const teamName =
       tr.querySelector(".team-name");
-
+    
     if (teamName) {
       teamName.textContent =
         team.name || "";
     }
-
+    
     if (team.logo) {
       const teamCell =
         tr.querySelector(".table-team-cell");
-
+      
       const placeholder =
         teamCell?.querySelector(
           ".team-logo-placeholder"
         );
-
+      
       if (
         teamCell &&
         placeholder
       ) {
         const img =
           document.createElement("img");
-
+        
         img.className =
           "table-team-logo";
-
+        
         img.src =
           team.logo;
-
+        
         img.alt =
           team.name || "Logo";
-
+        
         img.onerror = () => {
           img.replaceWith(
             placeholder
           );
         };
-
+        
         teamCell.replaceChild(
           img,
           placeholder
         );
       }
     }
-
+    
     tbody.appendChild(tr);
   });
-
+  
   renderFormView();
 }
 
