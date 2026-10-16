@@ -6466,80 +6466,6 @@ button.knockout-score-cell:hover {
 
 
 
-.loader-overlay {
-  position: fixed;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(0.1px);
-  z-index: 999999;
-}
-
-.dot-loader {
-  position: relative;
-  width: 64px;
-  height: 64px;
-}
-
-.dot-loader span {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 10px;
-  height: 10px;
-  margin: -5px;
-  border-radius: 50%;
-  background: #d1d5db;
-}
-
-.dot-loader span:nth-child(1) {
-  transform: rotate(0deg) translateY(-26px);
-}
-
-.dot-loader span:nth-child(2) {
-  transform: rotate(60deg) translateY(-26px);
-}
-
-.dot-loader span:nth-child(3) {
-  transform: rotate(120deg) translateY(-26px);
-}
-
-.dot-loader span:nth-child(4) {
-  transform: rotate(180deg) translateY(-26px);
-}
-
-.dot-loader span:nth-child(5) {
-  transform: rotate(240deg) translateY(-26px);
-}
-
-.dot-loader span:nth-child(6) {
-  transform: rotate(300deg) translateY(-26px);
-}
-
-.dot-loader::after {
-  content: "";
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 10px;
-  height: 10px;
-  margin: -5px;
-  border-radius: 50%;
-  background: #1d4ed8;
-  animation: orbit .8s linear infinite;
-}
-
-@keyframes orbit {
-  from {
-    transform: rotate(0deg) translateY(-26px);
-  }
-  
-  to {
-    transform: rotate(360deg) translateY(-26px);
-  }
-}
 
 
 #homepageNav {
@@ -8039,4 +7965,433 @@ button.knockout-score-cell:hover {
   background: #ef4444;
   box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.12);
   vertical-align: middle;
+}
+
+
+.loader-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(10, 10, 12, 0.12);
+  backdrop-filter: blur(0.3px);
+  -webkit-backdrop-filter: blur(0.3px);
+}
+
+.galatico-mini-loader {
+  width: 54px;
+  height: 54px;
+  display: grid;
+  place-items: center;
+}
+
+.galatico-mini-logo {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  animation: galaticoMiniDeform 1.5s ease-in-out infinite;
+  filter: drop-shadow(0 0 7px rgba(232, 185, 71, 0.35));
+}
+
+.galatico-mini-g {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: galaticoMiniGForm 1.5s ease-in-out infinite;
+}
+
+.galatico-mini-orbit {
+  stroke-dasharray: 180;
+  stroke-dashoffset: 0;
+  transform-origin: center;
+  animation: galaticoMiniOrbit 2s linear infinite;
+}
+
+.galatico-mini-star {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: galaticoMiniStar 1s ease-in-out infinite;
+}
+
+@keyframes galaticoMiniDeform {
+  0%, 100% {
+    transform: scale(1, 1);
+  }
+  50% {
+    transform: scale(0.88, 1.12);
+  }
+}
+
+@keyframes galaticoMiniGForm {
+  0%, 100% {
+    transform: scaleX(1);
+  }
+  50% {
+    transform: scaleX(1.08);
+  }
+}
+
+@keyframes galaticoMiniOrbit {
+  from {
+    transform: rotate(-35deg);
+  }
+  to {
+    transform: rotate(325deg);
+  }
+}
+
+@keyframes galaticoMiniStar {
+  0%, 100% {
+    opacity: 0.55;
+    transform: scale(0.8);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.15);
+  }
+}
+
+
+
+.auth-logo {
+  display: block;
+  width: 120px;
+  height: 120px;
+  object-fit: contain;
+  margin: 0 auto 20px;
+}
+
+
+.header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  width: 100%;
+  box-sizing: border-box;
+  z-index: 800;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 16px;
+  height: auto;
+  background: #f7f7f5;
+  border-bottom: 1px solid #e2e2df;
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+}
+
+.header-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
+}
+
+.header-logo {
+  display: block;
+  width: 44px;
+  height: 44px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+#welcomeText {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 3px;
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+  line-height: 1.3;
+}
+
+.welcome-message {
+  font-size: 12px;
+  font-weight: 400;
+  opacity: 0.75;
+}
+
+#usernameText {
+  display: block;
+  max-width: 100%;
+  font-size: 16px;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.menu-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+#tourListPageHead {
+  justify-content: center;
+  padding-left: 16px;
+  padding-right: 16px;
+}
+
+#tourListPageHead .page-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+}
+
+#tourListPageHead .tournamentListView {
+  text-align: center;
+}
+
+
+#galaticoSplash {
+  position: fixed;
+  inset: 0;
+  z-index: 999999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background: radial-gradient(
+    ellipse at center,
+    #242016 0%,
+    #100f0b 42%,
+    #050505 100%
+  );
+  opacity: 1;
+  visibility: visible;
+  transition: opacity 0.7s ease, visibility 0.7s ease;
+}
+
+#galaticoSplash::before {
+  content: "";
+  position: absolute;
+  width: 280px;
+  height: 280px;
+  border-radius: 50%;
+  background: rgba(218, 170, 55, 0.09);
+  filter: blur(65px);
+  animation: splashGlow 2.4s ease-in-out infinite;
+}
+
+.splash-content {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  padding: 24px;
+  text-align: center;
+}
+
+.splash-logo-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 170px;
+  height: 170px;
+  margin-bottom: 18px;
+  opacity: 0;
+  transform: scale(0.72);
+  animation: splashLogoReveal 0.9s ease-out 0.15s forwards;
+}
+
+.splash-logo {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 0 12px rgba(222, 177, 67, 0.22));
+}
+
+.splash-gold-ring {
+  position: absolute;
+  width: 135px;
+  height: 135px;
+  border: 1px solid rgba(224, 183, 82, 0.5);
+  border-radius: 50%;
+  animation: splashRing 2.5s linear infinite;
+}
+
+.splash-brand {
+  margin: 0;
+  color: #e8c66d;
+  font-size: clamp(30px, 8vw, 42px);
+  font-weight: 900;
+  letter-spacing: 5px;
+  line-height: 1.2;
+  opacity: 0;
+  transform: translateY(12px);
+  animation: splashTextReveal 0.65s ease-out 0.65s forwards;
+  text-shadow: 0 0 20px rgba(224, 183, 82, 0.15);
+}
+
+.splash-divider {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  width: 190px;
+  margin-top: 13px;
+  opacity: 0;
+  animation: splashFadeIn 0.5s ease-out 0.95s forwards;
+}
+
+.splash-divider span {
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    #cba64e
+  );
+}
+
+.splash-divider span:last-child {
+  background: linear-gradient(
+    90deg,
+    #cba64e,
+    transparent
+  );
+}
+
+.splash-divider div {
+  width: 6px;
+  height: 6px;
+  background: #f2d58b;
+  transform: rotate(45deg);
+}
+
+.splash-subtitle {
+  margin: 9px 0 0;
+  color: #f2e4bd;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 8px;
+  padding-left: 8px;
+  opacity: 0;
+  animation: splashFadeIn 0.5s ease-out 1.05s forwards;
+}
+
+.splash-tagline {
+  margin: 23px 0 0;
+  color: rgba(255, 255, 255, 0.65);
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 2px;
+  line-height: 1.8;
+  opacity: 0;
+  animation: splashFadeIn 0.6s ease-out 1.25s forwards;
+}
+
+.splash-bottom {
+  position: absolute;
+  bottom: 30px;
+  left: 0;
+  width: 100%;
+  text-align: center;
+  opacity: 0;
+  animation: splashFadeIn 0.6s ease-out 1.4s forwards;
+}
+
+.splash-bottom span {
+  color: rgba(232, 198, 109, 0.5);
+  font-size: 9px;
+  letter-spacing: 3px;
+}
+
+#galaticoSplash.splash-hidden {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+@keyframes splashLogoReveal {
+  0% {
+    opacity: 0;
+    transform: scale(0.72);
+  }
+  65% {
+    opacity: 1;
+    transform: scale(1.06);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes splashTextReveal {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes splashFadeIn {
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes splashGlow {
+  0%, 100% {
+    transform: scale(0.9);
+    opacity: 0.55;
+  }
+  50% {
+    transform: scale(1.15);
+    opacity: 1;
+  }
+}
+
+@keyframes splashRing {
+  from {
+    transform: rotate(0deg) scale(0.95);
+    opacity: 0.45;
+  }
+  50% {
+    transform: rotate(180deg) scale(1.05);
+    opacity: 0.8;
+  }
+  to {
+    transform: rotate(360deg) scale(0.95);
+    opacity: 0.45;
+  }
+}
+
+@media (max-width: 380px) {
+  .splash-logo-wrap {
+    width: 145px;
+    height: 145px;
+  }
+
+  .splash-gold-ring {
+    width: 115px;
+    height: 115px;
+  }
+
+  .splash-tagline {
+    font-size: 8px;
+    letter-spacing: 1.5px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #galaticoSplash *,
+  #galaticoSplash::before {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
 }

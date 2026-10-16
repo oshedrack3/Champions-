@@ -58,6 +58,36 @@ const CACHE_DB_VERSION = 1;
 
 let cacheDBPromise = null;
 
+
+function startGalaticoSplash() {
+  const splash = document.getElementById("galaticoSplash");
+  
+  if (!splash) return;
+  
+  const minimumDuration = 2600;
+  const startTime = performance.now();
+  
+  function hideSplash() {
+    const elapsed = performance.now() - startTime;
+    const remaining = Math.max(0, minimumDuration - elapsed);
+    
+    setTimeout(() => {
+      splash.classList.add("splash-hidden");
+      
+      setTimeout(() => {
+        splash.remove();
+      }, 750);
+    }, remaining);
+  }
+  
+  if (document.readyState === "complete") {
+    hideSplash();
+  } else {
+    window.addEventListener("load", hideSplash, { once: true });
+  }
+}
+
+startGalaticoSplash();
 function openCacheDB() {
   if (cacheDBPromise) {
     return cacheDBPromise;

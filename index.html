@@ -16,19 +16,51 @@
 
 <body>
   
+  <div id="galaticoSplash">
+  <div class="splash-content">
+    <div class="splash-logo-wrap">
+      <div class="splash-gold-ring"></div>
+      <img
+        src="galaticoLogo1.png"
+        alt="Galatico Esports"
+        class="splash-logo"
+      >
+    </div>
+
+    <h1 class="splash-brand">GALATICO</h1>
+
+    <div class="splash-divider">
+      <span></span>
+      <div></div>
+      <span></span>
+    </div>
+
+    <p class="splash-subtitle">ESPORTS</p>
+
+    <p class="splash-tagline">COMPETE. CONQUER. MAKE HISTORY.</p>
+  </div>
+
+  <div class="splash-bottom">
+    <span>THE HOME OF COMPETITION</span>
+  </div>
+</div>
+  
   <!-- Page Heads and Nav btn -->
   
-  <div id="compPageHead" class="header">
+<div id="compPageHead" class="header">
+  <div class="header-brand">
+    <img src="galaticoLogo1.png" alt="Galatico Esports" class="header-logo">
+    
     <h2 id="welcomeText">
       <span class="welcome-message">Welcome back 👋,</span>
       <span id="usernameText">Username</span>
     </h2>
-    
-    <button class="menu-btn" onclick="setPageAndToggleMenu('competition')">
-      ☰
-    </button>
   </div>
   
+  <button class="menu-btn" onclick="setPageAndToggleMenu('competition')">
+    ☰
+  </button>
+</div>  
   
   <!-- TourList header -->
   <div class="header" id="tourListPageHead">
@@ -833,7 +865,7 @@
     
     <div class="auth-card">
       
-      <h1>⭐️ CHAMPIONS⭐️</h1>
+     <img src="galaticoLogo1.png" alt="Galatico Esports" class="auth-logo">
       
       <!-- Login -->
       <div id="loginSection">
@@ -1733,16 +1765,44 @@
     
   </div>
   
-  <div id="loader" class="loader-overlay" style="display:none;">
-    <div class="dot-loader">
-      <span></span>
-      <span></span>
-      <span></span>
-      <span></span>
-      <span></span>
-      <span></span>
-    </div>
+<div id="loader" class="loader-overlay" style="display:none;">
+  <div class="galatico-mini-loader">
+    <svg class="galatico-mini-logo" viewBox="0 0 100 100" aria-label="Loading">
+      <defs>
+        <linearGradient id="galaticoMiniGold" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="#fff0a6"/>
+          <stop offset="50%" stop-color="#e8b947"/>
+          <stop offset="100%" stop-color="#a87318"/>
+        </linearGradient>
+      </defs>
+
+      <path
+        class="galatico-mini-g"
+        d="M72 18 H48 C27 18 15 32 15 50 S28 82 49 82 H76 V47 H48 L38 58 H64 V69 H49 C37 69 27 61 27 50 S36 31 49 31 H62 Z"
+        fill="url(#galaticoMiniGold)"
+      />
+
+      <ellipse
+        class="galatico-mini-orbit"
+        cx="50"
+        cy="50"
+        rx="43"
+        ry="16"
+        fill="none"
+        stroke="url(#galaticoMiniGold)"
+        stroke-width="4"
+        stroke-linecap="round"
+        transform="rotate(-35 50 50)"
+      />
+
+      <path
+        class="galatico-mini-star"
+        d="M79 9 L82 17 L90 20 L82 23 L79 31 L76 23 L68 20 L76 17 Z"
+        fill="#ffe18a"
+      />
+    </svg>
   </div>
+</div>
   
   <div id="submissionDeadlineModal" class="modal-overlay" style="display:none">
     <div class="modal-box submission-deadline-modal">
