@@ -7985,6 +7985,12 @@ button.knockout-score-cell:hover {
   height: 54px;
   display: grid;
   place-items: center;
+  border-radius: 50%;
+  background: #111111;
+  border: 1px solid rgba(232, 185, 71, 0.45);
+  box-shadow:
+    0 0 0 3px rgba(17, 17, 17, 0.08),
+    0 4px 14px rgba(0, 0, 0, 0.18);
 }
 
 .galatico-mini-logo {
@@ -7992,7 +7998,7 @@ button.knockout-score-cell:hover {
   height: 100%;
   overflow: visible;
   animation: galaticoMiniDeform 1.5s ease-in-out infinite;
-  filter: drop-shadow(0 0 7px rgba(232, 185, 71, 0.35));
+  filter: drop-shadow(0 0 5px rgba(232, 185, 71, 0.4));
 }
 
 .galatico-mini-g {
