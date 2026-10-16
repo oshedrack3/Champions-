@@ -8104,6 +8104,8 @@ button.knockout-score-cell:hover {
   height: 44px;
   object-fit: contain;
   flex-shrink: 0;
+  background: #111111 ;
+  border-radius: 10px;
 }
 
 #welcomeText {
