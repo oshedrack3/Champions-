@@ -216,7 +216,7 @@
       
       <div id="globalRankingsSection" style="display:none;">
         
-   
+        
         
         <div class="rankings-header">
           
@@ -250,82 +250,82 @@
       </div>
       
       <div id="hallOfFameSection" style="display:none;">
-  
-  <header class="hallOfFameHeader">
-    
-    <div class="hallOfFameHeaderBadge">
-      <span>🏆</span>
-    </div>
-    
-    <div class="hallOfFameHeaderLabel">
-      THE LEGENDS COLLECTION
-    </div>
-    
-    <h1 class="hallOfFameMainTitle">
-      Hall of <span>Fame</span>
-    </h1>
-    
-    <p class="hallOfFameDescription">
-      Celebrating the champions who made history.
-      Every trophy tells a story, every victory builds a legacy.
-    </p>
-    
-    <div class="hallOfFameHeaderDivider">
-      <span></span>
-      <span class="hallOfFameDividerIcon">✦</span>
-      <span></span>
-    </div>
-    
-  </header>
-  
-  <div id="hallOfFameList"></div>
-  
-</div>
-         
-        <div id="profileModal" class="profile-modal-page" aria-hidden="true">
-    <div class="profile-modal-page-header">
-      <h2 class="profile-modal-page-title">
-        My Profile
-      </h2>
-      <div class="profile-modal-page-header-spacer"></div>
-    </div>
-    <div class="profile-page-content">
-      <div class="profile-page-user-section">
         
-        <div id="profileUsername" class="profile-page-username">
-          Username
-        </div>
+        <header class="hallOfFameHeader">
+          
+          <div class="hallOfFameHeaderBadge">
+            <span>🏆</span>
+          </div>
+          
+          <div class="hallOfFameHeaderLabel">
+            THE LEGENDS COLLECTION
+          </div>
+          
+          <h1 class="hallOfFameMainTitle">
+            Hall of <span>Fame</span>
+          </h1>
+          
+          <p class="hallOfFameDescription">
+            Celebrating the champions who made history.
+            Every trophy tells a story, every victory builds a legacy.
+          </p>
+          
+          <div class="hallOfFameHeaderDivider">
+            <span></span>
+            <span class="hallOfFameDividerIcon">✦</span>
+            <span></span>
+          </div>
+          
+        </header>
         
-        <div id="profilePhone" class="profile-page-phone">
-          WhatsApp number not added
-        </div>
-        
-        <button type="button" onclick="openUpdateProfile()" class="profile-page-update-profile-btn">
-          Update Profile
-        </button>
+        <div id="hallOfFameList"></div>
         
       </div>
-      <section class="profile-page-teams-section">
-        <div class="profile-page-section-header">
-          <h3 class="profile-page-section-title">
-            My Teams
-          </h3>
+      
+      <div id="profileModal" class="profile-modal-page" aria-hidden="true">
+        <div class="profile-modal-page-header">
+          <h2 class="profile-modal-page-title">
+            My Profile
+          </h2>
+          <div class="profile-modal-page-header-spacer"></div>
         </div>
-        <div id="profileTeams" class="profile-page-teams-list"></div>
-        <div id="profileTeamsEmpty" class="profile-page-empty" hidden>
-          You don't own any teams yet.
+        <div class="profile-page-content">
+          <div class="profile-page-user-section">
+            
+            <div id="profileUsername" class="profile-page-username">
+              Username
+            </div>
+            
+            <div id="profilePhone" class="profile-page-phone">
+              WhatsApp number not added
+            </div>
+            
+            <button type="button" onclick="openUpdateProfile()" class="profile-page-update-profile-btn">
+              Update Profile
+            </button>
+            
+          </div>
+          <section class="profile-page-teams-section">
+            <div class="profile-page-section-header">
+              <h3 class="profile-page-section-title">
+                My Teams
+              </h3>
+            </div>
+            <div id="profileTeams" class="profile-page-teams-list"></div>
+            <div id="profileTeamsEmpty" class="profile-page-empty" hidden>
+              You don't own any teams yet.
+            </div>
+          </section>
+          <div class="profile-page-team-actions">
+            <button type="button" onclick="openAddTeam()" class="profile-page-add-team-btn">
+              Add Team
+            </button>
+            <button type="button" onclick="openEditTeam()" class="profile-page-edit-team-btn">
+              Edit Team
+            </button>
+          </div>
         </div>
-      </section>
-      <div class="profile-page-team-actions">
-        <button type="button" onclick="openAddTeam()" class="profile-page-add-team-btn">
-          Add Team
-        </button>
-        <button type="button" onclick="openEditTeam()" class="profile-page-edit-team-btn">
-          Edit Team
-        </button>
       </div>
-    </div>
-  </div>
     </section>
     <section id="listOfTournamentPage" class="page" style="display:none">
       
@@ -1924,26 +1924,26 @@
   
   
   <nav id="homepageNav" style="display: n;">
-  <button type="button" class="homepage-nav-btn" onclick="goBackHome()">
-    <span>🏠</span>
-    <span>Home</span>
-  </button>
-  
-  <button type="button" class="homepage-nav-btn" onclick="openHallOfFame()">
-    <span>🏆</span>
-    <span>Hall of Fame</span>
-  </button>
-  
-  <button type="button" class="homepage-nav-btn" onclick="showGlobalRankings()">
-    <span>📊</span>
-    <span>Ranking</span>
-  </button>
-  
-  <button type="button" class="homepage-nav-btn" onclick="openProfileModal()">
-    <span>👤</span>
-    <span>My Profile</span>
-  </button>
-</nav>
+    <button type="button" class="homepage-nav-btn" onclick="goBackHome()">
+      <span>🏠</span>
+      <span>Home</span>
+    </button>
+    
+    <button type="button" class="homepage-nav-btn" onclick="openHallOfFame()">
+      <span>🏆</span>
+      <span>Hall of Fame</span>
+    </button>
+    
+    <button type="button" class="homepage-nav-btn" onclick="showGlobalRankings()">
+      <span>📊</span>
+      <span>Ranking</span>
+    </button>
+    
+    <button type="button" class="homepage-nav-btn" onclick="openProfileModal()">
+      <span>👤</span>
+      <span>My Profile</span>
+    </button>
+  </nav>
   
   <div id="fixtureSquadModal" class="fixture-squad-modal" style="display: none;" aria-hidden="true">
     <div class="fixture-squad-backdrop" onclick="closeFixtureSquads()"></div>
@@ -1988,7 +1988,112 @@
       </div>
     </div>
   </div>
-
+  
+  <div id="disciplinaryModal" class="disciplinary-modal" style="display:none;">
+    <div class="disciplinary-modal-overlay" onclick="closeDisciplinaryModal()"></div>
+    <div class="disciplinary-modal-card">
+      <div class="disciplinary-modal-header">
+        <div>
+          <span class="disciplinary-eyebrow">TOURNAMENT MANAGEMENT</span>
+          <h2>Point Deductions</h2>
+          <p>Manage disciplinary penalties for tournament players.</p>
+        </div>
+        <button type="button" class="disciplinary-close" onclick="closeDisciplinaryModal()" aria-label="Close modal">&times;</button>
+      </div>
+      <div class="disciplinary-tournament-info">
+        <span class="disciplinary-info-label">CURRENT TOURNAMENT</span>
+        <strong id="disciplinaryTournamentName">Loading tournament...</strong>
+        <span id="disciplinaryPlayerCount">0 registered players</span>
+      </div>
+      <form id="disciplinaryForm">
+        <div class="disciplinary-field">
+          <label for="disciplinaryPlayer">Select Player</label>
+          <select id="disciplinaryPlayer" required>
+            <option value="">Loading players...</option>
+          </select>
+          <small>Select the player receiving the deduction.</small>
+        </div>
+        <div id="disciplinarySelectedPlayer" class="disciplinary-selected-player" style="display:none;">
+          <div class="disciplinary-player-avatar" id="disciplinaryPlayerAvatar">P</div>
+          <div class="disciplinary-player-details">
+            <strong id="disciplinarySelectedPlayerName"></strong>
+            <span id="disciplinarySelectedPlayerTeam"></span>
+          </div>
+          <div class="disciplinary-current-points">
+            <span>Current points</span>
+            <strong id="disciplinaryCurrentPoints">0</strong>
+          </div>
+        </div>
+        <div class="disciplinary-field">
+          <label for="disciplinaryPoints">Points to Deduct</label>
+          <input type="number" id="disciplinaryPoints" min="1" step="1" inputmode="numeric" placeholder="e.g. 3" required>
+          <small id="disciplinaryPointsPreview">Select a player to preview the deduction.</small>
+        </div>
+        <div class="disciplinary-field">
+          <label for="disciplinaryReason">Reason for Deduction</label>
+          <textarea id="disciplinaryReason" rows="3" maxlength="1000" placeholder="Explain why this penalty is being issued..." required></textarea>
+        </div>
+        <div id="disciplinaryError" class="disciplinary-message disciplinary-error" style="display:none;" role="alert"></div>
+        <div id="disciplinarySummary" class="disciplinary-summary" style="display:none;">
+          <span>Points after deduction</span>
+          <strong id="disciplinaryPointsAfter">0</strong>
+        </div>
+        <div class="disciplinary-modal-actions">
+          <button type="button" class="disciplinary-cancel-btn" onclick="closeDisciplinaryModal()">Cancel</button>
+          <button type="submit" id="disciplinarySubmitBtn" class="disciplinary-submit-btn">
+            Apply Deduction
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+  
+  <div id="disciplinaryActionsSection" class="disciplinary-actions-section" style="display:none">
+    <div class="disciplinary-actions-header">
+      <div class="disciplinary-actions-heading">
+        <h2>Disciplinary Records</h2>
+        <p class="data-admin">
+          Manage player point deductions and review disciplinary decisions.
+        </p>
+      </div>
+      <div class="disciplinary-actions-header-buttons">
+        <button type="button" id="refreshDisciplinaryActions" class="disciplinary-refresh-btn">
+          Refresh
+        </button>
+        <button type="button" id="closeDisciplinaryActions" class="disciplinary-close-btn" aria-label="Close disciplinary records">
+          &times;
+        </button>
+      </div>
+    </div>
+    <div id="disciplinaryReversalForm" class="disciplinary-reversal-form" style="display:none">
+      <div class="disciplinary-reversal-form-header">
+        <h3>Point Deduction History</h3>
+        <p class="data-admin">
+          Provide a reason for reversing this disciplinary action.
+        </p>
+      </div>
+      <form id="disciplinaryReversalReasonForm">
+        <input type="hidden" id="disciplinaryReversalActionId">
+        <label for="disciplinaryReversalReason">
+          Reason for reversal
+        </label>
+        <textarea id="disciplinaryReversalReason" name="reversal_reason" placeholder="Explain why this deduction is being reversed..." rows="4" maxlength="1000" required></textarea>
+        <div class="disciplinary-reversal-form-actions">
+          <button type="button" id="cancelDisciplinaryReversal" class="disciplinary-cancel-btn">
+            Cancel
+          </button>
+          <button type="submit" id="submitDisciplinaryReversal" class="disciplinary-submit-btn">
+            Confirm Reversal
+          </button>
+        </div>
+      </form>
+    </div>
+    <div id="disciplinaryActionsList">
+      <div class="disciplinary-empty-state">
+        Loading disciplinary records...
+      </div>
+    </div>
+  </div>
   
   <div id="updateProfileModal" class="update-profile-modal-overlay" style="display: none;" aria-hidden="true">
     <div class="update-profile-modal-box">

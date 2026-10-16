@@ -3569,7 +3569,938 @@ async function getTournamentTeamSquad(
   return result.squad;
 }
 
+async function deductTournamentPlayerPoints(
+  tournamentId,
+  userId,
+  teamId,
+  points,
+  reason
+) {
+  const token = getToken();
+  if (!token) {
+    throw new Error("Invalid session.");
+  }
+  if (!tournamentId) {
+    throw new Error("Invalid tournament.");
+  }
+  if (!userId || !teamId) {
+    throw new Error("Select a valid tournament player.");
+  }
+  if (
+    !Number.isSafeInteger(Number(points)) ||
+    Number(points) <= 0
+  ) {
+    throw new Error(
+      "Points deduction must be a positive whole number."
+    );
+  }
+  if (
+    typeof reason !== "string" ||
+    !reason.trim()
+  ) {
+    throw new Error(
+      "A reason for the deduction is required."
+    );
+  }
+  const response = await apiRequest(
+    `${API}/tournaments/${encodeURIComponent(tournamentId)}/disciplinary-actions`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: token
+      },
+      body: JSON.stringify({
+        user_id: userId,
+        team_id: teamId,
+        points: Number(points),
+        reason: reason.trim()
+      })
+    },
+    deductTournamentPlayerPoints
+  );
+  if (!response) {
+    return null;
+  }
+  const data = await response.json();
+  if (!response.ok || !data.success) {
+    throw new Error(
+      data.message ||
+      "Failed to deduct tournament points."
+    );
+  }
+  return data;
+}
+async function reverseTournamentPlayerDeduction(
+  tournamentId,
+  actionId,
+  reversalReason
+) {
+  const token = getToken();
+  if (!token) {
+    throw new Error("Invalid session.");
+  }
+  if (!tournamentId || !actionId) {
+    throw new Error(
+      "Invalid tournament or disciplinary action."
+    );
+  }
+  if (
+    typeof reversalReason !== "string" ||
+    !reversalReason.trim()
+  ) {
+    throw new Error(
+      "A reason for reversing the deduction is required."
+    );
+  }
+  const response = await apiRequest(
+    `${API}/tournaments/${encodeURIComponent(tournamentId)}/disciplinary-actions/${encodeURIComponent(actionId)}/reverse`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: token
+      },
+      body: JSON.stringify({
+        reversal_reason: reversalReason.trim()
+      })
+    },
+    reverseTournamentPlayerDeduction
+  );
+  if (!response) {
+    return null;
+  }
+  const data = await response.json();
+  if (!response.ok || !data.success) {
+    throw new Error(
+      data.message ||
+      "Failed to reverse disciplinary action."
+    );
+  }
+  return data;
+}
 
+function openDisciplinaryModal() {
+  const modal = document.getElementById(
+    "disciplinaryModal"
+  );
+  const tournament = getCurrentTournament();
+  if (!modal) {
+    showAlert("Disciplinary modal was not found.");
+    return;
+  }
+  if (!tournament || !tournament.id) {
+    showAlert("Select a tournament first.");
+    return;
+  }
+  const players = Array.isArray(
+      tournament.tournament_players
+    ) ?
+    tournament.tournament_players : [];
+  document.getElementById(
+    "disciplinaryTournamentName"
+  ).textContent = tournament.name || "Tournament";
+  document.getElementById(
+      "disciplinaryPlayerCount"
+    ).textContent =
+    `${players.length} registered player${players.length === 1 ? "" : "s"}`;
+  const select = document.getElementById(
+    "disciplinaryPlayer"
+  );
+  select.replaceChildren();
+  const placeholder = document.createElement("option");
+  placeholder.value = "";
+  placeholder.textContent = players.length ?
+    "Choose a tournament player" :
+    "No registered players found";
+  select.appendChild(placeholder);
+  players.forEach(player => {
+    const option = document.createElement("option");
+    option.value = JSON.stringify({
+      user_id: player.user_id,
+      team_id: player.team_id
+    });
+    option.textContent =
+      `${player.team_name || "Unnamed team"} — ${Number(player.points) || 0} points`;
+    option.disabled = !player.user_id || !player.team_id;
+    select.appendChild(option);
+  });
+  document.getElementById(
+    "disciplinaryForm"
+  ).reset();
+  document.getElementById(
+    "disciplinarySelectedPlayer"
+  ).style.display = "none";
+  document.getElementById(
+    "disciplinarySummary"
+  ).style.display = "none";
+  document.getElementById(
+    "disciplinaryPointsPreview"
+  ).textContent = "Select a player to preview the deduction.";
+  hideDisciplinaryError();
+  disciplinarySubmitting = false;
+  const submitButton = document.getElementById(
+    "disciplinarySubmitBtn"
+  );
+  submitButton.disabled = players.length === 0;
+  submitButton.textContent = "Apply Deduction";
+  modal.style.display = "flex";
+  modal.setAttribute("aria-hidden", "false");
+  document.body.style.overflow = "hidden";
+}
+
+function closeDisciplinaryModal() {
+  if (disciplinarySubmitting) {
+    return;
+  }
+  const modal = document.getElementById(
+    "disciplinaryModal"
+  );
+  if (modal) {
+    modal.style.display = "none";
+    modal.setAttribute("aria-hidden", "true");
+  }
+  document.body.style.overflow = "";
+}
+
+function getDisciplinarySelectedPlayer() {
+  const select = document.getElementById(
+    "disciplinaryPlayer"
+  );
+  if (!select.value) {
+    return null;
+  }
+  try {
+    return JSON.parse(select.value);
+  } catch {
+    return null;
+  }
+}
+
+function showDisciplinaryError(message) {
+  const error = document.getElementById(
+    "disciplinaryError"
+  );
+  error.textContent = message;
+  error.style.display = "block";
+}
+
+function hideDisciplinaryError() {
+  const error = document.getElementById(
+    "disciplinaryError"
+  );
+  error.textContent = "";
+  error.style.display = "none";
+}
+
+function updateDisciplinaryPlayerPreview() {
+  const tournament = getCurrentTournament();
+  const selected = getDisciplinarySelectedPlayer();
+  const playerCard = document.getElementById(
+    "disciplinarySelectedPlayer"
+  );
+  const summary = document.getElementById(
+    "disciplinarySummary"
+  );
+  const preview = document.getElementById(
+    "disciplinaryPointsPreview"
+  );
+  if (!selected || !tournament) {
+    playerCard.style.display = "none";
+    summary.style.display = "none";
+    preview.textContent =
+      "Select a player to preview the deduction.";
+    return;
+  }
+  const players = Array.isArray(
+      tournament.tournament_players
+    ) ?
+    tournament.tournament_players : [];
+  const player = players.find(item =>
+    String(item.user_id) === String(selected.user_id) &&
+    String(item.team_id) === String(selected.team_id)
+  );
+  if (!player) {
+    playerCard.style.display = "none";
+    summary.style.display = "none";
+    preview.textContent = "Player not found in this tournament.";
+    return;
+  }
+  const currentPoints = Number(player.points) || 0;
+  document.getElementById(
+    "disciplinarySelectedPlayerName"
+  ).textContent = player.team_name || "Unnamed team";
+  document.getElementById(
+      "disciplinarySelectedPlayerTeam"
+    ).textContent =
+    player.has_point_deduction ?
+    "Has an active point deduction" :
+    "No active point deductions";
+  document.getElementById(
+      "disciplinaryPlayerAvatar"
+    ).textContent =
+    (player.team_name || "P").trim().charAt(0).toUpperCase();
+  document.getElementById(
+    "disciplinaryCurrentPoints"
+  ).textContent = currentPoints;
+  playerCard.style.display = "flex";
+  const pointsInput = document.getElementById(
+    "disciplinaryPoints"
+  );
+  const points = Number(pointsInput.value);
+  if (
+    pointsInput.value &&
+    Number.isSafeInteger(points) &&
+    points > 0
+  ) {
+    const pointsAfter = currentPoints - points;
+    document.getElementById(
+      "disciplinaryPointsAfter"
+    ).textContent = pointsAfter;
+    summary.style.display = "flex";
+    preview.textContent =
+      pointsAfter < 0 ?
+      "Warning: this deduction will make the player's points negative." :
+      `The player will lose ${points} point${points === 1 ? "" : "s"}.`;
+  } else {
+    summary.style.display = "none";
+    preview.textContent =
+      `Current points: ${currentPoints}. Enter a positive whole number.`;
+  }
+}
+
+async function submitDisciplinaryDeduction(event) {
+  event.preventDefault();
+  if (disciplinarySubmitting) {
+    return;
+  }
+  hideDisciplinaryError();
+  const tournament = getCurrentTournament();
+  const selected = getDisciplinarySelectedPlayer();
+  const pointsInput = document.getElementById(
+    "disciplinaryPoints"
+  );
+  const reasonInput = document.getElementById(
+    "disciplinaryReason"
+  );
+  const points = Number(pointsInput.value);
+  const reason = reasonInput.value.trim();
+  if (!tournament || !tournament.id) {
+    showDisciplinaryError("Select a valid tournament.");
+    return;
+  }
+  if (
+    !selected ||
+    !selected.user_id ||
+    !selected.team_id
+  ) {
+    showDisciplinaryError(
+      "Select a valid tournament player."
+    );
+    return;
+  }
+  if (
+    !Number.isSafeInteger(points) ||
+    points <= 0
+  ) {
+    showDisciplinaryError(
+      "Enter a positive whole number of points to deduct."
+    );
+    pointsInput.focus();
+    return;
+  }
+  if (!reason) {
+    showDisciplinaryError(
+      "Enter a reason for the deduction."
+    );
+    reasonInput.focus();
+    return;
+  }
+  disciplinarySubmitting = true;
+  const submitButton = document.getElementById(
+    "disciplinarySubmitBtn"
+  );
+  submitButton.disabled = true;
+  submitButton.textContent = "Confirming...";
+  const disciplinaryModal = document.getElementById(
+    "disciplinaryModal"
+  );
+  disciplinaryModal.style.display = "none";
+  disciplinaryModal.setAttribute("aria-hidden", "true");
+  document.body.style.overflow = "";
+  try {
+    const confirmed = await showConfirmModal(
+      `Are you sure you want to deduct ${points} point${points === 1 ? "" : "s"} from ${document.getElementById("disciplinarySelectedPlayerName").textContent}? This deduction will affect the tournament standings.`,
+      "Apply Deduction",
+      "Cancel"
+    );
+    if (!confirmed) {
+      disciplinaryModal.style.display = "flex";
+      disciplinaryModal.setAttribute("aria-hidden", "false");
+      document.body.style.overflow = "hidden";
+      return;
+    }
+    submitButton.textContent = "Applying...";
+    const result = await deductTournamentPlayerPoints(
+      tournament.id,
+      selected.user_id,
+      selected.team_id,
+      points,
+      reason
+    );
+    if (!result) {
+      disciplinaryModal.style.display = "flex";
+      disciplinaryModal.setAttribute("aria-hidden", "false");
+      document.body.style.overflow = "hidden";
+      return;
+    }
+    disciplinaryModal.style.display = "none";
+    disciplinaryModal.setAttribute("aria-hidden", "true");
+    document.body.style.overflow = "";
+    showActionModal(
+      result.message || "Points deducted successfully.",
+      "success"
+    );
+    window.dispatchEvent(
+      new CustomEvent("tournamentDisciplinaryAction", {
+        detail: {
+          tournamentId: tournament.id,
+          userId: selected.user_id,
+          teamId: selected.team_id,
+          action: result.action
+        }
+      })
+    );
+  } catch (error) {
+    disciplinaryModal.style.display = "flex";
+    disciplinaryModal.setAttribute("aria-hidden", "false");
+    document.body.style.overflow = "hidden";
+    showDisciplinaryError(
+      error.message || "Failed to apply the deduction."
+    );
+  } finally {
+    disciplinarySubmitting = false;
+    submitButton.disabled = false;
+    submitButton.textContent = "Apply Deduction";
+  }
+}
+document.getElementById(
+  "disciplinaryPlayer"
+).addEventListener(
+  "change",
+  updateDisciplinaryPlayerPreview
+);
+document.getElementById(
+  "disciplinaryPoints"
+).addEventListener(
+  "input",
+  updateDisciplinaryPlayerPreview
+);
+document.getElementById(
+  "disciplinaryForm"
+).addEventListener(
+  "submit",
+  submitDisciplinaryDeduction
+);
+
+async function getTournamentDisciplinaryActions(
+  tournamentId
+) {
+  const token = getToken();
+  
+  if (!token) {
+    throw new Error("Invalid session.");
+  }
+  
+  if (!tournamentId) {
+    throw new Error("Invalid tournament.");
+  }
+  
+  const response = await apiRequest(
+    `${API}/tournaments/${encodeURIComponent(tournamentId)}/disciplinary-actions`,
+    {
+      method: "GET",
+      headers: {
+        Authorization: token
+      }
+    },
+    getTournamentDisciplinaryActions
+  );
+  
+  if (!response) {
+    return null;
+  }
+  
+  const data = await response.json();
+  
+  if (!response.ok || !data.success) {
+    throw new Error(
+      data.message ||
+      "Failed to load disciplinary actions."
+    );
+  }
+  
+  return data.actions || [];
+}
+
+async function showDisciplinaryReversalSection() {
+  const section = document.getElementById(
+    "disciplinaryActionsSection"
+  );
+  
+  if (!section) return;
+  
+  section.style.display = "flex";
+  
+  await loadDisciplinaryActions();
+}
+async function loadDisciplinaryActions() {
+  const container = document.getElementById(
+    "disciplinaryActionsList"
+  );
+  
+  if (!container) return;
+  
+  container.innerHTML = `
+    <div class="disciplinary-empty-state">
+      Loading disciplinary records...
+    </div>
+  `;
+  
+  try {
+    const tournament = getCurrentTournament();
+    
+    if (!tournament?.id) {
+      throw new Error("No tournament selected.");
+    }
+    
+    const actions =
+      await getTournamentDisciplinaryActions(
+        tournament.id
+      );
+    
+    if (actions === null) return;
+    
+    renderDisciplinaryActions(actions);
+  } catch (error) {
+    container.innerHTML = `
+      <div class="disciplinary-empty-state">
+        ${escapeHtml(
+          error.message ||
+          "Failed to load disciplinary records."
+        )}
+      </div>
+    `;
+  }
+}
+function formatDisciplinaryDate(timestamp) {
+  if (
+    timestamp === null ||
+    timestamp === undefined ||
+    timestamp === ""
+  ) {
+    return "—";
+  }
+  
+  const value = Number(timestamp);
+  
+  if (!Number.isFinite(value)) {
+    return "—";
+  }
+  
+  const date = new Date(value);
+  
+  if (Number.isNaN(date.getTime())) {
+    return "—";
+  }
+  
+  return date.toLocaleString("en-GB", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false
+  });
+}
+
+function renderDisciplinaryActions(actions) {
+  const container = document.getElementById(
+    "disciplinaryActionsList"
+  );
+  if (!container) return;
+  const currentUser = getCurrentUser();
+  const isAdmin = currentUser?.role === "admin";
+  if (!actions || actions.length === 0) {
+    container.innerHTML = `
+      <div class="disciplinary-empty-state">
+        No disciplinary history available.
+      </div>
+    `;
+    return;
+  }
+  const formatDate = timestamp => {
+    if (
+      timestamp === null ||
+      timestamp === undefined ||
+      timestamp === ""
+    ) {
+      return "Not available";
+    }
+    const value = Number(timestamp);
+    if (!Number.isFinite(value)) {
+      return "Not available";
+    }
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) {
+      return "Not available";
+    }
+    return date.toLocaleString("en-GB", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hour12: false
+    });
+  };
+  container.innerHTML = actions.map(action => {
+    const playerName = escapeHtml(
+      action.username || "Unknown Player"
+    );
+    const teamName = escapeHtml(
+      action.team_name || "Unknown Team"
+    );
+    const reason = escapeHtml(
+      action.reason || "No reason provided"
+    );
+    const points = Number(action.points_deducted) || 0;
+    const currentPoints =
+      action.current_points != null ?
+      Number(action.current_points) :
+      null;
+    const status = action.status || "unknown";
+    const isReversed = status === "reversed";
+    const isActive = status === "active";
+    const statusLabel = isReversed ?
+      "Reversed" :
+      isActive ?
+      "Active" :
+      status.charAt(0).toUpperCase() + status.slice(1);
+    const statusClass = isReversed ?
+      "reversed" :
+      isActive ?
+      "active" :
+      "unknown";
+    const issuedDate = formatDate(action.issued_at);
+    const reversedDate = formatDate(action.reversed_at);
+    const issuedBy = escapeHtml(
+      action.issued_by_username || "Unknown administrator"
+    );
+    const reversedBy = escapeHtml(
+      action.reversed_by_username || "Not applicable"
+    );
+    const reversalReason = escapeHtml(
+      action.reversal_reason || "No reversal reason provided"
+    );
+    const actionId = escapeHtml(action.id || "");
+    const hasCurrentPoints =
+      currentPoints !== null &&
+      Number.isFinite(currentPoints);
+    return `
+      <div class="disciplinary-action-card ${statusClass}">
+        <div class="disciplinary-action-top">
+          <div class="disciplinary-player-info">
+            <h3 class="disciplinary-player-name">
+              ${playerName}
+            </h3>
+            <div class="disciplinary-team-name">
+              ${teamName}
+            </div>
+          </div>
+          <div class="disciplinary-action-badges">
+            <span class="disciplinary-points-badge">
+              -${points} ${points === 1 ? "Point" : "Points"}
+            </span>
+            <span class="disciplinary-status-badge ${statusClass}">
+              ${escapeHtml(statusLabel)}
+            </span>
+          </div>
+        </div>
+        <div class="disciplinary-action-details">
+          <div class="disciplinary-detail-row">
+            <span class="disciplinary-detail-label">
+              Reason
+            </span>
+            <span class="disciplinary-detail-value">
+              ${reason}
+            </span>
+          </div>
+          <div class="disciplinary-detail-row">
+            <span class="disciplinary-detail-label">
+              Issued by
+            </span>
+            <span class="disciplinary-detail-value">
+              ${issuedBy}
+            </span>
+          </div>
+          <div class="disciplinary-detail-row">
+            <span class="disciplinary-detail-label">
+              Date issued
+            </span>
+            <span class="disciplinary-detail-value">
+              ${escapeHtml(issuedDate)}
+            </span>
+          </div>
+          <div class="disciplinary-detail-row">
+            <span class="disciplinary-detail-label">
+              Current points
+            </span>
+            <span class="disciplinary-detail-value">
+              ${
+                hasCurrentPoints
+                  ? escapeHtml(String(currentPoints))
+                  : "Unavailable"
+              }
+            </span>
+          </div>
+          ${
+            isReversed
+              ? `
+                <div class="disciplinary-reversal-details">
+                  <div class="disciplinary-detail-row">
+                    <span class="disciplinary-detail-label">
+                      Reversed by
+                    </span>
+                    <span class="disciplinary-detail-value">
+                      ${reversedBy}
+                    </span>
+                  </div>
+                  <div class="disciplinary-detail-row">
+                    <span class="disciplinary-detail-label">
+                      Date reversed
+                    </span>
+                    <span class="disciplinary-detail-value">
+                      ${escapeHtml(reversedDate)}
+                    </span>
+                  </div>
+                  <div class="disciplinary-detail-row">
+                    <span class="disciplinary-detail-label">
+                      Reversal reason
+                    </span>
+                    <span class="disciplinary-detail-value">
+                      ${reversalReason}
+                    </span>
+                  </div>
+                </div>
+              `
+              : ""
+          }
+        </div>
+        ${
+          isAdmin && isActive
+            ? `
+              <button
+                type="button"
+                class="disciplinary-reverse-btn"
+                data-action-id="${actionId}"
+              >
+                Reverse Deduction
+              </button>
+            `
+            : ""
+        }
+      </div>
+    `;
+  }).join("");
+  container
+    .querySelectorAll(".disciplinary-reverse-btn")
+    .forEach(button => {
+      button.addEventListener("click", async () => {
+        await reverseDisciplinaryAction(
+          button.dataset.actionId
+        );
+      });
+    });
+}
+
+
+async function reverseDisciplinaryAction(actionId) {
+  if (disciplinaryReversalSubmitting) {
+    return;
+  }
+  const currentUser = getCurrentUser();
+  if (currentUser?.role !== "admin") {
+    showActionModal(
+      "Only an administrator can reverse a deduction.",
+      "error"
+    );
+    return;
+  }
+  if (!actionId) {
+    showActionModal(
+      "The disciplinary action ID is missing.",
+      "error"
+    );
+    return;
+  }
+  const form = document.getElementById(
+    "disciplinaryReversalForm"
+  );
+  const actionInput = document.getElementById(
+    "disciplinaryReversalActionId"
+  );
+  const reasonInput = document.getElementById(
+    "disciplinaryReversalReason"
+  );
+  const section = document.getElementById(
+    "disciplinaryActionsSection"
+  );
+  if (!form || !actionInput || !reasonInput || !section) {
+    showActionModal(
+      "The disciplinary reversal form could not be found.",
+      "error"
+    );
+    return;
+  }
+  actionInput.value = actionId;
+  reasonInput.value = "";
+  form.style.display = "block";
+  form.scrollIntoView({
+    behavior: "smooth",
+    block: "nearest"
+  });
+  reasonInput.focus();
+}
+
+document.getElementById(
+  "disciplinaryReversalReasonForm"
+)?.addEventListener("submit", async function(event) {
+  event.preventDefault();
+  if (disciplinaryReversalSubmitting) {
+    return;
+  }
+  const reasonInput = document.getElementById(
+    "disciplinaryReversalReason"
+  );
+  const actionInput = document.getElementById(
+    "disciplinaryReversalActionId"
+  );
+  const submitButton = document.getElementById(
+    "submitDisciplinaryReversal"
+  );
+  const form = document.getElementById(
+    "disciplinaryReversalForm"
+  );
+  const reversalReason = reasonInput.value.trim();
+  const actionId = actionInput.value;
+  if (!actionId) {
+    showActionModal(
+      "Select a disciplinary action to reverse.",
+      "error"
+    );
+    return;
+  }
+  if (!reversalReason) {
+    reasonInput.focus();
+    showActionModal(
+      "Enter a reason for reversing this deduction.",
+      "error"
+    );
+    return;
+  }
+  const tournament = getCurrentTournament();
+  if (!tournament?.id) {
+    showActionModal(
+      "No tournament is currently selected.",
+      "error"
+    );
+    return;
+  }
+  disciplinaryReversalSubmitting = true;
+  submitButton.disabled = true;
+  submitButton.textContent = "Reversing...";
+  try {
+    const result = await reverseTournamentPlayerDeduction(
+      tournament.id,
+      actionId,
+      reversalReason
+    );
+    if (!result) {
+      throw new Error(
+        "No response was received. Please check your connection and try again."
+      );
+    }
+    form.style.display = "none";
+    window.dispatchEvent(
+      new CustomEvent("tournamentDisciplinaryAction", {
+        detail: {
+          tournamentId: tournament.id,
+          action: "reversed",
+          actionId
+        }
+      })
+    );
+    showActionModal(
+      "The deduction has been reversed successfully.",
+      "success"
+    );
+    await loadDisciplinaryActions();
+  } catch (error) {
+    showActionModal(
+      error.message ||
+      "Failed to reverse the disciplinary deduction.",
+      "error"
+    );
+  } finally {
+    disciplinaryReversalSubmitting = false;
+    submitButton.disabled = false;
+    submitButton.textContent = "Confirm Reversal";
+  }
+});
+document.getElementById(
+  "cancelDisciplinaryReversal"
+)?.addEventListener("click", function() {
+  const form = document.getElementById(
+    "disciplinaryReversalForm"
+  );
+  const reasonInput = document.getElementById(
+    "disciplinaryReversalReason"
+  );
+  const actionInput = document.getElementById(
+    "disciplinaryReversalActionId"
+  );
+  if (form) {
+    form.style.display = "none";
+  }
+  if (reasonInput) {
+    reasonInput.value = "";
+  }
+  if (actionInput) {
+    actionInput.value = "";
+  }
+});
+document.getElementById(
+  "closeDisciplinaryActions"
+)?.addEventListener("click", function() {
+  const section = document.getElementById(
+    "disciplinaryActionsSection"
+  );
+  
+  const form = document.getElementById(
+    "disciplinaryReversalForm"
+  );
+  
+  if (section) {
+    section.style.display = "none";
+  }
+  
+  if (form) {
+    form.style.display = "none";
+  }
+});
 
 
 window.addEventListener(
@@ -3589,8 +4520,8 @@ window.addEventListener(
       
       await renderCompetitionList();
       
-    
-    
+      
+      
       
       
       await registerSW();

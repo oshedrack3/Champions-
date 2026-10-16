@@ -461,6 +461,8 @@ function handleMenuAction(action) {
   closeMenu();
   
   const actions = {
+    reverseRule:showDisciplinaryReversalSection,
+    enforceRule:openDisciplinaryModal,
     viewRules:viewTournamentRules,
     joinTour: handleJoinTournament,
     newNotice: openNoticeBoardModal,
@@ -634,8 +636,22 @@ const menuConfig = {
       {
     label: "View Rules and Regulations",
     action: "viewRules",
+    roles: ["admin", "player"],
+    
+  },
+    {
+    label: "Point Deduction Section",
+    action: "enforceRule",
+    roles: ["admin"]
+    
+    }
+    ,
+     {
+    label: "See Point Deductions",
+    action: "reverseRule",
     roles: ["admin", "player"]
-  }
+    
+     }
     
   ],
   group: [
