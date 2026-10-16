@@ -3202,21 +3202,18 @@ function buildTableFromTournamentPlayers(tournament) {
   ) {
     return [];
   }
-  
   const table =
     tournament.tournament_players
     .filter(
       player =>
-      player &&
-      player.team_id
+        player &&
+        player.team_id
     )
     .map(player => {
       const gf =
         Number(player.gf) || 0;
-      
       const ga =
         Number(player.ga) || 0;
-      
       return {
         id: player.team_id,
         name: player.team_name ||
@@ -3232,30 +3229,26 @@ function buildTableFromTournamentPlayers(tournament) {
         gf,
         ga,
         gd: gf - ga,
-        pts: Number(player.points) || 0
+        pts: Number(player.points) || 0,
+        has_point_deduction:
+          Number(player.has_point_deduction) === 1
       };
     });
-  
   table.sort((a, b) => {
     if (b.pts !== a.pts) {
       return b.pts - a.pts;
     }
-    
     if (b.gd !== a.gd) {
       return b.gd - a.gd;
     }
-    
     if (b.gf !== a.gf) {
       return b.gf - a.gf;
     }
-    
     return a.name.localeCompare(b.name);
   });
-  
   table.forEach((team, index) => {
     team.pos = index + 1;
   });
-  
   return table;
 }
 

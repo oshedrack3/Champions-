@@ -4082,13 +4082,10 @@ checkOpenCV();
 function renderTable(data) {
   const tbody =
     document.getElementById("tableBody");
-  
   if (!tbody) {
     return;
   }
-  
   tbody.innerHTML = "";
-  
   if (
     !Array.isArray(data) ||
     data.length === 0
@@ -4100,69 +4097,55 @@ function renderTable(data) {
         </td>
       </tr>
     `;
-    
     return;
   }
-  
   data.forEach((team, index) => {
     const tr =
       document.createElement("tr");
-    
     tr.setAttribute(
       "data-row-index",
       index
     );
-    
     if (index < 4) {
       tr.classList.add("champions-league");
     }
-    
     if (index >= data.length - 3) {
       tr.classList.add("relegation");
     }
-    
     const played =
       Number(team.played) || 0;
-    
     const wins =
       Number(team.wins) || 0;
-    
     const draws =
       Number(team.draws) || 0;
-    
     const losses =
       Number(team.losses) || 0;
-    
     const gf =
       Number(team.gf) || 0;
-    
     const ga =
       Number(team.ga) || 0;
-    
     const gd =
       team.gd !== undefined &&
       team.gd !== null ?
       Number(team.gd) || 0 :
       gf - ga;
-    
     const pts =
       team.pts !== undefined &&
       team.pts !== null ?
       Number(team.pts) || 0 :
       Number(team.points) || 0;
-    
     const gdClass =
       gd < 0 ? "neg" : "";
-    
     const indicator =
       typeof getChangeIndicator ===
       "function" ?
       getChangeIndicator(team.change) :
       "";
-    
     const teamId =
       String(team.id || "");
-    
+    const hasPointDeduction =
+      team.has_point_deduction === true ||
+      Number(team.has_point_deduction) === 1;
     tr.innerHTML = `
       <td>
         <div class="rank-cell">
@@ -4172,34 +4155,35 @@ function renderTable(data) {
           ${indicator}
         </div>
       </td>
-
       <td>
         <div class="table-team-cell">
           <div class="team-logo-placeholder">
             ?
           </div>
-
-          <strong class="team-name"></strong>
+          <div class="team-name-wrapper">
+            <strong class="team-name"></strong>
+            ${
+              hasPointDeduction
+                ? `<span class="deduction-dot" title="Active disciplinary point deduction" aria-label="Active disciplinary point deduction"></span>`
+                : ""
+            }
+          </div>
         </div>
       </td>
-
       <td>${played}</td>
       <td>${wins}</td>
       <td>${draws}</td>
       <td>${losses}</td>
       <td>${gf}</td>
       <td>${ga}</td>
-
       <td class="${gdClass}">
         ${gd >= 0 ? "+" + gd : gd}
       </td>
-
       <td>
         <strong>
           ${pts}
         </strong>
       </td>
-
       <td
         class="table-form-cell"
         data-team-id="${teamId}"
@@ -4207,59 +4191,46 @@ function renderTable(data) {
         <div class="form-results"></div>
       </td>
     `;
-    
     const teamName =
       tr.querySelector(".team-name");
-    
     if (teamName) {
       teamName.textContent =
         team.name || "";
     }
-    
     if (team.logo) {
       const teamCell =
         tr.querySelector(".table-team-cell");
-      
       const placeholder =
         teamCell?.querySelector(
           ".team-logo-placeholder"
         );
-      
       if (
         teamCell &&
         placeholder
       ) {
         const img =
           document.createElement("img");
-        
         img.className =
           "table-team-logo";
-        
         img.src =
           team.logo;
-        
         img.alt =
           team.name || "Logo";
-        
         img.onerror = () => {
           img.replaceWith(
             placeholder
           );
         };
-        
         teamCell.replaceChild(
           img,
           placeholder
         );
       }
     }
-    
     tbody.appendChild(tr);
   });
-  
   renderFormView();
 }
-
 
 async function renderFormView() {
   const tournament =

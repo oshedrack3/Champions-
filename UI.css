@@ -5688,37 +5688,32 @@ button.knockout-score-cell:hover {
   display: flex;
   justify-content: center;
   align-items: center;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 20px;
   margin: 0 auto 15px;
-  width: 100%;
+  width: max-content;
   font-size: 0.75rem;
   color: #0f0f0f;
-  
+  overflow-x: auto;
 }
-
 .table-zone {
   display: flex;
   align-items: center;
   gap: 7px;
-  
+  flex-shrink: 0;
 }
-
 .zone-indicator {
   width: 4px;
   height: 18px;
   border-radius: 2px;
   flex-shrink: 0;
-  }
-
+}
 .champions-zone {
   background: #2563eb;
 }
-
 .relegation-zone {
   background: #dc2626;
 }
-
 
 .table-tournament-name {
   display: flex;
@@ -8027,4 +8022,21 @@ button.knockout-score-cell:hover {
   .disciplinary-reversal-form {
     animation: none;
   }
+}
+
+.team-name-wrapper {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+.deduction-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  min-width: 6px;
+  border-radius: 50%;
+  background: #ef4444;
+  box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.12);
+  vertical-align: middle;
 }
