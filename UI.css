@@ -817,15 +817,41 @@ body.admin-mode .data-admin {
 
 #createCompetitionModal {
   position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
+  inset: 0;
+  width: 100%;
+  height: 100%;
   background: rgba(0, 0, 0, 0.5);
   display: flex;
   align-items: center;
   justify-content: center;
+  padding: 80px 0 90px;
+  box-sizing: border-box;
+  overflow: hidden;
   z-index: 1000;
+}
+
+#createCompetitionModal .modal-content {
+  position: relative;
+  width: 90%;
+  max-width: 450px;
+  max-height: 100%;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  background-color: #ffffff;
+  padding: 24px;
+  border-radius: 16px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+  box-sizing: border-box;
+  margin: auto;
+}
+#createCompetitionModal .modal-content::-webkit-scrollbar {
+  width: 4px;
+}
+
+#createCompetitionModal .modal-content::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 10px;
 }
 
 .modal-header {
@@ -841,20 +867,6 @@ body.admin-mode .data-admin {
 
 .modal-header p {
   margin: 0.5rem 0 1rem;
-}
-
-#createCompetitionModal .modal-content {
-  position: fixed;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
-  width: 90%;
-  max-width: 450px;
-  background-color: #ffffff;
-  padding: 24px;
-  border-radius: 16px;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
-  box-sizing: border-box;
 }
 
 #createCompetitionModal .modal-body {
@@ -923,7 +935,6 @@ body.admin-mode .data-admin {
 #createCompetitionModal .primary-btn:hover {
   background-color: #f3f4f6;
 }
-
 #competitionList {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
