@@ -8414,3 +8414,20 @@ button.knockout-score-cell:hover {
     animation-iteration-count: 1 !important;
   }
 }
+
+
+#homepageNav .homepage-nav-btn.active {
+  color: #d4af37;
+  background: transparent;
+  border: 1px solid rgba(0, 0, 0, 0.35);
+  border-radius: 10px;
+}
+
+#homepageNav .homepage-nav-btn.active span:first-child {
+  transform: scale(1.05);
+}
+
+#homepageNav .homepage-nav-btn {
+  border: 1px solid transparent;
+  transition: color 0.25s ease, border-color 0.25s ease;
+}

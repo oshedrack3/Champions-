@@ -102,6 +102,21 @@ function goBackHome() {
   closeHallOfFame();
   closeGlobalRankings();
 }
+const homepageNavButtons = document.querySelectorAll("#homepageNav .homepage-nav-btn");
+
+homepageNavButtons.forEach(button => {
+  button.addEventListener("click", function() {
+    homepageNavButtons.forEach(btn => {
+      btn.classList.remove("active");
+    });
+    
+    this.classList.add("active");
+  });
+});
+
+if (homepageNavButtons.length > 0) {
+  homepageNavButtons[0].classList.add("active");
+}
 
 let confirmCallback = null;
 
@@ -1016,7 +1031,7 @@ async function exportSelectedTournaments() {
       for (const team of teams) {
         const logoKey = tournament.teamLogos[team];
         
-        // If it is an IndexedDB tracking key, grab the raw image text string
+     
         if (logoKey && !logoKey.startsWith("data:image")) {
           try {
             const base64Data = await getLogoFromIndexedDB(logoKey);
