@@ -4548,7 +4548,7 @@ td:nth-child(2) {
 #manualKnockoutOptions .btn-secondary:active {
   transform: translateY(0);
 }
-
+;
 
 #bracketViewport {
   flex: 1;
@@ -4558,7 +4558,7 @@ td:nth-child(2) {
 }
 
 #bracket-container {
-  background: #f8f7f4;
+  background: #1a202c;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -5969,6 +5969,7 @@ button.knockout-score-cell:hover {
 
 
 #bracketViewport {
+  background: grey;
   width: 100%;
   height: calc(100vh - 60px);
   overflow: auto;
@@ -5979,7 +5980,7 @@ button.knockout-score-cell:hover {
 }
 
 #bracket-container {
-  background: #f8f7f4;
+  background: grey;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -8430,4 +8431,24 @@ button.knockout-score-cell:hover {
 #homepageNav .homepage-nav-btn {
   border: 1px solid transparent;
   transition: color 0.25s ease, border-color 0.25s ease;
+}
+
+.ranking-trophies {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: fit-content;
+  margin-top: 8px;
+  margin-bottom: 8px;
+  margin-left: 70%;
+  padding: 5px 12px;
+  background: #5c4500;
+  border: 1px solid #b8860b;
+  border-radius: 20px;
+  color: #ffd700;
+  font-size: 12px;
+  font-weight: 700;
+  text-align: center;
+  white-space: nowrap;
+  box-sizing: border-box;
 }

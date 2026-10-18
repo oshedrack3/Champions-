@@ -3277,28 +3277,36 @@ function renderGlobalRankings(rankings) {
     document.getElementById(
       "globalRankingsList"
     );
+  
   if (!list) return;
+  
   if (!rankings.length) {
     list.innerHTML =
       "<p>No rankings available yet.</p>";
     return;
   }
+  
   const currentUser =
     getCurrentUser();
+  
   const currentUserId =
     String(
       currentUser?.id ||
       currentUser?.user_id ||
       ""
     );
+  
   list.innerHTML =
     rankings
     .map((player, index) => {
       const position = index + 1;
+      
       const isCurrentUser =
         currentUserId !== "" &&
         String(player.id) === currentUserId;
+      
       let positionDisplay;
+      
       if (position === 1) {
         positionDisplay = "🥇";
       } else if (position === 2) {
@@ -3308,22 +3316,34 @@ function renderGlobalRankings(rankings) {
       } else {
         positionDisplay = position;
       }
+      
       const played =
         Number(player.played) || 0;
+      
       const wins =
         Number(player.wins) || 0;
+      
       const draws =
         Number(player.draws) || 0;
+      
       const losses =
         Number(player.losses) || 0;
+      
       const goalsFor =
         Number(player.goals_for) || 0;
+      
       const goalsAgainst =
         Number(player.goals_against) || 0;
+      
       const goalDifference =
         Number(player.goal_difference) || 0;
+      
       const winPercentage =
         Number(player.win_percentage) || 0;
+      
+      const trophiesWon =
+        Number(player.trophies_won) || 0;
+      
       return `
         <div class="global-ranking-row ${
           isCurrentUser
@@ -3333,6 +3353,7 @@ function renderGlobalRankings(rankings) {
           <div class="ranking-position">
             ${positionDisplay}
           </div>
+
           <div class="ranking-player">
             <div class="ranking-player-name">
               ${escapeHtml(
@@ -3345,6 +3366,7 @@ function renderGlobalRankings(rankings) {
                   : ""
               }
             </div>
+
             <div class="ranking-stats ${
               isCurrentUser
                 ? "current-ranking-stats"
@@ -3364,15 +3386,22 @@ function renderGlobalRankings(rankings) {
               <span>Win: ${winPercentage}%</span>
             </div>
           </div>
+
           <div class="ranking-rating">
             ${player.rating ?? 1500}
           </div>
+
+      ${ trophiesWon > 0 ? `
+  <div class="ranking-trophies" title="Championship trophies won">
+    🏆 ${trophiesWon} ${trophiesWon === 1 ? "Trophy Won" : "Trophies Won"}
+  </div>
+` : "" }
+</div>
         </div>
       `;
     })
     .join("");
 }
-
 async function getMySquad() {
   const token = getToken();
   const res = await apiRequest(
