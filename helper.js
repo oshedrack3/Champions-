@@ -98,6 +98,7 @@ function showActionModal(message, type = "") {
 }
 
 function goBackHome() {
+  backToGlobalRankings()
   closeProfileModal();
   closeHallOfFame();
   closeGlobalRankings();

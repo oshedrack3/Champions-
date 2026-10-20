@@ -3272,41 +3272,34 @@ function closeGlobalRankings() {
   
 }
 
+
 function renderGlobalRankings(rankings) {
   const list =
     document.getElementById(
       "globalRankingsList"
     );
-  
   if (!list) return;
-  
   if (!rankings.length) {
     list.innerHTML =
       "<p>No rankings available yet.</p>";
     return;
   }
-  
   const currentUser =
     getCurrentUser();
-  
   const currentUserId =
     String(
       currentUser?.id ||
       currentUser?.user_id ||
       ""
     );
-  
   list.innerHTML =
     rankings
     .map((player, index) => {
       const position = index + 1;
-      
       const isCurrentUser =
         currentUserId !== "" &&
         String(player.id) === currentUserId;
-      
       let positionDisplay;
-      
       if (position === 1) {
         positionDisplay = "🥇";
       } else if (position === 2) {
@@ -3316,34 +3309,30 @@ function renderGlobalRankings(rankings) {
       } else {
         positionDisplay = position;
       }
-      
       const played =
         Number(player.played) || 0;
-      
       const wins =
         Number(player.wins) || 0;
-      
       const draws =
         Number(player.draws) || 0;
-      
       const losses =
         Number(player.losses) || 0;
-      
       const goalsFor =
         Number(player.goals_for) || 0;
-      
       const goalsAgainst =
         Number(player.goals_against) || 0;
-      
       const goalDifference =
         Number(player.goal_difference) || 0;
-      
       const winPercentage =
         Number(player.win_percentage) || 0;
-      
       const trophiesWon =
         Number(player.trophies_won) || 0;
-      
+      const currentRating =
+        Number(player.rating ?? 1500);
+      const highestRating =
+        Number(player.highest_rating) || 0;
+      const highestRank =
+        Number(player.highest_rank) || 0;
       return `
         <div class="global-ranking-row ${
           isCurrentUser
@@ -3353,7 +3342,6 @@ function renderGlobalRankings(rankings) {
           <div class="ranking-position">
             ${positionDisplay}
           </div>
-
           <div class="ranking-player">
             <div class="ranking-player-name">
               ${escapeHtml(
@@ -3366,7 +3354,6 @@ function renderGlobalRankings(rankings) {
                   : ""
               }
             </div>
-
             <div class="ranking-stats ${
               isCurrentUser
                 ? "current-ranking-stats"
@@ -3384,19 +3371,32 @@ function renderGlobalRankings(rankings) {
                   : goalDifference
               }</span>
               <span>Win: ${winPercentage}%</span>
+              <span>Best Rating: ${
+                highestRating || "N/A"
+              }</span>
+              <span>Best Rank: ${
+                highestRank > 0
+                  ? "#" + highestRank
+                  : "N/A"
+              }</span>
             </div>
           </div>
-
           <div class="ranking-rating">
-            ${player.rating ?? 1500}
+            ${currentRating}
           </div>
-
-      ${ trophiesWon > 0 ? `
-  <div class="ranking-trophies" title="Championship trophies won">
-    🏆 ${trophiesWon} ${trophiesWon === 1 ? "Trophy Won" : "Trophies Won"}
-  </div>
-` : "" }
-</div>
+          ${
+            trophiesWon > 0
+              ? `
+                <div class="ranking-trophies" title="Championship trophies won">
+                  🏆 ${trophiesWon} ${
+                    trophiesWon === 1
+                      ? "Trophy Won"
+                      : "Trophies Won"
+                  }
+                </div>
+              `
+              : ""
+          }
         </div>
       `;
     })
@@ -4530,6 +4530,842 @@ document.getElementById(
     form.style.display = "none";
   }
 });
+
+
+async function getHeadToHeadComparison(
+  player1Id,
+  player2Id
+) {
+  if (!player1Id || !player2Id) {
+    throw new Error(
+      "Select two players to compare."
+    );
+  }
+  
+  if (player1Id === player2Id) {
+    throw new Error(
+      "Select two different players."
+    );
+  }
+  
+  const params = new URLSearchParams({
+    player1_id: player1Id,
+    player2_id: player2Id
+  });
+  
+  const res = await apiRequest(
+    `${API}/players/head-to-head?${params.toString()}`,
+    {
+      headers: {
+        Authorization: getToken()
+      }
+    },
+    () => getHeadToHeadComparison(
+      player1Id,
+      player2Id
+    )
+  );
+  
+  if (!res) return null;
+  
+  const result = await res.json();
+  
+  if (!res.ok || !result.success) {
+    throw new Error(
+      result.message ||
+      "Failed to compare players."
+    );
+  }
+  
+  return result;
+}
+
+
+function openPlayerComparison() {
+  const rankingsSection = document.getElementById(
+    "globalRankingsSection"
+  );
+  
+  const comparisonSection = document.getElementById(
+    "playerComparisonSection"
+  );
+  
+  if (!comparisonSection) {
+    return;
+  }
+  
+  if (rankingsSection) {
+    rankingsSection.style.display = "none";
+  }
+  
+  document
+    .querySelectorAll(
+      "#mySection, #noticeSection, #publicSection, #hallOfFameSection"
+    )
+    .forEach(section => {
+      section.style.display = "none";
+    });
+  
+  comparisonSection.style.display = "block";
+  
+  window.scrollTo({
+    top: 0,
+    behavior: "smooth"
+  });
+}
+
+function backToGlobalRankings() {
+  const comparisonSection = document.getElementById(
+    "playerComparisonSection"
+  );
+  
+  const rankingsSection = document.getElementById(
+    "globalRankingsSection"
+  );
+  
+  if (comparisonSection) {
+    comparisonSection.style.display = "none";
+  }
+  
+  if (rankingsSection) {
+    rankingsSection.style.display = "block";
+  }
+  
+  window.scrollTo({
+    top: 0,
+    behavior: "smooth"
+  });
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  const openButton = document.getElementById(
+    "openPlayerComparisonButton"
+  );
+  
+  const backButton = document.getElementById(
+    "backToRankingsButton"
+  );
+  
+  if (openButton) {
+    openButton.addEventListener(
+      "click",
+      openPlayerComparison
+    );
+  }
+  
+  if (backButton) {
+    backButton.addEventListener(
+      "click",
+      backToGlobalRankings
+    );
+  }
+});
+
+
+let comparisonSelectedPlayer1 = null;
+let comparisonSelectedPlayer2 = null;
+const comparisonSearchTimers = {};
+const comparisonSearchRequests = {};
+const comparisonSearchResults = {};
+async function searchComparisonPlayers(query) {
+  const searchQuery = String(query || "").trim();
+  if (searchQuery.length < 2) {
+    return [];
+  }
+  const params = new URLSearchParams({
+    q: searchQuery
+  });
+  const response = await apiRequest(
+    `${API}/players/search?${params.toString()}`,
+    {
+      headers: {
+        Authorization: getToken()
+      }
+    },
+    () => searchComparisonPlayers(searchQuery)
+  );
+  if (!response) {
+    return [];
+  }
+  const result = await response.json();
+  if (!response.ok || !result.success) {
+    throw new Error(
+      result.message || "Failed to search players."
+    );
+  }
+  return Array.isArray(result.players)
+    ? result.players
+    : [];
+}
+function comparisonSearchEscapeHtml(value) {
+  return String(value ?? "").replace(
+    /[&<>"']/g,
+    character => ({
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#39;"
+    })[character]
+  );
+}
+function renderComparisonPlayerSuggestions(
+  players,
+  playerNumber
+) {
+  const suggestions = document.getElementById(
+    `comparisonPlayer${playerNumber}Suggestions`
+  );
+  if (!suggestions) return;
+  comparisonSearchResults[playerNumber] = players;
+  if (!players.length) {
+    suggestions.innerHTML = `
+      <div class="player-search-empty">
+        No players found.
+      </div>
+    `;
+    suggestions.style.display = "block";
+    return;
+  }
+  suggestions.innerHTML = players.map(player => `
+    <button
+      type="button"
+      class="player-search-suggestion"
+      data-player-id="${comparisonSearchEscapeHtml(player.id)}"
+    >
+      <span class="player-search-suggestion-name">
+        ${comparisonSearchEscapeHtml(player.username)}
+      </span>
+      <span class="player-search-suggestion-rating">
+        Rating: ${Number(player.rating ?? 0).toLocaleString()}
+      </span>
+    </button>
+  `).join("");
+  suggestions.style.display = "block";
+  suggestions.querySelectorAll(
+    ".player-search-suggestion"
+  ).forEach(button => {
+    button.addEventListener("click", () => {
+      const player = players.find(
+        item => String(item.id) === button.dataset.playerId
+      );
+      if (player) {
+        selectComparisonPlayer(player, playerNumber);
+      }
+    });
+  });
+}
+function selectComparisonPlayer(player, playerNumber) {
+  const otherPlayer = playerNumber === 1
+    ? comparisonSelectedPlayer2
+    : comparisonSelectedPlayer1;
+  if (
+    otherPlayer &&
+    String(otherPlayer.id) === String(player.id)
+  ) {
+    showComparisonSearchMessage(
+      "Please select two different players."
+    );
+    return;
+  }
+  if (playerNumber === 1) {
+    comparisonSelectedPlayer1 = player;
+  } else {
+    comparisonSelectedPlayer2 = player;
+  }
+  const input = document.getElementById(
+    `comparisonPlayer${playerNumber}Search`
+  );
+  const suggestions = document.getElementById(
+    `comparisonPlayer${playerNumber}Suggestions`
+  );
+  const selected = document.getElementById(
+    `comparisonPlayer${playerNumber}Selected`
+  );
+  if (input) {
+    input.value = player.username;
+  }
+  if (suggestions) {
+    suggestions.innerHTML = "";
+    suggestions.style.display = "none";
+  }
+  if (selected) {
+    selected.innerHTML = `
+      <div class="comparison-selected-player has-player">
+        <span>
+          ${comparisonSearchEscapeHtml(player.username)}
+        </span>
+        <span>
+          Rating: ${Number(player.rating ?? 0).toLocaleString()}
+        </span>
+        <button
+          type="button"
+          class="comparison-remove-player"
+          aria-label="Remove selected player"
+        >
+          ×
+        </button>
+      </div>
+    `;
+    selected.querySelector(
+      ".comparison-remove-player"
+    )?.addEventListener("click", () => {
+      clearComparisonSearchSelection(playerNumber);
+    });
+  }
+  updateComparisonSearchButton();
+  clearComparisonSearchMessage();
+}
+function clearComparisonSearchSelection(playerNumber) {
+  if (playerNumber === 1) {
+    comparisonSelectedPlayer1 = null;
+  } else {
+    comparisonSelectedPlayer2 = null;
+  }
+  const input = document.getElementById(
+    `comparisonPlayer${playerNumber}Search`
+  );
+  const selected = document.getElementById(
+    `comparisonPlayer${playerNumber}Selected`
+  );
+  const suggestions = document.getElementById(
+    `comparisonPlayer${playerNumber}Suggestions`
+  );
+  if (input) {
+    input.value = "";
+    input.focus();
+  }
+  if (selected) {
+    selected.textContent = "No player selected";
+  }
+  if (suggestions) {
+    suggestions.innerHTML = "";
+    suggestions.style.display = "none";
+  }
+  updateComparisonSearchButton();
+}
+function updateComparisonSearchButton() {
+  const button = document.getElementById(
+    "comparePlayersButton"
+  );
+  if (!button) return;
+  button.disabled = !(
+    comparisonSelectedPlayer1 &&
+    comparisonSelectedPlayer2 &&
+    String(comparisonSelectedPlayer1.id) !==
+      String(comparisonSelectedPlayer2.id)
+  );
+}
+function showComparisonSearchMessage(message) {
+  const element = document.getElementById(
+    "playerComparisonMessage"
+  );
+  if (!element) return;
+  element.textContent = message;
+  element.style.display = "block";
+}
+function clearComparisonSearchMessage() {
+  const element = document.getElementById(
+    "playerComparisonMessage"
+  );
+  if (!element) return;
+  element.textContent = "";
+  element.style.display = "none";
+}
+function setupComparisonPlayerSearch(playerNumber) {
+  const input = document.getElementById(
+    `comparisonPlayer${playerNumber}Search`
+  );
+  const suggestions = document.getElementById(
+    `comparisonPlayer${playerNumber}Suggestions`
+  );
+  if (!input || input.dataset.searchInitialized === "true") {
+    return;
+  }
+  input.dataset.searchInitialized = "true";
+  input.addEventListener("input", () => {
+    const query = input.value.trim();
+    clearTimeout(comparisonSearchTimers[playerNumber]);
+    comparisonSearchRequests[playerNumber] =
+      (comparisonSearchRequests[playerNumber] || 0) + 1;
+    const requestNumber =
+      comparisonSearchRequests[playerNumber];
+    if (playerNumber === 1) {
+      comparisonSelectedPlayer1 = null;
+    } else {
+      comparisonSelectedPlayer2 = null;
+    }
+    const selected = document.getElementById(
+      `comparisonPlayer${playerNumber}Selected`
+    );
+    if (selected) {
+      selected.textContent = "No player selected";
+    }
+    updateComparisonSearchButton();
+    clearComparisonSearchMessage();
+    if (!suggestions) return;
+    if (query.length < 2) {
+      suggestions.innerHTML = "";
+      suggestions.style.display = "none";
+      return;
+    }
+    suggestions.innerHTML = `
+      <div class="player-search-empty">
+        Searching players...
+      </div>
+    `;
+    suggestions.style.display = "block";
+    comparisonSearchTimers[playerNumber] = setTimeout(
+      async () => {
+        try {
+          const players = await searchComparisonPlayers(query);
+          if (
+            requestNumber !==
+              comparisonSearchRequests[playerNumber] ||
+            input.value.trim() !== query
+          ) {
+            return;
+          }
+          renderComparisonPlayerSuggestions(
+            players,
+            playerNumber
+          );
+        } catch (error) {
+          if (
+            requestNumber !==
+              comparisonSearchRequests[playerNumber]
+          ) {
+            return;
+          }
+          suggestions.innerHTML = `
+            <div class="player-search-empty">
+              ${comparisonSearchEscapeHtml(
+                error.message || "Unable to search players."
+              )}
+            </div>
+          `;
+          suggestions.style.display = "block";
+        }
+      },
+      300
+    );
+  });
+  input.addEventListener("focus", () => {
+    const query = input.value.trim();
+    if (
+      query.length >= 2 &&
+      comparisonSearchResults[playerNumber]
+    ) {
+      renderComparisonPlayerSuggestions(
+        comparisonSearchResults[playerNumber],
+        playerNumber
+      );
+    }
+  });
+  document.addEventListener("click", event => {
+    if (
+      !input.contains(event.target) &&
+      !suggestions?.contains(event.target)
+    ) {
+      if (suggestions) {
+        suggestions.style.display = "none";
+      }
+    }
+  });
+}
+function initializeComparisonPlayerSearch() {
+  setupComparisonPlayerSearch(1);
+  setupComparisonPlayerSearch(2);
+  updateComparisonSearchButton();
+}
+if (document.readyState === "loading") {
+  document.addEventListener(
+    "DOMContentLoaded",
+    initializeComparisonPlayerSearch
+  );
+} else {
+  initializeComparisonPlayerSearch();
+}
+
+
+async function compareSelectedPlayers() {
+  const button = document.getElementById(
+    "comparePlayersButton"
+  );
+  const results = document.getElementById(
+    "playerComparisonResults"
+  );
+  if (
+    !comparisonSelectedPlayer1 ||
+    !comparisonSelectedPlayer2
+  ) {
+    showComparisonSearchMessage(
+      "Search for and select two players first."
+    );
+    return;
+  }
+  if (
+    String(comparisonSelectedPlayer1.id) ===
+    String(comparisonSelectedPlayer2.id)
+  ) {
+    showComparisonSearchMessage(
+      "Please select two different players."
+    );
+    return;
+  }
+  if (button) {
+    button.disabled = true;
+    button.textContent = "Comparing...";
+  }
+  clearComparisonSearchMessage();
+  if (results) {
+    results.innerHTML = "";
+    results.style.display = "none";
+  }
+  try {
+    const params = new URLSearchParams({
+      player1_id: comparisonSelectedPlayer1.id,
+      player2_id: comparisonSelectedPlayer2.id
+    });
+    const response = await apiRequest(
+      `${API}/players/head-to-head?${params.toString()}`,
+      {
+        headers: {
+          Authorization: getToken()
+        }
+      },
+      () => compareSelectedPlayers()
+    );
+    if (!response) {
+      throw new Error(
+        "Unable to connect to the server."
+      );
+    }
+    const data = await response.json();
+    if (!response.ok || !data.success) {
+      throw new Error(
+        data.message || "Failed to compare players."
+      );
+    }
+    renderPlayerComparisonResults(data);
+  } catch (error) {
+    showComparisonSearchMessage(
+      error.message || "Failed to compare players."
+    );
+  } finally {
+    if (button) {
+      button.textContent = "Compare Players";
+      updateComparisonSearchButton();
+    }
+  }
+}
+function comparisonResultsEscape(value) {
+  return String(value ?? "").replace(
+    /[&<>"']/g,
+    character => ({
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#39;"
+    })[character]
+  );
+}
+function comparisonResultsNumber(value) {
+  const number = Number(value ?? 0);
+  return Number.isFinite(number)
+    ? number.toLocaleString()
+    : "0";
+}
+function comparisonResultsPercentage(value) {
+  const number = Number(value ?? 0);
+  return Number.isFinite(number)
+    ? `${number.toFixed(1)}%`
+    : "0.0%";
+}
+function renderComparisonCareerStats(stats = {}) {
+  const items = [
+    ["Matches Played", stats.played],
+    ["Wins", stats.wins],
+    ["Draws", stats.draws],
+    ["Losses", stats.losses],
+    ["Goals Scored", stats.goals_scored],
+    ["Goals Conceded", stats.goals_conceded],
+    ["Goal Difference", stats.goal_difference],
+    ["Win Rate", comparisonResultsPercentage(stats.win_percentage)]
+  ];
+  return `
+    <div class="comparison-stat-grid">
+      ${items.map(([label, value]) => `
+        <div class="comparison-stat-item">
+          <span class="comparison-stat-label">
+            ${comparisonResultsEscape(label)}
+          </span>
+          <span class="comparison-stat-value">
+            ${comparisonResultsEscape(
+              value ?? 0
+            )}
+          </span>
+        </div>
+      `).join("")}
+    </div>
+  `;
+}
+function renderComparisonPlayerResultCard(player, label) {
+  const stats = player.career_stats || {};
+  return `
+    <div class="comparison-player-card">
+      <div class="comparison-results-heading">
+        ${comparisonResultsEscape(label)}
+      </div>
+      <h3>
+        ${comparisonResultsEscape(player.username)}
+      </h3>
+      <div class="comparison-player-rating">
+        ${comparisonResultsNumber(player.rating)}
+        <span>Current Rating</span>
+      </div>
+      <div class="comparison-stat-grid">
+        <div class="comparison-stat-item">
+          <span class="comparison-stat-label">
+            Highest Rating
+          </span>
+          <span class="comparison-stat-value">
+            ${comparisonResultsNumber(player.highest_rating)}
+          </span>
+        </div>
+        <div class="comparison-stat-item">
+          <span class="comparison-stat-label">
+            Highest Rank
+          </span>
+          <span class="comparison-stat-value">
+            ${
+              player.highest_rank == null ||
+              Number(player.highest_rank) === 0
+                ? "N/A"
+                : `#${comparisonResultsNumber(player.highest_rank)}`
+            }
+          </span>
+        </div>
+        <div class="comparison-stat-item">
+          <span class="comparison-stat-label">
+            Trophies Won
+          </span>
+          <span class="comparison-stat-value">
+            ${comparisonResultsNumber(player.trophies_won)}
+          </span>
+        </div>
+      </div>
+      <h4>Career Statistics</h4>
+      ${renderComparisonCareerStats(stats)}
+    </div>
+  `;
+}
+function comparisonResultsDate(value) {
+  if (!value) return "Date unavailable";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return "Date unavailable";
+  }
+  return date.toLocaleDateString(undefined, {
+    day: "numeric",
+    month: "short",
+    year: "numeric"
+  });
+}
+function renderComparisonRecentMatches(
+  matches,
+  player1,
+  player2
+) {
+  if (!Array.isArray(matches) || matches.length === 0) {
+    return `
+      <div class="comparison-no-matches">
+        No head-to-head matches found between these players.
+      </div>
+    `;
+  }
+  return `
+    <div class="comparison-matches-list">
+      ${matches.map(match => {
+        const homeId = String(
+          match.home_player_id ?? ""
+        );
+        const awayId = String(
+          match.away_player_id ?? ""
+        );
+        let resultLabel = "Draw";
+        let resultClass = "draw";
+        if (
+          Number(match.home_score) >
+          Number(match.away_score)
+        ) {
+          resultLabel =
+            homeId === String(player1.id)
+              ? `${player1.username} won`
+              : `${player2.username} won`;
+          resultClass =
+            homeId === String(player1.id)
+              ? "win"
+              : "loss";
+        } else if (
+          Number(match.away_score) >
+          Number(match.home_score)
+        ) {
+          resultLabel =
+            awayId === String(player1.id)
+              ? `${player1.username} won`
+              : `${player2.username} won`;
+          resultClass =
+            awayId === String(player1.id)
+              ? "win"
+              : "loss";
+        }
+        return `
+          <div class="comparison-match-card">
+            <div class="comparison-match-tournament">
+              ${comparisonResultsEscape(
+                match.tournament_name || "Tournament"
+              )}
+            </div>
+            <div class="comparison-match-score">
+              <span class="comparison-match-player">
+                ${comparisonResultsEscape(
+                  match.home_player_name || "Player 1"
+                )}
+              </span>
+              <strong>
+                ${comparisonResultsNumber(match.home_score)}
+                -
+                ${comparisonResultsNumber(match.away_score)}
+              </strong>
+              <span class="comparison-match-player">
+                ${comparisonResultsEscape(
+                  match.away_player_name || "Player 2"
+                )}
+              </span>
+            </div>
+            <div class="comparison-match-result ${resultClass}">
+              ${comparisonResultsEscape(resultLabel)}
+            </div>
+            <div class="comparison-match-date">
+              ${comparisonResultsEscape(
+                comparisonResultsDate(match.played_at)
+              )}
+            </div>
+          </div>
+        `;
+      }).join("")}
+    </div>
+  `;
+}
+function renderPlayerComparisonResults(data) {
+  const results = document.getElementById(
+    "playerComparisonResults"
+  );
+  if (!results) {
+    throw new Error(
+      "Player comparison results container was not found."
+    );
+  }
+  const player1 = data.players?.player1;
+  const player2 = data.players?.player2;
+  const headToHead = data.head_to_head || {};
+  if (!player1 || !player2) {
+    throw new Error(
+      "The server did not return both players."
+    );
+  }
+  results.innerHTML = `
+    <div class="comparison-results-heading">
+      Player Comparison
+    </div>
+    <div class="comparison-player-cards">
+      ${renderComparisonPlayerResultCard(
+        player1,
+        "Player 1"
+      )}
+      ${renderComparisonPlayerResultCard(
+        player2,
+        "Player 2"
+      )}
+    </div>
+    <h3 class="comparison-results-heading">
+      Head-to-Head Record
+    </h3>
+    <div class="comparison-h2h-summary">
+      <div class="comparison-h2h-item">
+        <span>
+          ${comparisonResultsEscape(player1.username)} Wins
+        </span>
+        <strong>
+          ${comparisonResultsNumber(headToHead.player1_wins)}
+        </strong>
+      </div>
+      <div class="comparison-h2h-item">
+        <span>Draws</span>
+        <strong>
+          ${comparisonResultsNumber(headToHead.draws)}
+        </strong>
+      </div>
+      <div class="comparison-h2h-item">
+        <span>
+          ${comparisonResultsEscape(player2.username)} Wins
+        </span>
+        <strong>
+          ${comparisonResultsNumber(headToHead.player2_wins)}
+        </strong>
+      </div>
+      <div class="comparison-h2h-item">
+        <span>Total Matches</span>
+        <strong>
+          ${comparisonResultsNumber(headToHead.total_matches)}
+        </strong>
+      </div>
+    </div>
+    <div class="comparison-results-heading">
+      Recent Head-to-Head Matches
+    </div>
+    ${renderComparisonRecentMatches(
+      data.recent_matches,
+      player1,
+      player2
+    )}
+  `;
+  results.style.display = "block";
+  results.scrollIntoView({
+    behavior: "smooth",
+    block: "start"
+  });
+}
+function initializeComparePlayersButton() {
+  const button = document.getElementById(
+    "comparePlayersButton"
+  );
+  if (
+    !button ||
+    button.dataset.compareInitialized === "true"
+  ) {
+    return;
+  }
+  button.addEventListener(
+    "click",
+    compareSelectedPlayers
+  );
+  button.dataset.compareInitialized = "true";
+  updateComparisonSearchButton();
+}
+if (document.readyState === "loading") {
+  document.addEventListener(
+    "DOMContentLoaded",
+    initializeComparePlayersButton
+  );
+} else {
+  initializeComparePlayersButton();
+}
+
+
+
 
 
 window.addEventListener(

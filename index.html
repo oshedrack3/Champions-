@@ -246,37 +246,111 @@
         
       </div>
       
-      <div id="globalRankingsSection" style="display:none;">
-        
-        
-        
-        <div class="rankings-header">
-          
-          <h2>Global Rankings</h2>
-          
-          <p>
-            Global Rankings measure your performance across official
-            Galatico Tournament matches. Every player starts with a rating of 1500.
-          </p>
-          
-          <p>
-            Winning increases your rating, while losing decreases it.
-            Beating a higher-rated player earns more points, while
-            losing to a lower-rated player can cost more.
-          </p>
-          
-          <p>
-            Your rating belongs to your user account, so it remains with
-            you even if you change teams.
-          </p>
-          
-        </div>
-        
-        <div id="globalRankingsList"></div>
-        
+<div id="globalRankingsSection" style="display:none;">
+  <div class="rankings-header">
+    <h2>Global Rankings</h2>
+    <p>
+      Global Rankings measure your performance across official
+      Galatico Tournament matches. Every player starts with a rating of 1500.
+    </p>
+    <p>
+      Winning increases your rating, while losing decreases it.
+      Beating a higher-rated player earns more points, while
+      losing to a lower-rated player can cost more.
+    </p>
+    <p>
+      Your rating belongs to your user account, so it remains with
+      you even if you change teams.
+    </p>
+  </div>
+  <div class="rankings-actions">
+    <button
+      type="button"
+      id="openPlayerComparisonButton"
+      class="open-player-comparison-button"
+    >
+      <span>⚔️</span>
+      <span>Compare Players</span>
+    </button>
+  </div>
+  <div id="globalRankingsList"></div>
+</div>
+<div id="playerComparisonSection" style="display:none;">
+  <div class="player-comparison-page-header">
+    <button
+      type="button"
+      id="backToRankingsButton"
+      class="back-to-rankings-button"
+    >
+      ✕
+    </button>
+    <h2>Player Comparison</h2>
+    <p>
+      Compare any two players across Galatico.
+      Explore their career statistics, ratings, trophies, and head-to-head records.
+    </p>
+  </div>
+  <div class="player-comparison-section">
+    <div class="player-comparison-searches">
+      <div class="comparison-player-field">
+        <label for="comparisonPlayer1Search">Player 1</label>
+        <input
+          type="text"
+          id="comparisonPlayer1Search"
+          placeholder="Search username..."
+          autocomplete="off"
+        >
+        <div
+          id="comparisonPlayer1Suggestions"
+          class="player-search-suggestions"
+          style="display:none;"
+        ></div>
+        <div
+          id="comparisonPlayer1Selected"
+          class="comparison-selected-player"
+        >No player selected</div>
       </div>
-      <div id="publicSection" style="display:none;">
-        
+      <div class="comparison-versus">VS</div>
+      <div class="comparison-player-field">
+        <label for="comparisonPlayer2Search">Player 2</label>
+        <input
+          type="text"
+          id="comparisonPlayer2Search"
+          placeholder="Search username..."
+          autocomplete="off"
+        >
+        <div
+          id="comparisonPlayer2Suggestions"
+          class="player-search-suggestions"
+          style="display:none;"
+        ></div>
+        <div
+          id="comparisonPlayer2Selected"
+          class="comparison-selected-player"
+        >No player selected</div>
+      </div>
+    </div>
+    <button
+      type="button"
+      id="comparePlayersButton"
+      class="compare-players-button"
+      disabled
+    >
+      Compare Players
+    </button>
+    <div
+      id="playerComparisonMessage"
+      class="player-comparison-message"
+      style="display:none;"
+    ></div>
+    <div
+      id="playerComparisonResults"
+      class="player-comparison-results"
+      style="display:none;"
+    ></div>
+  </div>
+</div>
+<div id="publicSection" style="display:none;">        
         <div id="publicTournaments"></div>
         
       </div>

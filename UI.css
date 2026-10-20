@@ -5693,8 +5693,516 @@ button.knockout-score-cell:hover {
   }
 }
 
+.player-comparison-section {
+  margin-bottom: 24px;
+  padding: 18px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.06);
+}
+.player-comparison-header {
+  margin-bottom: 20px;
+}
+.player-comparison-header h3 {
+  margin: 0 0 8px;
+  color: #111827;
+  font-size: 19px;
+  font-weight: 800;
+}
+.player-comparison-header p {
+  margin: 0;
+  color: #6b7280;
+  font-size: 13px;
+  line-height: 1.6;
+}
+.player-comparison-searches {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 16px;
+}
+.comparison-player-field {
+  position: relative;
+  min-width: 0;
+}
+.comparison-player-field label {
+  display: block;
+  margin-bottom: 8px;
+  color: #374151;
+  font-size: 13px;
+  font-weight: 800;
+}
+.comparison-player-field input {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 12px 13px;
+  color: #111827;
+  background: #f9fafb;
+  border: 1px solid #d1d5db;
+  border-radius: 10px;
+  outline: none;
+  font: inherit;
+  font-size: 14px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+}
+.comparison-player-field input:focus {
+  background: #ffffff;
+  border-color: #c49a27;
+  box-shadow: 0 0 0 3px rgba(196, 154, 39, 0.14);
+}
+.comparison-player-field input::placeholder {
+  color: #9ca3af;
+}
+.player-comparison-page-header {
+  margin: 20px;
+  padding-top: 20px;
+}
+.player-comparison-page-header h2 {
+  margin: 0 0 8px;
+  color: #111827;
+  font-size: 22px;
+  font-weight: 800;
+}
+.player-comparison-page-header p {
+  margin: 0;
+  color: #6b7280;
+  font-size: 13px;
+  line-height: 1.6;
+}
+.back-to-rankings-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 18px;
+  padding: 10px 16px;
+  color: #78350f;
+  background: linear-gradient(135deg, #fffbeb, #fef3c7);
+  border: 1px solid #d4a72c;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+.back-to-rankings-button:hover {
+  background: #fef3c7;
+  box-shadow: 0 3px 10px rgba(180, 130, 20, 0.15);
+}
+.back-to-rankings-button:active {
+  transform: scale(0.97);
+}
+.back-to-rankings-button:focus-visible {
+  outline: 2px solid #b8860b;
+  outline-offset: 3px;
+}
+.player-search-suggestions {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  max-height: 240px;
+  overflow-y: auto;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+}
+.player-search-suggestion {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px;
+  color: #111827;
+  border-bottom: 1px solid #f3f4f6;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+.player-search-suggestion:last-child {
+  border-bottom: none;
+}
+.player-search-suggestion:hover,
+.player-search-suggestion:focus {
+  background: #fffbeb;
+  outline: none;
+}
+.player-search-suggestion-name {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-size: 14px;
+  font-weight: 700;
+}
+.player-search-suggestion-rating {
+  flex-shrink: 0;
+  padding: 4px 7px;
+  color: #92400e;
+  background: #fef3c7;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 800;
+}
+.player-search-empty {
+  padding: 13px;
+  color: #6b7280;
+  font-size: 13px;
+  text-align: center;
+}
+.comparison-selected-player {
+  margin-top: 8px;
+  padding: 9px 11px;
+  color: #6b7280;
+  background: #f9fafb;
+  border: 1px dashed #d1d5db;
+  border-radius: 9px;
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+.comparison-selected-player.has-player {
+  color: #78350f;
+  background: #fffbeb;
+  border: 1px solid #e8c45c;
+  font-weight: 700;
+}
+.comparison-versus {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  justify-self: center;
+  width: 42px;
+  height: 42px;
+  color: #92400e;
+  background: #fef3c7;
+  border: 1px solid #e8c45c;
+  border-radius: 50%;
+  font-size: 12px;
+  font-weight: 900;
+}
+.compare-players-button {
+  display: block;
+  width: 100%;
+  margin-top: 18px;
+  padding: 13px 16px;
+  color: #ffffff;
+  background: #92400e;
+  border: 1px solid #78350f;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.2s ease, opacity 0.2s ease;
+}
+.compare-players-button:hover:not(:disabled) {
+  background: #78350f;
+}
+.compare-players-button:active:not(:disabled) {
+  transform: scale(0.99);
+}
+.compare-players-button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.player-comparison-message {
+  margin-top: 14px;
+  padding: 11px 12px;
+  color: #92400e;
+  background: #fffbeb;
+  border: 1px solid #f3d47a;
+  border-radius: 9px;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.player-comparison-results {
+  margin-top: 22px;
+  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
+}
+.comparison-results-heading {
+  margin: 24px 0 12px;
+  color: #111827;
+  font-size: 17px;
+  font-weight: 800;
+}
+.comparison-player-cards {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  width: 100%;
+  align-items: stretch;
+  box-sizing: border-box;
+}
+.comparison-player-card {
+  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 15px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+}
+.comparison-player-card:first-child {
+  border-top: 3px solid #d4a72c;
+}
+.comparison-player-card:last-child {
+  border-top: 3px solid #6b7280;
+}
+.comparison-player-card h4 {
+  margin: 0 0 8px;
+  color: #111827;
+  font-size: 16px;
+  overflow-wrap: anywhere;
+}
+.comparison-player-rating {
+  margin-bottom: 14px;
+  color: #92400e;
+  font-size: 13px;
+  font-weight: 800;
+  overflow-wrap: anywhere;
+}
+.comparison-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+.comparison-stat-item {
+  min-width: 0;
+  padding: 10px 8px;
+  background: #f9fafb;
+  border: 1px solid #f1f5f9;
+  border-radius: 8px;
+  overflow-wrap: anywhere;
+}
+.comparison-stat-label {
+  display: block;
+  margin-bottom: 5px;
+  color: #6b7280;
+  font-size: 11px;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+.comparison-stat-value {
+  display: block;
+  color: #111827;
+  font-size: 17px;
+  font-weight: 800;
+  overflow-wrap: anywhere;
+}
+.comparison-h2h-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  width: 100%;
+  margin-bottom: 16px;
+}
+
+.comparison-h2h-item {
+  min-width: 0;
+  padding: 12px 5px;
+  text-align: center;
+  background: #fffbeb;
+  border: 1px solid #f3d47a;
+  border-radius: 10px;
+  box-sizing: border-box;
+}
+
+.comparison-h2h-item strong {
+  display: block;
+  margin-bottom: 5px;
+  color: #78350f;
+  font-size: 20px;
+  font-weight: 900;
+}
+
+.comparison-h2h-item span {
+  display: block;
+  color: #92400e;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 480px) {
+  .comparison-h2h-summary {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 5px;
+  }
+  
+  .comparison-h2h-item {
+    padding: 10px 3px;
+  }
+  
+  .comparison-h2h-item strong {
+    font-size: 17px;
+  }
+  
+  .comparison-h2h-item span {
+    font-size: 10px;
+  }
+}
+.comparison-matches-list {
+  display: grid;
+  gap: 10px;
+}
+.comparison-match-card {
+  padding: 13px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+}
+.comparison-match-tournament {
+  margin-bottom: 9px;
+  color: #6b7280;
+  font-size: 12px;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+.comparison-match-score {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+}
+.comparison-match-player {
+  min-width: 0;
+  color: #111827;
+  font-size: 12px;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+.comparison-match-player:last-child {
+  text-align: right;
+}
+.comparison-match-result {
+  padding: 7px 9px;
+  color: #78350f;
+  background: #fef3c7;
+  border-radius: 7px;
+  font-size: 15px;
+  font-weight: 900;
+  white-space: nowrap;
+}
+.comparison-match-date {
+  margin-top: 9px;
+  color: #9ca3af;
+  font-size: 11px;
+}
+.comparison-no-matches {
+  padding: 18px 12px;
+  color: #6b7280;
+  background: #f9fafb;
+  border: 1px dashed #d1d5db;
+  border-radius: 10px;
+  font-size: 13px;
+  text-align: center;
+  line-height: 1.6;
+}
+@media (min-width: 600px) {
+  .player-comparison-searches {
+    grid-template-columns: minmax(0, 1fr) 42px minmax(0, 1fr);
+    align-items: start;
+    gap: 12px;
+  }
+  .comparison-versus {
+    margin-top: 26px;
+  }
+  .compare-players-button {
+    width: auto;
+    min-width: 220px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+}
+@media (max-width: 480px) {
+  .comparison-player-cards {
+    gap: 8px;
+  }
+  .comparison-player-card {
+    padding: 9px;
+  }
+  .comparison-player-card h4 {
+    font-size: 14px;
+  }
+  .comparison-player-rating {
+    font-size: 11px;
+  }
+  .comparison-stat-grid {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+  .comparison-stat-item {
+    padding: 8px 5px;
+  }
+  .comparison-stat-label {
+    font-size: 10px;
+  }
+  .comparison-stat-value {
+    font-size: 14px;
+  }
+  .comparison-h2h-summary {
+    gap: 5px;
+  }
+  .comparison-h2h-item {
+    padding: 10px 4px;
+  }
+  .comparison-h2h-item strong {
+    font-size: 17px;
+  }
+  .comparison-match-score {
+    gap: 5px;
+  }
+  .comparison-match-player {
+    font-size: 11px;
+  }
+  .comparison-match-result {
+    padding: 6px;
+    font-size: 13px;
+  }
+}
+
+.comparison-h2h-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  width: 100%;
+  margin-bottom: 16px;
+}
+
+.comparison-h2h-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  min-width: 0;
+}
+
+.comparison-h2h-item:last-child {
+  grid-column: 2;
+  margin-top: 4px;
+}
 
 
+.comparison-match-score strong {
+  display: inline-block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  color: #1a1a1a !important;
+  font-size: 20px !important;
+  font-weight: 800 !important;
+  flex-shrink: 0 !important;
+}
+.comparison-match-player {
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  color: #333333 !important;
+  min-width: 0 !important;
+  overflow-wrap: anywhere !important;
+}
 .table-zones {
   display: flex;
   justify-content: center;
@@ -8452,3 +8960,50 @@ button.knockout-score-cell:hover {
   white-space: nowrap;
   box-sizing: border-box;
 }
+
+
+.rankings-actions {
+  display: flex;
+  justify-content: center;
+  margin: 0 0 20px;
+}
+.open-player-comparison-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  padding: 14px 18px;
+  color: #78350f;
+  background: linear-gradient(
+    135deg,
+    #fffbeb,
+    #fef3c7
+  );
+  border: 1px solid #d4a72c;
+  border-radius: 12px;
+  box-shadow: 0 3px 10px rgba(180, 130, 20, 0.1);
+  font-size: 15px;
+  font-weight: 800;
+  cursor: pointer;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease,
+    background 0.2s ease;
+}
+.open-player-comparison-button:hover {
+  background: #fef3c7;
+  box-shadow: 0 5px 14px rgba(180, 130, 20, 0.18);
+}
+.open-player-comparison-button:active {
+  transform: scale(0.98);
+}
+@media (min-width: 500px) {
+  .open-player-comparison-button {
+    width: auto;
+    min-width: 240px;
+  }
+}
+
+
+
