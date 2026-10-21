@@ -86,6 +86,7 @@ async function generateTournament() {
   showLoader();
 
   try {
+    
     const res = await apiRequest(
       `${API}/tournaments/${encodeURIComponent(tournament.id)}/${generationRoute}`,
       {
@@ -6843,151 +6844,6 @@ async function renderCupFixtures() {
 }
 
 
-async function renderCupTables() {
-  const tournament =
-    getCurrentTournament();
-  
-  if (!tournament) return;
-  
-  const container =
-    document.getElementById(
-      "cupTables"
-    );
-  
-  if (!container) return;
-  
-  container.innerHTML = `
-    <div class="cup-tables-header">
-      <div class="cup-tables-name">
-        ${tournament.name || ""}
-      </div>
-      
-      <div class="cup-tables-season">
-        ${tournament.season || ""}
-      </div>
-    </div>
-  `;
-  
-  const fixtures =
-    await loadTournamentFixtures(
-      tournament.id
-    );
-  
-  const groupMatches =
-    fixtures.filter(
-      match =>
-      match.match_type === "group"
-    );
-  
-  if (!groupMatches.length) {
-    container.innerHTML += `
-      <p class="emptyText">
-        No table for direct Knockout Cups
-        <br>
-        Check the bracket section for knockout matches
-      </p>
-    `;
-    
-    return;
-  }
-  
-  const table =
-    await rebuildTableFromMatches(
-      false
-    );
-  
-  if (!Array.isArray(table)) {
-    container.innerHTML += `
-      <p class="emptyText">
-        Unable to load table.
-      </p>
-    `;
-    
-    return;
-  }
-  
-  const teamGroupMap =
-    new Map();
-  
-  const groupsMap =
-    new Map();
-  
-  groupMatches.forEach(
-    match => {
-      const groupId =
-        match.group_id;
-      
-      if (!groupId) return;
-      
-      const settings =
-  typeof tournament.settings === "string" ?
-  JSON.parse(tournament.settings || "{}") :
-  tournament.settings || {};
-
-const isSingleGroup =
-  settings.tournamentMode === "champions_league" ||
-  (
-    settings.isChampionsLeague === true &&
-    settings.groupFormat === "single"
-  );
-
-let groupName;
-
-if (isSingleGroup) {
-  groupName = "League Phase";
-} else {
-  groupName =
-    String(match.round || "")
-    .match(
-      /Group (.+?) - Round/i
-    )?.[1];
-  
-  if (!groupName) {
-    groupName =
-      `Group ${groupsMap.size + 1}`;
-  }
-}
-
-      if (!groupsMap.has(groupId)) {
-        groupsMap.set(
-          groupId,
-          {
-            id: groupId,
-            name: groupName
-          }
-        );
-      }
-      
-      if (match.home_team_id) {
-        teamGroupMap.set(
-          String(match.home_team_id),
-          groupId
-        );
-      }
-      
-      if (match.away_team_id) {
-        teamGroupMap.set(
-          String(match.away_team_id),
-          groupId
-        );
-      }
-    }
-  );
-  
-  groupsMap.forEach(
-    group => {
-      renderCupTableGroupFromTable(
-        container,
-        tournament,
-        group,
-        table,
-        teamGroupMap
-      );
-    }
-  );
-}
-
-
 function renderCupPlayoffGroup(
   container,
   tournament,
@@ -7027,5 +6883,329 @@ function renderCupPlayoffGroup(
     );
   });
   container.appendChild(groupCard);
+}
+
+function renderCupTableGroup(
+  container,
+  tournament,
+  group,
+  table
+) {
+  const groupCard = createCupTableGroupCard(group.name);
+  const tbody = groupCard.querySelector("tbody");
+  const settings =
+    typeof tournament.settings === "string" ?
+    JSON.parse(tournament.settings || "{}") :
+    tournament.settings || {};
+  const isSingleGroup =
+    settings.isChampionsLeague === true ||
+    settings.tournamentMode === "champions_league";
+  if (!table.length) {
+    renderEmptyCupTable(tbody);
+  } else {
+    table.forEach((team, index) => {
+      const position = index + 1;
+      let qualificationClass = "";
+      if (isSingleGroup) {
+        const directQualifiers =
+          Number(settings.directQualifiers) || 0;
+        const playoffEndPosition =
+          Number(settings.playoffEndPosition) || 0;
+        if (position <= directQualifiers) {
+          qualificationClass = "cup-direct-qualification";
+        } else if (position <= playoffEndPosition) {
+          qualificationClass = "cup-playoff-qualification";
+        } else {
+          qualificationClass = "cup-eliminated";
+        }
+      } else {
+        const teamsQualify =
+          Number(settings.teamsQualify) || 0;
+        qualificationClass =
+          position <= teamsQualify ?
+          "cup-group-qualification" :
+          "cup-eliminated";
+      }
+      renderCupTableRow(
+        tbody,
+        tournament,
+        {
+          ...team,
+          pos: position,
+          qualificationClass
+        }
+      );
+      const positionCell = tbody.lastElementChild?.querySelector("td");
+      if (positionCell && qualificationClass) {
+        positionCell.classList.add(qualificationClass);
+      }
+    });
+  }
+  container.appendChild(groupCard);
+}
+function renderCupTableRow(
+  tbody,
+  tournament,
+  team
+) {
+  const tr = document.createElement("tr");
+  tr.innerHTML = `
+    <td>${team.pos}</td>
+    <td>
+      <div class="table-team-cell">
+        <div class="team-logo-placeholder">?</div>
+        <strong class="team-name"></strong>
+      </div>
+    </td>
+    <td>${team.played}</td>
+    <td>${team.gd}</td>
+    <td>${team.pts}</td>
+  `;
+  tr.querySelector(".team-name").textContent =
+    team.name || "";
+  tbody.appendChild(tr);
+  if (team.logo) {
+    const placeholder = tr.querySelector(
+      ".team-logo-placeholder"
+    );
+    if (placeholder) {
+      const img = document.createElement("img");
+      img.className = "fixture-team-logo";
+      img.src = team.logo;
+      img.alt = `${team.name || "Team"} logo`;
+      img.onerror = () => {
+        img.remove();
+      };
+      placeholder.replaceWith(img);
+    }
+  }
+}
+
+function renderCupTableGroupFromTable(
+  container,
+  tournament,
+  group,
+  table,
+  teamGroupMap
+) {
+  const settings = readTournamentSettings(tournament);
+  const isSingleGroup =
+    settings.tournamentMode === "champions_league" ||
+    (
+      settings.isChampionsLeague === true &&
+      settings.groupFormat === "single"
+    );
+  const groupTable = table
+    .filter(team => {
+      const teamId = String(
+        team.team_id ||
+        team.teamId ||
+        team.id ||
+        ""
+      );
+      return (
+        teamId &&
+        String(teamGroupMap.get(teamId) || "") ===
+        String(group.id)
+      );
+    })
+    .sort((a, b) => {
+      const positionA = Number(a.pos);
+      const positionB = Number(b.pos);
+      if (
+        Number.isFinite(positionA) &&
+        positionA > 0 &&
+        Number.isFinite(positionB) &&
+        positionB > 0
+      ) {
+        return positionA - positionB;
+      }
+      return 0;
+    });
+  const groupCard = createCupTableGroupCard(group.name);
+  const tbody = groupCard.querySelector("tbody");
+  if (!tbody) return;
+  if (!groupTable.length) {
+    renderEmptyCupTable(tbody);
+  } else {
+    groupTable.forEach((team, index) => {
+      const position = index + 1;
+      let qualificationClass = "cup-eliminated";
+      if (isSingleGroup) {
+        const directQualifiers =
+          Number(settings.directQualifiers) || 0;
+        const playoffEndPosition =
+          Number(settings.playoffEndPosition) || 0;
+        if (position <= directQualifiers) {
+          qualificationClass =
+            "cup-direct-qualification";
+        } else if (position <= playoffEndPosition) {
+          qualificationClass =
+            "cup-playoff-qualification";
+        }
+      } else if (settings.enableGroups) {
+        const teamsQualify =
+          Number(settings.teamsQualify) || 0;
+        if (position <= teamsQualify) {
+          qualificationClass =
+            "cup-group-qualification";
+        }
+      }
+      renderCupTableRow(
+        tbody,
+        tournament,
+        {
+          ...team,
+          pos: position
+        }
+      );
+      const positionCell =
+        tbody.lastElementChild?.querySelector("td");
+      if (positionCell) {
+        positionCell.classList.add(qualificationClass);
+      }
+    });
+  }
+  container.appendChild(groupCard);
+}
+
+function readTournamentSettings(tournament) {
+  if (!tournament) return {};
+  const settings = tournament.settings;
+  if (typeof settings === "string") {
+    try {
+      return JSON.parse(settings || "{}");
+    } catch (err) {
+      console.error(
+        "[readTournamentSettings] Invalid tournament settings:",
+        err
+      );
+      return {};
+    }
+  }
+  return settings && typeof settings === "object" ?
+    settings :
+    {};
+}
+
+
+async function renderCupTables() {
+  const tournament = getCurrentTournament();
+  if (!tournament) return;
+  const container = document.getElementById("cupTables");
+  if (!container) return;
+  container.innerHTML = `
+    <div class="cup-tables-header">
+      <div class="cup-tables-name">
+        ${tournament.name || ""}
+      </div>
+      <div class="cup-tables-season">
+        ${tournament.season || ""}
+      </div>
+    </div>
+  `;
+  const fixtures = await loadTournamentFixtures(tournament.id);
+  const groupMatches = fixtures.filter(
+    match => match.match_type === "group"
+  );
+  if (!groupMatches.length) {
+    container.innerHTML += `
+      <p class="emptyText">
+        No table for direct Knockout Cups
+        <br>
+        Check the bracket section for knockout matches
+      </p>
+    `;
+    return;
+  }
+  const settings = readTournamentSettings(tournament);
+  const isSingleGroup =
+    settings.tournamentMode === "champions_league" ||
+    (
+      settings.isChampionsLeague === true &&
+      settings.groupFormat === "single"
+    );
+  container.insertAdjacentHTML(
+    "beforeend",
+    `
+      <div class="cup-qualification-legend">
+        ${
+          isSingleGroup
+            ? `
+              <div class="cup-legend-item">
+                <span class="cup-legend-marker cup-direct-qualification"></span>
+                <span>Direct Knockout Qualification</span>
+              </div>
+              <div class="cup-legend-item">
+                <span class="cup-legend-marker cup-playoff-qualification"></span>
+                <span>Playoff Qualification</span>
+              </div>
+            `
+            : `
+              <div class="cup-legend-item">
+                <span class="cup-legend-marker cup-group-qualification"></span>
+                <span>Knockout Stage Qualification</span>
+              </div>
+            `
+        }
+        <div class="cup-legend-item">
+          <span class="cup-legend-marker cup-eliminated"></span>
+          <span>Elimination </span>
+        </div>
+      </div>
+    `
+  );
+  const table = await rebuildTableFromMatches(false);
+  if (!Array.isArray(table)) {
+    container.innerHTML += `
+      <p class="emptyText">
+        Unable to load table.
+      </p>
+    `;
+    return;
+  }
+  const teamGroupMap = new Map();
+  const groupsMap = new Map();
+  groupMatches.forEach(match => {
+    const groupId = match.group_id;
+    if (!groupId) return;
+    let groupName;
+    if (isSingleGroup) {
+      groupName = "League Phase";
+    } else {
+      groupName = String(match.round || "")
+        .match(/Group (.+?) - Round/i)?.[1];
+      if (!groupName) {
+        groupName = `Group ${groupsMap.size + 1}`;
+      }
+    }
+    if (!groupsMap.has(groupId)) {
+      groupsMap.set(groupId, {
+        id: groupId,
+        name: groupName
+      });
+    }
+    if (match.home_team_id) {
+      teamGroupMap.set(
+        String(match.home_team_id),
+        groupId
+      );
+    }
+    if (match.away_team_id) {
+      teamGroupMap.set(
+        String(match.away_team_id),
+        groupId
+      );
+    }
+  });
+  groupsMap.forEach(group => {
+    renderCupTableGroupFromTable(
+      container,
+      tournament,
+      group,
+      table,
+      teamGroupMap
+    );
+  });
 }
 

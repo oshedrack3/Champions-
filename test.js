@@ -3173,81 +3173,74 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 
 function renderNotices(notices) {
-  const container =
-    document.getElementById("noticeBoard");
-  if (!container) return;
-  if (!notices.length) {
-    container.innerHTML = `
-      <div class="notice-empty">
-        No notices at the moment.
-      </div>
-    `;
+  const container = document.getElementById("noticeBoard");
+  const noticeSection = document.getElementById("noticeSection");
+  const galaticoGlow = document.getElementById("galaticoGlow");
+
+  if (!container || !noticeSection || !galaticoGlow) return;
+
+  const hasNotices = Array.isArray(notices) && notices.length > 0;
+
+  noticeSection.style.display = hasNotices ? "" : "none";
+  galaticoGlow.style.display = hasNotices ? "none" : "flex";
+
+  if (!hasNotices) {
+    container.innerHTML = "";
     return;
   }
-  container.innerHTML = `
-    <div class="notice-slider-wrapper">
-      <div class="notice-slider">
-        ${notices.map(notice => {
-          const images =
-            Array.isArray(notice.images) ?
-            notice.images :
-            [];
-          const imagesHTML = images.length ?
-            `
-              <div class="notice-images">
-                ${images.map(image => `
-                  <img
-                    src="${escapeHtml(image.url)}"
-                    alt="${escapeHtml(notice.title)}"
-                    loading="lazy"
-                    class="notice-image"
-                  >
-                `).join("")}
-              </div>
-            ` :
-            "";
-          return `
-            <article
-              class="notice-card"
-              data-notice-id="${notice.id}"
+
+  container.innerHTML = notices.map(notice => {
+    const images = Array.isArray(notice.images) ? notice.images : [];
+
+    const imagesHTML = images.length
+      ? `
+        <div class="notice-images">
+          ${images.map(image => `
+            <img
+              src="${escapeHtml(image.url)}"
+              alt="${escapeHtml(notice.title)}"
+              loading="lazy"
+              class="notice-image"
             >
-              <div class="notice-card-header">
-                <span class="notice-category">
-                  ${escapeHtml(
-                    notice.category || "General"
-                  )}
-                </span>
-                <span class="notice-date">
-                  ${formatNoticeDate(
-                    notice.createdAt
-                  )}
-                </span>
-              </div>
-              <h3 class="notice-title">
-                ${escapeHtml(notice.title)}
-              </h3>
-           <div class="notice-content">
-  ${escapeHtml(
-    notice.content
-      .split("\n")
-      .map(line => line.trim())
-      .join("\n")
-  )}
-</div>             
-${imagesHTML}
-              <button
-                type="button"
-                class="notice-delete-btn data-admin"
-                onclick="deleteNotice('${notice.id}')"
-              >
-                Delete
-              </button>
-            </article>
-          `;
-        }).join("")}
-      </div>
-    </div>
-  `;
+          `).join("")}
+        </div>
+      `
+      : "";
+
+    return `
+      <article
+        class="notice-card"
+        data-notice-id="${notice.id}"
+      >
+        <div class="notice-card-header">
+          <span class="notice-category">
+            ${escapeHtml(notice.category || "General")}
+          </span>
+          <span class="notice-date">
+            ${formatNoticeDate(notice.createdAt)}
+          </span>
+        </div>
+        <h3 class="notice-title">
+          ${escapeHtml(notice.title)}
+        </h3>
+        <div class="notice-content">${escapeHtml(
+          notice.content
+            .split("\n")
+            .map(line => line.trim())
+            .join("\n")
+        )}</div>
+        ${imagesHTML}
+        <button
+          type="button"
+          class="notice-delete-btn data-admin"
+          onclick="deleteNotice('${notice.id}')"
+        >
+          Delete
+        </button>
+      </article>
+    `;
+  }).join("");
+
   setupNoticeInteraction();
   setupNoticeScrollTracking();
   startNoticeAutoScroll();

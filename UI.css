@@ -9076,3 +9076,271 @@ button.knockout-score-cell:hover {
   cursor: not-allowed;
 }
 
+
+
+
+
+.competition-branding {
+display: flex;
+flex-direction: column;
+align-items: center;
+justify-content: center;
+position: relative;
+overflow: hidden;
+padding: 30px 12px 20px;
+text-align: center;
+background: radial-gradient(
+ellipse at center,
+rgba(184, 134, 11, 0.09) 0%,
+transparent 70%
+);
+}
+
+.competition-branding-content {
+display: flex;
+flex-direction: column;
+align-items: center;
+width: 100%;
+position: relative;
+z-index: 1;
+}
+
+.competition-logo-wrap {
+width: 104px;
+height: 104px;
+display: flex;
+align-items: center;
+justify-content: center;
+position: relative;
+margin-bottom: 14px;
+}
+
+.competition-gold-ring {
+position: absolute;
+inset: 0;
+border: 1px solid rgba(212, 175, 55, 0.7);
+border-radius: 50%;
+box-shadow:
+0 0 10px rgba(212, 175, 55, 0.18),
+inset 0 0 10px rgba(212, 175, 55, 0.08);
+animation: competitionRingPulse 3s ease-in-out infinite;
+}
+
+.competition-gold-ring::before {
+content: “”;
+position: absolute;
+inset: 6px;
+border: 1px solid rgba(212, 175, 55, 0.25);
+border-radius: 50%;
+}
+
+.competition-brand-logo {
+display: block;
+width: 76px;
+height: 76px;
+object-fit: contain;
+filter:
+drop-shadow(0 0 6px rgba(255, 215, 0, 0.4))
+drop-shadow(0 0 16px rgba(255, 190, 0, 0.22));
+animation: competitionLogoPulse 3s ease-in-out infinite;
+}
+
+.competition-brand-name {
+margin: 0;
+color: #d4af37;
+font-size: 25px;
+font-weight: 900;
+letter-spacing: 7px;
+line-height: 1.3;
+text-shadow: 0 0 15px rgba(212, 175, 55, 0.2);
+}
+
+.competition-brand-divider {
+display: flex;
+align-items: center;
+justify-content: center;
+gap: 9px;
+width: 150px;
+margin: 13px 0 10px;
+}
+
+.competition-brand-divider span {
+flex: 1;
+height: 1px;
+background: linear-gradient(
+90deg,
+transparent,
+rgba(212, 175, 55, 0.8)
+);
+}
+
+.competition-brand-divider span:last-child {
+background: linear-gradient(
+90deg,
+rgba(212, 175, 55, 0.8),
+transparent
+);
+}
+
+.competition-brand-divider div {
+width: 6px;
+height: 6px;
+background: #d4af37;
+transform: rotate(45deg);
+box-shadow: 0 0 7px rgba(212, 175, 55, 0.5);
+}
+
+.competition-brand-subtitle {
+margin: 0;
+color: #b8860b;
+font-size: 11px;
+font-weight: 800;
+letter-spacing: 6px;
+}
+
+.competition-brand-tagline {
+margin: 14px 0 0;
+color: #88816d;
+font-size: 9px;
+font-weight: 600;
+letter-spacing: 1.8px;
+line-height: 1.8;
+}
+
+.competition-brand-footer {
+width: 100%;
+display: flex;
+align-items: center;
+justify-content: center;
+margin-top: 25px;
+padding-top: 12px;
+border-top: 1px solid rgba(184, 134, 11, 0.18);
+}
+
+.competition-brand-footer span {
+color: #8c7840;
+font-size: 8px;
+font-weight: 700;
+letter-spacing: 3px;
+}
+
+@keyframes competitionLogoPulse {
+0%, 100% {
+filter:
+drop-shadow(0 0 5px rgba(255, 215, 0, 0.3))
+drop-shadow(0 0 12px rgba(255, 190, 0, 0.2));
+transform: scale(1);
+}
+
+50% {
+filter:
+drop-shadow(0 0 9px rgba(255, 215, 0, 0.7))
+drop-shadow(0 0 22px rgba(255, 190, 0, 0.4));
+transform: scale(1.04);
+}
+}
+
+@keyframes competitionRingPulse {
+0%, 100% {
+opacity: 0.65;
+transform: scale(1);
+}
+
+50% {
+opacity: 1;
+transform: scale(1.035);
+}
+}
+
+@media (max-width: 480px) {
+.competition-branding {
+padding: 24px 10px 16px;
+}
+
+.competition-logo-wrap {
+width: 92px;
+height: 92px;
+}
+
+.competition-brand-logo {
+width: 68px;
+height: 68px;
+}
+
+.competition-brand-name {
+font-size: 23px;
+letter-spacing: 6px;
+}
+
+.competition-brand-footer {
+margin-top: 20px;
+}
+}
+
+@media (prefers-reduced-motion: reduce) {
+.competition-brand-logo,
+.competition-gold-ring {
+animation: none;
+}
+}
+
+
+td.cup-direct-qualification {
+  border-left: 5px solid #16a34a !important;
+}
+td.cup-playoff-qualification {
+  border-left: 5px solid #2563eb !important;
+}
+td.cup-group-qualification {
+  border-left: 5px solid #16a34a !important;
+}
+td.cup-eliminated {
+  border-left: 5px solid #dc2626 !important;
+}
+
+
+.cup-qualification-legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 10px 20px;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 12px 8px;
+  margin: 12px 0 16px;
+  background: #fff;
+  border: none;
+  border-radius: 0;
+  color: #111827;
+  font-size: 12px;
+  text-align: center;
+}
+.cup-legend-item {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  color: #111827;
+  white-space: nowrap;
+}
+.cup-legend-item span:last-child {
+  color: #111827;
+}
+.cup-legend-marker {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  flex-shrink: 0;
+  border-radius: 3px;
+}
+.cup-legend-marker.cup-direct-qualification,
+.cup-legend-marker.cup-group-qualification {
+  background: #16a34a;
+}
+.cup-legend-marker.cup-playoff-qualification {
+  background: #2563eb;
+}
+.cup-legend-marker.cup-eliminated {
+  background: #dc2626;
+}
