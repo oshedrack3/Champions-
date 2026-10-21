@@ -17,50 +17,46 @@
 <body>
   
   <div id="galaticoSplash">
-  <div class="splash-content">
-    <div class="splash-logo-wrap">
-      <div class="splash-gold-ring"></div>
-      <img
-        src="galaticoLogo1.png"
-        alt="Galatico Esports"
-        class="splash-logo"
-      >
+    <div class="splash-content">
+      <div class="splash-logo-wrap">
+        <div class="splash-gold-ring"></div>
+        <img src="galaticoLogo1.png" alt="Galatico Esports" class="splash-logo">
+      </div>
+      
+      <h1 class="splash-brand">GALATICO</h1>
+      
+      <div class="splash-divider">
+        <span></span>
+        <div></div>
+        <span></span>
+      </div>
+      
+      <p class="splash-subtitle">ESPORTS</p>
+      
+      <p class="splash-tagline">COMPETE. CONQUER. MAKE HISTORY.</p>
     </div>
-
-    <h1 class="splash-brand">GALATICO</h1>
-
-    <div class="splash-divider">
-      <span></span>
-      <div></div>
-      <span></span>
+    
+    <div class="splash-bottom">
+      <span>THE HOME OF COMPETITION</span>
     </div>
-
-    <p class="splash-subtitle">ESPORTS</p>
-
-    <p class="splash-tagline">COMPETE. CONQUER. MAKE HISTORY.</p>
   </div>
-
-  <div class="splash-bottom">
-    <span>THE HOME OF COMPETITION</span>
-  </div>
-</div>
   
   <!-- Page Heads and Nav btn -->
   
-<div id="compPageHead" class="header">
-  <div class="header-brand">
-    <img src="galaticoLogo1.png" alt="Galatico Esports" class="header-logo">
+  <div id="compPageHead" class="header">
+    <div class="header-brand">
+      <img src="galaticoLogo1.png" alt="Galatico Esports" class="header-logo">
+      
+      <h2 id="welcomeText">
+        <span class="welcome-message">Welcome back 👋,</span>
+        <span id="usernameText">Username</span>
+      </h2>
+    </div>
     
-    <h2 id="welcomeText">
-      <span class="welcome-message">Welcome back 👋,</span>
-      <span id="usernameText">Username</span>
-    </h2>
+    <button class="menu-btn" onclick="setPageAndToggleMenu('competition')">
+      ☰
+    </button>
   </div>
-  
-  <button class="menu-btn" onclick="setPageAndToggleMenu('competition')">
-    ☰
-  </button>
-</div>  
   
   <!-- TourList header -->
   <div class="header" id="tourListPageHead">
@@ -246,111 +242,66 @@
         
       </div>
       
-<div id="globalRankingsSection" style="display:none;">
-  <div class="rankings-header">
-    <h2>Global Rankings</h2>
-    <p>
-      Global Rankings measure your performance across official
-      Galatico Tournament matches. Every player starts with a rating of 1500.
-    </p>
-    <p>
-      Winning increases your rating, while losing decreases it.
-      Beating a higher-rated player earns more points, while
-      losing to a lower-rated player can cost more.
-    </p>
-    <p>
-      Your rating belongs to your user account, so it remains with
-      you even if you change teams.
-    </p>
-  </div>
-  <div class="rankings-actions">
-    <button
-      type="button"
-      id="openPlayerComparisonButton"
-      class="open-player-comparison-button"
-    >
-      <span>⚔️</span>
-      <span>Compare Players</span>
-    </button>
-  </div>
-  <div id="globalRankingsList"></div>
-</div>
-<div id="playerComparisonSection" style="display:none;">
-  <div class="player-comparison-page-header">
-    <button
-      type="button"
-      id="backToRankingsButton"
-      class="back-to-rankings-button"
-    >
-      ✕
-    </button>
-    <h2>Player Comparison</h2>
-    <p>
-      Compare any two players across Galatico.
-      Explore their career statistics, ratings, trophies, and head-to-head records.
-    </p>
-  </div>
-  <div class="player-comparison-section">
-    <div class="player-comparison-searches">
-      <div class="comparison-player-field">
-        <label for="comparisonPlayer1Search">Player 1</label>
-        <input
-          type="text"
-          id="comparisonPlayer1Search"
-          placeholder="Search username..."
-          autocomplete="off"
-        >
-        <div
-          id="comparisonPlayer1Suggestions"
-          class="player-search-suggestions"
-          style="display:none;"
-        ></div>
-        <div
-          id="comparisonPlayer1Selected"
-          class="comparison-selected-player"
-        >No player selected</div>
+      <div id="globalRankingsSection" style="display:none;">
+        <div class="rankings-header">
+          <h2>Global Rankings</h2>
+          <p>
+            Global Rankings measure your performance across official
+            Galatico Tournament matches. Every player starts with a rating of 1500.
+          </p>
+          <p>
+            Winning increases your rating, while losing decreases it.
+            Beating a higher-rated player earns more points, while
+            losing to a lower-rated player can cost more.
+          </p>
+          <p>
+            Your rating belongs to your user account, so it remains with
+            you even if you change teams.
+          </p>
+        </div>
+        <div class="rankings-actions">
+          <button type="button" id="openPlayerComparisonButton" class="open-player-comparison-button">
+            <span>⚔️</span>
+            <span>Compare Players</span>
+          </button>
+        </div>
+        <div id="globalRankingsList"></div>
       </div>
-      <div class="comparison-versus">VS</div>
-      <div class="comparison-player-field">
-        <label for="comparisonPlayer2Search">Player 2</label>
-        <input
-          type="text"
-          id="comparisonPlayer2Search"
-          placeholder="Search username..."
-          autocomplete="off"
-        >
-        <div
-          id="comparisonPlayer2Suggestions"
-          class="player-search-suggestions"
-          style="display:none;"
-        ></div>
-        <div
-          id="comparisonPlayer2Selected"
-          class="comparison-selected-player"
-        >No player selected</div>
+      <div id="playerComparisonSection" style="display:none;">
+        <div class="player-comparison-page-header">
+          <button type="button" id="backToRankingsButton" class="back-to-rankings-button">
+            ✕
+          </button>
+          <h2>Player Comparison</h2>
+          <p>
+            Compare any two players across Galatico.
+            Explore their career statistics, ratings, trophies, and head-to-head records.
+          </p>
+        </div>
+        <div class="player-comparison-section">
+          <div class="player-comparison-searches">
+            <div class="comparison-player-field">
+              <label for="comparisonPlayer1Search">Player 1</label>
+              <input type="text" id="comparisonPlayer1Search" placeholder="Search username..." autocomplete="off">
+              <div id="comparisonPlayer1Suggestions" class="player-search-suggestions" style="display:none;"></div>
+              <div id="comparisonPlayer1Selected" class="comparison-selected-player">No player selected</div>
+            </div>
+            <div class="comparison-versus">VS</div>
+            <div class="comparison-player-field">
+              <label for="comparisonPlayer2Search">Player 2</label>
+              <input type="text" id="comparisonPlayer2Search" placeholder="Search username..." autocomplete="off">
+              <div id="comparisonPlayer2Suggestions" class="player-search-suggestions" style="display:none;"></div>
+              <div id="comparisonPlayer2Selected" class="comparison-selected-player">No player selected</div>
+            </div>
+          </div>
+          <button type="button" id="comparePlayersButton" class="compare-players-button" disabled>
+            Compare Players
+          </button>
+          <div id="playerComparisonMessage" class="player-comparison-message" style="display:none;"></div>
+          <div id="playerComparisonResults" class="player-comparison-results" style="display:none;"></div>
+        </div>
       </div>
-    </div>
-    <button
-      type="button"
-      id="comparePlayersButton"
-      class="compare-players-button"
-      disabled
-    >
-      Compare Players
-    </button>
-    <div
-      id="playerComparisonMessage"
-      class="player-comparison-message"
-      style="display:none;"
-    ></div>
-    <div
-      id="playerComparisonResults"
-      class="player-comparison-results"
-      style="display:none;"
-    ></div>
-  </div>
-</div>
-<div id="publicSection" style="display:none;">        
+      <div id="publicSection" style="display:none;">
         <div id="publicTournaments"></div>
         
       </div>
@@ -549,128 +500,82 @@
               
               <div id="groupOptions" style="display:none;">
                 
-                <label for="groupingMode">
-                  Group Assignment
-                </label>
-                
-                <select id="groupingMode" onchange="handleGroupingModeChange()">
-                
-                  <option value="auto" selected>
-                    Automatic
-                  </option>
-                  
-                  <option value="manual">
-                    Manual
-                  </option>
-                  
+                <select id="groupFormat" onchange="handleGroupFormatChange()">
+                  <option value="multiple" selected>Multiple Groups</option>
+                  <option value="single">Single Group</option>
                 </select>
                 
                 
-                <label for="teamsPerGroup">
-                  Teams Per Group
-                </label>
-                
-                <select id="teamsPerGroup">
-                
-                  <option value="2">
-                    2 Teams
-                  </option>
-                  
-                  <option value="3">
-                    3 Teams
-                  </option>
-                  
-                  <option value="4" selected>
-                    4 Teams
-                  </option>
-                  
-                  <option value="5">
-                    5 Teams
-                  </option>
-                  
-                  <option value="6">
-                    6 Teams
-                  </option>
-                  
-                  <option value="7">
-                    7 Teams
-                  </option>
-                  
-                  <option value="8">
-                    8 Teams
-                  </option>
-                  
-                  <option value="9">
-                    9 Teams
-                  </option>
-                  
-                  <option value="10">
-                    10 Teams
-                  </option>
-                  
-                  <option value="11">
-                    11 Teams
-                  </option>
-                  
-                  <option value="12">
-                    12 Teams
-                  </option>
-                  
-                </select>
-                
-                
-                <label for="teamsQualify">
-                  Teams Qualifying Per Group
-                </label>
-                
-                <select id="teamsQualify">
-                
-                  <option value="1">
-                    Top 1
-                  </option>
-                  
-                  <option value="2" selected>
-                    Top 2
-                  </option>
-                  
-                  <option value="3">
-                    Top 3
-                  </option>
-                  
-                  <option value="4">
-                    Top 4
-                  </option>
-                  
-                </select>
-                
-                
-                <label for="groupRoundMode">
-                  Group Matches
-                </label>
-                
-                <select id="groupRoundMode">
-                
-                  <option value="single" selected>
-                    Single Round
-                  </option>
-                  
-                  <option value="double">
-                    Double Round
-                  </option>
-                  
-                </select>
-                
-                
-                <div id="manualGroupOptions" style="display:none;">
-                  
-                  <button type="button" class="btn-secondary" onclick="openManualGroupSetup()">
-                    Assign Teams to Groups
-                  </button>
-                  
+                <div id="multipleGroupOptions">
+                  <label for="groupingMode">Group Assignment</label>
+                  <select id="groupingMode" onchange="handleGroupingModeChange()">
+                    <option value="auto" selected>Automatic</option>
+                    <option value="manual">Manual</option>
+                  </select>
+                  <label for="teamsPerGroup">Teams Per Group</label>
+                  <select id="teamsPerGroup">
+                    <option value="2">2 Teams</option>
+                    <option value="3">3 Teams</option>
+                    <option value="4" selected>4 Teams</option>
+                    <option value="5">5 Teams</option>
+                    <option value="6">6 Teams</option>
+                    <option value="7">7 Teams</option>
+                    <option value="8">8 Teams</option>
+                    <option value="9">9 Teams</option>
+                    <option value="10">10 Teams</option>
+                    <option value="11">11 Teams</option>
+                    <option value="12">12 Teams</option>
+                  </select>
+                  <label for="teamsQualify">Teams Qualifying Per Group</label>
+                  <select id="teamsQualify">
+                    <option value="1">Top 1</option>
+                    <option value="2" selected>Top 2</option>
+                    <option value="3">Top 3</option>
+                    <option value="4">Top 4</option>
+                  </select>
+                  <label for="groupRoundMode">Group Matches</label>
+                  <select id="groupRoundMode">
+                    <option value="single" selected>Single Round</option>
+                    <option value="double">Double Round</option>
+                  </select>
+                  <div id="manualGroupOptions" style="display:none;">
+                    <button type="button" class="btn-secondary" onclick="openManualGroupSetup()">
+                      Assign Teams to Groups
+                    </button>
+                  </div>
                 </div>
-                
+                <div id="championsLeagueOptions" style="display:none;">
+                  <h3>League Phase Settings</h3>
+                  <label for="groupScheduleMode">League Stage Schedule</label>
+                  <select id="groupScheduleMode" onchange="toggleLimitedScheduleOptions()">
+                    <option value="full" selected>Full League Stage</option>
+                    <option value="limited">Limited League Stage</option>
+                  </select>
+                  <div id="limitedScheduleOptions" style="display:none;">
+                    <label for="opponentsPerTeam">Rounds per Team</label>
+                    <select id="opponentsPerTeam"></select>
+                    <small>Each team faces a different opponent in each round.</small>
+                  </div>
+                  <label for="directQualifiers">Direct Knockout Qualifiers</label>
+                  <select id="directQualifiers" onchange="updateChampionsLeaguePlayoffPositions()">
+                    <option value="">Select direct qualifiers</option>
+                  </select>
+                  <label for="playoffStartPosition">Playoff Starting Position</label>
+                  <input type="number" id="playoffStartPosition" min="2" max="30" readonly>
+                  <label for="playoffEndPosition">Playoff Ending Position</label>
+                  <select id="playoffEndPosition" onchange="updateChampionsLeaguePlayoffPositions()">
+                    <option value="">Select playoff ending position</option>
+                  </select>
+                  <label for="playoffRoundMode">Playoff Matches</label>
+                  <select id="playoffRoundMode">
+                    <option value="single" selected>Single Match</option>
+                    <option value="double">Two Legs</option>
+                  </select>
+                  <small>
+                    Playoff teams are paired by league position, with the highest-ranked team facing the lowest-ranked team.
+                  </small>
+                </div>
               </div>
-              
             </div>
             
             
@@ -939,7 +844,7 @@
     
     <div class="auth-card">
       
-     <img src="galaticoLogo1.png" alt="Galatico Esports" class="auth-logo">
+      <img src="galaticoLogo1.png" alt="Galatico Esports" class="auth-logo">
       
       <!-- Login -->
       <div id="loginSection">
@@ -1839,44 +1744,25 @@
     
   </div>
   
-<div id="loader" class="loader-overlay" style="display:none;">
-  <div class="galatico-mini-loader">
-    <svg class="galatico-mini-logo" viewBox="0 0 100 100" aria-label="Loading">
-      <defs>
-        <linearGradient id="galaticoMiniGold" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stop-color="#fff0a6"/>
-          <stop offset="50%" stop-color="#e8b947"/>
-          <stop offset="100%" stop-color="#a87318"/>
-        </linearGradient>
-      </defs>
-
-      <path
-        class="galatico-mini-g"
-        d="M72 18 H48 C27 18 15 32 15 50 S28 82 49 82 H76 V47 H48 L38 58 H64 V69 H49 C37 69 27 61 27 50 S36 31 49 31 H62 Z"
-        fill="url(#galaticoMiniGold)"
-      />
-
-      <ellipse
-        class="galatico-mini-orbit"
-        cx="50"
-        cy="50"
-        rx="43"
-        ry="16"
-        fill="none"
-        stroke="url(#galaticoMiniGold)"
-        stroke-width="4"
-        stroke-linecap="round"
-        transform="rotate(-35 50 50)"
-      />
-
-      <path
-        class="galatico-mini-star"
-        d="M79 9 L82 17 L90 20 L82 23 L79 31 L76 23 L68 20 L76 17 Z"
-        fill="#ffe18a"
-      />
-    </svg>
+  <div id="loader" class="loader-overlay" style="display:none;">
+    <div class="galatico-mini-loader">
+      <svg class="galatico-mini-logo" viewBox="0 0 100 100" aria-label="Loading">
+        <defs>
+          <linearGradient id="galaticoMiniGold" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="#fff0a6" />
+            <stop offset="50%" stop-color="#e8b947" />
+            <stop offset="100%" stop-color="#a87318" />
+          </linearGradient>
+        </defs>
+        
+        <path class="galatico-mini-g" d="M72 18 H48 C27 18 15 32 15 50 S28 82 49 82 H76 V47 H48 L38 58 H64 V69 H49 C37 69 27 61 27 50 S36 31 49 31 H62 Z" fill="url(#galaticoMiniGold)" />
+        
+        <ellipse class="galatico-mini-orbit" cx="50" cy="50" rx="43" ry="16" fill="none" stroke="url(#galaticoMiniGold)" stroke-width="4" stroke-linecap="round" transform="rotate(-35 50 50)" />
+        
+        <path class="galatico-mini-star" d="M79 9 L82 17 L90 20 L82 23 L79 31 L76 23 L68 20 L76 17 Z" fill="#ffe18a" />
+      </svg>
+    </div>
   </div>
-</div>
   
   <div id="submissionDeadlineModal" class="modal-overlay" style="display:none">
     <div class="modal-box submission-deadline-modal">
@@ -2102,33 +1988,20 @@
   </div>
   
   <div id="seasonKeyModal" class="season-key-modal" style="display: none;">
-  <div class="season-key-modal-content">
-    <h3>End Season</h3>
-    <p>Enter a unique key to identify the season you are ending.</p>
-    <input
-      type="text"
-      id="seasonKeyInput"
-      maxlength="100"
-      placeholder="e.g. GeSL-Season-2026"
-      autocomplete="off"
-    >
-    <div class="season-key-modal-actions">
-      <button
-        type="button"
-        onclick="closeSeasonKeyInputModal()"
-      >
-        Cancel
-      </button>
-      <button
-        type="button"
-        id="submitSeasonKeyBtn"
-        onclick="submitSeasonKey()"
-      >
-        Continue
-      </button>
+    <div class="season-key-modal-content">
+      <h3>End Season</h3>
+      <p>Enter a unique key to identify the season you are ending.</p>
+      <input type="text" id="seasonKeyInput" maxlength="100" placeholder="e.g. GeSL-Season-2026" autocomplete="off">
+      <div class="season-key-modal-actions">
+        <button type="button" onclick="closeSeasonKeyInputModal()">
+          Cancel
+        </button>
+        <button type="button" id="submitSeasonKeyBtn" onclick="submitSeasonKey()">
+          Continue
+        </button>
+      </div>
     </div>
   </div>
-</div>
   
   <div id="teamSelectionModal" class="team-selection-modal-overlay" style="display: none;">
     <div class="team-selection-modal-box">

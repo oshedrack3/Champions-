@@ -5492,6 +5492,149 @@ async function sendEndSeasonRequest(seasonKey) {
 
 
 
+function updateChampionsLeagueSetupOptions(teamCount) {
+  const directSelect =
+    document.getElementById("directQualifiers");
+
+  const opponentsSelect =
+    document.getElementById("opponentsPerTeam");
+
+  const playoffEndSelect =
+    document.getElementById("playoffEndPosition");
+
+  const startInput =
+    document.getElementById("playoffStartPosition");
+
+  if (
+    !directSelect ||
+    !opponentsSelect ||
+    !playoffEndSelect ||
+    !startInput
+  ) {
+    return;
+  }
+
+  const count = Math.max(
+    0,
+    Math.min(30, Math.floor(Number(teamCount) || 0))
+  );
+
+  const previousDirect = directSelect.value;
+  const previousOpponents = opponentsSelect.value;
+  const previousEnd = playoffEndSelect.value;
+
+  directSelect.innerHTML =
+    "Select direct qualifiers";
+
+  for (let i = 1; i <= 20; i++) {
+    const option = new Option(
+      `${i} team${i === 1 ? "" : "s"}`,
+      String(i)
+    );
+
+    option.disabled = i >= count;
+    directSelect.add(option);
+  }
+
+  directSelect.value =
+    previousDirect &&
+    Number(previousDirect) < count
+      ? previousDirect
+      : "";
+
+  opponentsSelect.innerHTML = "";
+
+  if (count >= 2) {
+    for (let i = 1; i < count; i++) {
+      opponentsSelect.add(
+        new Option(
+          `${i} round${i === 1 ? "" : "s"}`,
+          String(i)
+        )
+      );
+    }
+  } else {
+    opponentsSelect.add(
+      new Option("No teams available", "")
+    );
+  }
+
+  opponentsSelect.value =
+    previousOpponents &&
+    Number(previousOpponents) < count
+      ? previousOpponents
+      : count >= 2
+      ? String(Math.min(3, count - 1))
+      : "";
+
+  playoffEndSelect.innerHTML =
+    "Select playoff ending position";
+
+  for (let i = 2; i <= count; i++) {
+    playoffEndSelect.add(
+      new Option(`Position ${i}`, String(i))
+    );
+  }
+
+  playoffEndSelect.value = previousEnd;
+
+  updateChampionsLeaguePlayoffPositions();
+}
+
+function updateChampionsLeaguePlayoffPositions() {
+  const directSelect =
+    document.getElementById("directQualifiers");
+
+  const startInput =
+    document.getElementById("playoffStartPosition");
+
+  const endSelect =
+    document.getElementById("playoffEndPosition");
+
+  if (!directSelect || !startInput || !endSelect) {
+    return;
+  }
+
+  const directQualifiers =
+    Number(directSelect.value);
+
+  const teamCount =
+    endSelect.options.length - 1;
+
+  startInput.value =
+    directQualifiers > 0
+      ? directQualifiers + 1
+      : "";
+
+  for (const option of endSelect.options) {
+    if (!option.value) continue;
+
+    const position = Number(option.value);
+    const playoffTeamCount =
+      position - directQualifiers;
+    const knockoutSize =
+      directQualifiers +
+      playoffTeamCount / 2;
+    const validKnockoutSize =
+      [2, 4, 8, 16, 32].includes(knockoutSize);
+    
+    option.disabled =
+      !directQualifiers ||
+      position > teamCount ||
+      playoffTeamCount < 2 ||
+      playoffTeamCount % 2 !== 0 ||
+      !validKnockoutSize;
+  }
+
+  if (
+    endSelect.selectedOptions[0]?.disabled
+  ) {
+    endSelect.value = "";
+  }
+}
+
+
+
 window.addEventListener(
   "load",
   async () => {

@@ -101,6 +101,7 @@ async function renderFixtures() {
     hideLoader();
   }
 }
+
 function getVisibleMatches(search = "") {
   const matches =
     Array.isArray(fixtures) ? [...fixtures] : [];
@@ -3112,8 +3113,7 @@ function renderHallOfFame(hallOfFame) {
   container.innerHTML = categories.map(category => {
     const winners =
       Array.isArray(category.winners) ?
-      category.winners :
-      [];
+      category.winners : [];
     
     return `
       <section class="hallOfFameCategory">
@@ -3899,9 +3899,13 @@ async function renderTeams(
     }
     
     if (teamadded) {
-      teamadded.textContent =
-        uniqueTeams.length;
+      teamadded.textContent = `Teams added: ${uniqueTeams.length}`;
     }
+    
+    updateChampionsLeagueSetupOptions(
+      uniqueTeams.length
+    );
+    
     
     if (!uniqueTeams.length) {
       container.innerHTML =
