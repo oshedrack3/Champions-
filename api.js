@@ -5366,6 +5366,130 @@ if (document.readyState === "loading") {
 
 
 
+function showSeasonKeyInputModal() {
+  if (getCurrentUser()?.role !== "admin") {
+    showAlert("Only administrators can end a season.");
+    return;
+  }
+  const modal = document.getElementById("seasonKeyModal");
+  const input = document.getElementById("seasonKeyInput");
+  if (!modal || !input) {
+    showAlert("Season input modal could not be found.");
+    return;
+  }
+  input.value = "";
+  modal.style.display = "flex";
+  setTimeout(() => input.focus(), 100);
+}
+function closeSeasonKeyInputModal() {
+  const modal = document.getElementById("seasonKeyModal");
+  if (modal) {
+    modal.style.display = "none";
+  }
+}
+function submitSeasonKey() {
+  const input = document.getElementById("seasonKeyInput");
+  const button = document.getElementById("submitSeasonKeyBtn");
+  if (!input) {
+    showAlert("Season input field could not be found.");
+    return;
+  }
+  const seasonKey = input.value.trim();
+  if (!seasonKey) {
+    showAlert("Please enter a season key.");
+    input.focus();
+    return;
+  }
+  if (seasonKey.length > 100) {
+    showAlert("The season key cannot exceed 100 characters.");
+    input.focus();
+    return;
+  }
+  if (button?.disabled) {
+    return;
+  }
+  closeSeasonKeyInputModal();
+  showConfirmModal(
+    `End season "${seasonKey}"?\n\n` +
+    "This action will:\n" +
+    "• Save players' highest ratings.\n" +
+    "• Update their highest career ranks where appropriate.\n" +
+    "• Reset all users' current ratings to 1500.\n\n" +
+    "Only proceed when the season is ready to end.",
+    "End Season",
+    "Cancel"
+  );
+  confirmYes = () => {
+    closeConfirmModal();
+    sendEndSeasonRequest(seasonKey);
+  };
+  confirmNo = () => {
+    closeConfirmModal();
+  };
+}
+async function sendEndSeasonRequest(seasonKey) {
+  if (getCurrentUser()?.role !== "admin") {
+    showAlert("Only administrators can end a season.");
+    return;
+  }
+  const button = document.getElementById("endSeasonRatingsBtn");
+  if (button?.disabled) {
+    return;
+  }
+  const token = getToken();
+  if (!token) {
+    showAlert("Please log in again to continue.");
+    return;
+  }
+  const originalText = button?.textContent;
+  try {
+    if (button) {
+      button.disabled = true;
+      button.textContent = "Ending Season...";
+    }
+    const res = await apiRequest(
+      `${API}/admin/ratings/end-season`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: token
+        },
+        body: JSON.stringify({
+          seasonKey: seasonKey
+        })
+      },
+      () => sendEndSeasonRequest(seasonKey)
+    );
+    if (!res) {
+      return;
+    }
+    const result = await res.json();
+    if (!res.ok || !result.success) {
+      throw new Error(
+        result.message || "Failed to end the season."
+      );
+    }
+    showAlert(
+      `${result.message}\n\n` +
+      `Season: ${result.seasonKey}\n` +
+      `Initial rating: ${result.initialRating}\n` +
+      `Users updated: ${result.usersUpdated ?? "N/A"}\n` +
+      `Ratings reset: ${result.ratingsReset ? "Yes" : "No"}`
+    );
+  } catch (error) {
+    console.error("End season ratings error:", error);
+    showAlert(
+      error.message || "Failed to process season ending."
+    );
+  } finally {
+    if (button) {
+      button.disabled = false;
+      button.textContent = originalText || "End Season";
+    }
+  }
+}
+
 
 
 window.addEventListener(

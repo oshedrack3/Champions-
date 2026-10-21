@@ -9007,3 +9007,72 @@ button.knockout-score-cell:hover {
 
 
 
+.season-key-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+}
+.season-key-modal-content {
+  width: 100%;
+  max-width: 380px;
+  padding: 22px;
+  border-radius: 14px;
+  background: #fff;
+  color: #222;
+  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.25);
+}
+.season-key-modal-content h3 {
+  margin: 0 0 10px;
+  font-size: 20px;
+}
+.season-key-modal-content p {
+  margin: 0 0 16px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #666;
+}
+#seasonKeyInput {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  outline: none;
+  font-size: 16px;
+}
+#seasonKeyInput:focus {
+  border-color: #b8860b;
+  box-shadow: 0 0 0 2px rgba(184, 134, 11, 0.15);
+}
+.season-key-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 20px;
+}
+.season-key-modal-actions button {
+  padding: 10px 16px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  background: #f5f5f5;
+  color: #222;
+  font-size: 14px;
+  cursor: pointer;
+}
+.season-key-modal-actions button:last-child {
+  border-color: #b8860b;
+  background: #5c4500;
+  color: #fff;
+}
+.season-key-modal-actions button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+

@@ -477,6 +477,7 @@ function handleMenuAction(action) {
   closeMenu();
   
   const actions = {
+    seasonend:showSeasonKeyInputModal,
     reverseRule:showDisciplinaryReversalSection,
     enforceRule:openDisciplinaryModal,
     viewRules:viewTournamentRules,
@@ -516,12 +517,7 @@ function handleMenuAction(action) {
 
 const menuConfig = {
   competition: [
-  /*  {
-      label: "👤 My Profile",
-      action: "openProfile",
-      roles: ["admin", "player"]
-    },
-    */
+  
     {
       label: "Create New Competition",
       action: "createComp",
@@ -550,6 +546,11 @@ const menuConfig = {
       action: "newNotice",
       roles: ["admin"]
     },
+       {
+     label: "Conclude Season",
+     action: "seasonend",
+     roles: ["admin"]
+   },
    /* 
     {
       label: "Hall of Fame",
