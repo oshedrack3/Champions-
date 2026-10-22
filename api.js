@@ -6162,13 +6162,27 @@ window.addEventListener("load", async () => {
     const loggedIn = await verifySession();
     if (loggedIn) {
       hideAllPages();
-      await goToCompetitionPage();
-      loadMyCompetitions();
-      await renderCompetitionList();
       await registerSW();
       await subscribeUser();
       bindSeasonRegistrationEvents();
-      handlePaymentReturn();
+      const url = new URL(window.location.href);
+      const hasPaymentReturn =
+        url.searchParams.has("status") ||
+        url.searchParams.has("tx_ref") ||
+        url.searchParams.has("reference") ||
+        url.searchParams.has("transaction_id");
+      if (hasPaymentReturn) {
+        await loadSeasonRegistrationData();
+        currentView = url.searchParams.get("status") === "cancelled" ?
+          "available" :
+          "mine";
+        renderSeasonRegistration();
+        handlePaymentReturn();
+      } else {
+        await goToCompetitionPage();
+        loadMyCompetitions();
+        await renderCompetitionList();
+      }
     } else {
       goToLoginPage();
     }
