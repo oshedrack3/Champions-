@@ -6009,18 +6009,26 @@ function renderAvailableSeasons(list) {
             <strong>${formatMoney(season.total_amount)}</strong>
           </div>
         </div>
-        <button
-          type="button"
-          class="sr-register-btn"
-          data-register-season="${escapeHtml(season.tournament_id)}"
-          ${loading || registered ? "disabled" : ""}
-        >
-          ${registered ? "Already Registered" : "Register & Pay"}
-        </button>
+        ${registered ? `
+          <div class="sr-registered-badge">
+            <span>✓</span>
+            Already Registered · Payment Confirmed
+          </div>
+        ` : `
+          <button
+            type="button"
+            class="sr-register-btn"
+            data-register-season="${escapeHtml(season.tournament_id)}"
+            ${loading ? "disabled" : ""}
+          >
+            Register & Pay
+          </button>
+        `}
       </article>
     `;
   }).join("");
 }
+
 function renderMySeasonRegistrations(list) {
   if (!registrations.length) {
     list.innerHTML = `
@@ -6046,8 +6054,7 @@ function renderMySeasonRegistrations(list) {
       <article class="sr-season-card">
         <div class="sr-season-info">
           <p class="sr-competition-name">${escapeHtml(registration.competition_name || "")}</p>
-          <h3>${escapeHtml(registration.tournament_name || "Season")}</h3>
-          <p>Season: ${escapeHtml(registration.season ?? "N/A")}</p>
+              <p>Season: ${escapeHtml(registration.season ?? "N/A")}</p>
           <p>Reference: ${escapeHtml(registration.payment_reference || "Not available")}</p>
         </div>
         <div class="sr-fees">
@@ -6119,8 +6126,6 @@ function clearMessage() {
   message.hidden = true;
   message.className = "sr-message";
 }
-
-openSeasonRegistration();
 
 
 

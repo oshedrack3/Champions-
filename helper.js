@@ -477,6 +477,7 @@ function handleMenuAction(action) {
   closeMenu();
   
   const actions = {
+    registerSeason:openSeasonRegistration,
     seasonend:showSeasonKeyInputModal,
     reverseRule:showDisciplinaryReversalSection,
     enforceRule:openDisciplinaryModal,
@@ -551,13 +552,13 @@ const menuConfig = {
      action: "seasonend",
      roles: ["admin"]
    },
-   /* 
+    
     {
-      label: "Hall of Fame",
-      action: "openHOF",
+      label: "Season Registration",
+      action: "registerSeason",
       roles: ["admin", "player"]
     },
-    
+    /*
     {
       label: "Ranking",
       action: "showRank",

@@ -9544,8 +9544,19 @@ td.cup-eliminated {
 }
 .sr-hero-icon {
   flex-shrink: 0;
-  font-size: 40px;
+  width: 64px;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
+.sr-hero-icon img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
 .sr-tabs {
   display: flex;
   gap: 7px;
@@ -10010,4 +10021,19 @@ td.cup-eliminated {
   }
 }
 
-
+.sr-registered-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 12px;
+  border-radius: 12px;
+  background: #dcfce7;
+  color: #166534;
+  border: 1px solid #bbf7d0;
+  font-size: 12px;
+  font-weight: 700;
+  text-align: center;
+}
