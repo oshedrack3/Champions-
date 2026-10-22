@@ -5681,16 +5681,17 @@ async function registerForSeason(tournamentId) {
   };
 }
 
-async function verifyPayment(reference) {
+async function verifyPayment(reference, showResultAlert = false) {
   if (!reference) {
-    showMessage("Payment reference is missing.", "error");
+    if (showResultAlert) {
+      showAlert("Payment reference is missing.");
+    } else {
+      showAlert("Payment reference is missing.", "error");
+    }
     return;
   }
   if (loading) return;
   loading = true;
-  currentView = "mine";
-  showMessage("Verifying your payment...", "info");
-  renderSeasonRegistration();
   try {
     const token = getToken();
     if (!token) {
@@ -5704,7 +5705,7 @@ async function verifyPayment(reference) {
           Authorization: token
         }
       },
-      () => verifyPayment(reference)
+      () => verifyPayment(reference, showResultAlert)
     );
     if (!res) return;
     const response = await res.json();
@@ -5713,62 +5714,68 @@ async function verifyPayment(reference) {
         response.message || "Payment verification failed."
       );
     }
-    await loadSeasonRegistrationData();
-    showMessage(
-      "Payment verified successfully. Your season registration is confirmed.",
-      "success"
-    );
+    
+    loading = false;
+await loadSeasonRegistrationData();
+loading = true;
+
+if (showResultAlert) {
+      showAlert(
+        "Payment verified successfully. Your season registration is confirmed."
+      );
+    } else {
+      showMessage(
+        "Payment verified successfully. Your season registration is confirmed.",
+        "success"
+      );
+    }
   } catch (error) {
     console.error("Payment verification error:", error);
-    showMessage(
+    const message =
       error.message ||
-      "We couldn't confirm your payment yet. Refresh your registrations to check again.",
-      "error"
-    );
+      "We couldn't confirm your payment yet. Check your registrations again.";
+    if (showResultAlert) {
+      showAlert(message);
+    } else {
+      showMessage(message, "error");
+    }
   } finally {
     loading = false;
     renderSeasonRegistration();
   }
 }
-
 function handlePaymentReturn() {
   const url = new URL(window.location.href);
   const status = url.searchParams.get("status");
   const reference =
     url.searchParams.get("tx_ref") ||
     url.searchParams.get("reference");
-  
-  if (status === "cancelled") {
-    url.searchParams.delete("status");
-    url.searchParams.delete("tx_ref");
-    url.searchParams.delete("reference");
-    
-    window.history.replaceState({}, "", url);
-    
-    currentView = "available";
-    
-    showMessage(
-      "Payment was cancelled. You can try registering again.",
-      "error"
-    );
-    
-    renderSeasonRegistration();
-    return true;
+  if (!url.searchParams.has("status") &&
+    !url.searchParams.has("tx_ref") &&
+    !url.searchParams.has("reference") &&
+    !url.searchParams.has("transaction_id")) {
+    return false;
   }
-  
-  if (!reference) return false;
-  
   url.searchParams.delete("status");
   url.searchParams.delete("tx_ref");
   url.searchParams.delete("reference");
   url.searchParams.delete("transaction_id");
-  
   window.history.replaceState({}, "", url);
-  
-  currentView = "mine";
-  
-  verifyPayment(reference);
-  
+  if (status === "cancelled") {
+    showAlert("Payment was cancelled. You can try registering again.");
+    return true;
+  }
+  if (status === "failed") {
+    showAlert("Payment failed. Please try again.");
+    return true;
+  }
+  if (!reference) {
+    showAlert(
+      "You have returned from payment, but the payment reference is missing. Check your registrations to confirm your payment."
+    );
+    return true;
+  }
+  verifyPayment(reference, true);
   return true;
 }
 function formatMoney(amount) {
@@ -6156,6 +6163,7 @@ function comparisonResultsEscape(value) {
 }
 
 
+
 window.addEventListener("load", async () => {
   showLoader();
   try {
@@ -6165,24 +6173,10 @@ window.addEventListener("load", async () => {
       await registerSW();
       await subscribeUser();
       bindSeasonRegistrationEvents();
-      const url = new URL(window.location.href);
-      const hasPaymentReturn =
-        url.searchParams.has("status") ||
-        url.searchParams.has("tx_ref") ||
-        url.searchParams.has("reference") ||
-        url.searchParams.has("transaction_id");
-      if (hasPaymentReturn) {
-        await loadSeasonRegistrationData();
-        currentView = url.searchParams.get("status") === "cancelled" ?
-          "available" :
-          "mine";
-        renderSeasonRegistration();
-        handlePaymentReturn();
-      } else {
-        await goToCompetitionPage();
-        loadMyCompetitions();
-        await renderCompetitionList();
-      }
+      const returnedFromPayment = handlePaymentReturn();
+      await goToCompetitionPage();
+      loadMyCompetitions();
+      await renderCompetitionList();
     } else {
       goToLoginPage();
     }
@@ -6192,3 +6186,5 @@ window.addEventListener("load", async () => {
     hideLoader();
   }
 });
+
+
