@@ -4697,18 +4697,7 @@ async function searchComparisonPlayers(query) {
     ? result.players
     : [];
 }
-function comparisonSearchEscapeHtml(value) {
-  return String(value ?? "").replace(
-    /[&<>"']/g,
-    character => ({
-      "&": "&amp;",
-      "<": "&lt;",
-      ">": "&gt;",
-      '"': "&quot;",
-      "'": "&#39;"
-    })[character]
-  );
-}
+
 function renderComparisonPlayerSuggestions(
   players,
   playerNumber
@@ -5058,18 +5047,6 @@ async function compareSelectedPlayers() {
       updateComparisonSearchButton();
     }
   }
-}
-function comparisonResultsEscape(value) {
-  return String(value ?? "").replace(
-    /[&<>"']/g,
-    character => ({
-      "&": "&amp;",
-      "<": "&lt;",
-      ">": "&gt;",
-      '"': "&quot;",
-      "'": "&#39;"
-    })[character]
-  );
 }
 function comparisonResultsNumber(value) {
   const number = Number(value ?? 0);
@@ -5635,34 +5612,564 @@ function updateChampionsLeaguePlayoffPositions() {
 
 
 
-window.addEventListener(
-  "load",
-  async () => {
-    showLoader();
+
+
+async function registerForSeason(tournamentId) {
+  if (!tournamentId || loading) return;
+  const season = seasons.find(
+    item => String(item.tournament_id) === String(tournamentId)
+  );
+  if (!season) {
+    showMessage("This season is no longer available.", "error");
+    return;
+  }
+  showConfirmModal(
+    `Register for ${season.competition_name || "this competition"}?\n\n` +
+    `Registration fee: ${formatMoney(season.registration_fee)}\n` +
+    `Admin fee: ${formatMoney(season.admin_fee)}\n` +
+    `Total: ${formatMoney(season.total_amount)}\n\n` +
+    "You will be redirected to Flutterwave to complete payment.",
+    "Continue to Payment",
+    "Cancel"
+  );
+  confirmYes = async () => {
+    closeConfirmModal();
+    if (loading) return;
+    loading = true;
+    clearMessage();
+    renderSeasonRegistration();
+    try {
+      const token = getToken();
+      if (!token) {
+        throw new Error("Please log in to register for a season.");
+      }
+      const res = await apiRequest(
+        `${API}/season-registrations/pay`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: token
+          },
+          body: JSON.stringify({
+            tournament_id: tournamentId
+          })
+        },
+        () => registerForSeason(tournamentId)
+      );
+      if (!res) return;
+      const response = await res.json();
+      if (!res.ok || !response.success || !response.checkout_url) {
+        throw new Error(
+          response.message || "Unable to initialize payment."
+        );
+      }
+      window.location.href = response.checkout_url;
+    } catch (error) {
+      console.error("Season registration payment error:", error);
+      showMessage(
+        error.message || "Unable to start payment. Please try again.",
+        "error"
+      );
+    } finally {
+      loading = false;
+      renderSeasonRegistration();
+    }
+  };
+  confirmNo = () => {
+    closeConfirmModal();
+  };
+}
+
+async function verifyPayment(reference) {
+  if (!reference) {
+    showMessage("Payment reference is missing.", "error");
+    return;
+  }
+  if (loading) return;
+  loading = true;
+  currentView = "mine";
+  showMessage("Verifying your payment...", "info");
+  renderSeasonRegistration();
+  try {
+    const token = getToken();
+    if (!token) {
+      throw new Error("Please log in to verify your payment.");
+    }
+    const res = await apiRequest(
+      `${API}/season-registrations/verify?reference=${encodeURIComponent(reference)}`,
+      {
+        method: "GET",
+        headers: {
+          Authorization: token
+        }
+      },
+      () => verifyPayment(reference)
+    );
+    if (!res) return;
+    const response = await res.json();
+    if (!res.ok || !response.success) {
+      throw new Error(
+        response.message || "Payment verification failed."
+      );
+    }
+    await loadSeasonRegistrationData();
+    showMessage(
+      "Payment verified successfully. Your season registration is confirmed.",
+      "success"
+    );
+  } catch (error) {
+    console.error("Payment verification error:", error);
+    showMessage(
+      error.message ||
+      "We couldn't confirm your payment yet. Refresh your registrations to check again.",
+      "error"
+    );
+  } finally {
+    loading = false;
+    renderSeasonRegistration();
+  }
+}
+
+function handlePaymentReturn() {
+  const url = new URL(window.location.href);
+  const status = url.searchParams.get("status");
+  const reference =
+    url.searchParams.get("tx_ref") ||
+    url.searchParams.get("reference");
+  
+  if (status === "cancelled") {
+    url.searchParams.delete("status");
+    url.searchParams.delete("tx_ref");
+    url.searchParams.delete("reference");
     
-    const loggedIn =
-      await verifySession();
+    window.history.replaceState({}, "", url);
     
+    currentView = "available";
+    
+    showMessage(
+      "Payment was cancelled. You can try registering again.",
+      "error"
+    );
+    
+    renderSeasonRegistration();
+    return true;
+  }
+  
+  if (!reference) return false;
+  
+  url.searchParams.delete("status");
+  url.searchParams.delete("tx_ref");
+  url.searchParams.delete("reference");
+  url.searchParams.delete("transaction_id");
+  
+  window.history.replaceState({}, "", url);
+  
+  currentView = "mine";
+  
+  verifyPayment(reference);
+  
+  return true;
+}
+function formatMoney(amount) {
+  return `₦${Number(amount || 0).toLocaleString("en-NG", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  })}`;
+}
+
+function bindSeasonRegistrationEvents() {
+  const page = document.getElementById("seasonRegistrationApp");
+  if (!page) return;
+  
+  const backButton = document.getElementById("srBack");
+  const refreshButton = document.getElementById("srRefresh");
+  const list = document.getElementById("srList");
+  
+  if (backButton) {
+    backButton.onclick = closeSeasonRegistration;
+  }
+  
+  if (refreshButton) {
+    refreshButton.onclick = loadSeasonRegistrationData;
+  }
+  
+  page.querySelectorAll("[data-view]").forEach(button => {
+    button.onclick = () => {
+      currentView = button.dataset.view;
+      renderSeasonRegistration();
+      bindSeasonRegistrationEvents();
+    };
+  });
+  
+  if (list) {
+    list.onclick = event => {
+      const button = event.target.closest("[data-register-season]");
+      
+      if (!button || button.disabled) return;
+      
+      const tournamentId = button.dataset.registerSeason;
+      
+      console.log("Register button clicked:", tournamentId);
+      
+      registerForSeason(tournamentId);
+    };
+  }
+}
+
+let currentView = "available";
+let seasons = [];
+let registrations = [];
+let loading = false;
+let seasonRegistrationError = "";
+
+async function loadSeasonRegistrationData() {
+  if (loading) return;
+  loading = true;
+  seasonRegistrationError = "";
+  renderSeasonRegistration();
+  try {
+    const token = getToken();
+    if (!token) {
+      throw new Error("Please log in to view season registrations.");
+    }
+    const [seasonsResponse, registrationsResponse] = await Promise.all([
+      apiRequest(
+        `${API}/season-registrations/available`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: token
+          }
+        },
+        () => loadSeasonRegistrationData()
+      ),
+      apiRequest(
+        `${API}/season-registrations/my`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: token
+          }
+        },
+        () => loadSeasonRegistrationData()
+      )
+    ]);
+    if (!seasonsResponse || !registrationsResponse) return;
+    const [seasonsResult, registrationsResult] = await Promise.all([
+      seasonsResponse.json(),
+      registrationsResponse.json()
+    ]);
+    if (!seasonsResponse.ok || !seasonsResult.success) {
+      throw new Error(
+        seasonsResult.message || "Unable to load available seasons."
+      );
+    }
+    if (!registrationsResponse.ok || !registrationsResult.success) {
+      throw new Error(
+        registrationsResult.message || "Unable to load your registrations."
+      );
+    }
+    seasons = Array.isArray(seasonsResult.seasons) ?
+      seasonsResult.seasons :
+      [];
+    registrations = Array.isArray(registrationsResult.registrations) ?
+      registrationsResult.registrations :
+      [];
+  } catch (error) {
+    console.error("Season registration error:", error);
+    seasonRegistrationError =
+      error.message || "Unable to load season registration data.";
+  } finally {
+    loading = false;
+    renderSeasonRegistration();
+  }
+}
+function renderSeasonRegistration() {
+  const root = document.getElementById("seasonRegistrationApp");
+  
+  if (!root) return;
+  
+  const availableCount = document.getElementById("srAvailableCount");
+  const registrationCount = document.getElementById("srRegistrationCount");
+  const sectionTitle = document.getElementById("srSectionTitle");
+  const sectionDescription = document.getElementById("srSectionDescription");
+  const message = document.getElementById("srMessage");
+  const list = document.getElementById("srList");
+  
+  if (availableCount) {
+    availableCount.textContent = seasons.length;
+  }
+  
+  if (registrationCount) {
+    registrationCount.textContent = registrations.length;
+  }
+  
+  root.querySelectorAll("[data-view]").forEach(button => {
+    const active = button.dataset.view === currentView;
+    
+    button.classList.toggle("active", active);
+    button.setAttribute("aria-pressed", String(active));
+  });
+  
+  if (sectionTitle) {
+    sectionTitle.textContent =
+      currentView === "available" ?
+      "Open for registration" :
+      "My Registrations";
+  }
+  
+  if (sectionDescription) {
+    sectionDescription.textContent =
+      currentView === "available" ?
+      "Choose a competition to get started." :
+      "Track your season registrations and payments.";
+  }
+  
+  if (message) {
+    message.textContent = seasonRegistrationError;
+    message.hidden = !seasonRegistrationError;
+    message.className = seasonRegistrationError ?
+      "sr-message error" :
+      "sr-message";
+  }
+  
+  if (!list) return;
+  
+  if (loading) {
+    list.innerHTML = `
+      <div class="sr-empty">
+        <p>Loading season registrations...</p>
+      </div>
+    `;
+    return;
+  }
+  
+  if (seasonRegistrationError) {
+    list.innerHTML = `
+      <div class="sr-empty">
+        <h3>Unable to load registrations</h3>
+        <p>${escapeHtml(seasonRegistrationError)}</p>
+        <button type="button" id="srRetry">Try Again</button>
+      </div>
+    `;
+    
+    document.getElementById("srRetry").onclick =
+      loadSeasonRegistrationData;
+    
+    return;
+  }
+  
+  if (currentView === "available") {
+    renderAvailableSeasons(list);
+  } else {
+    renderMySeasonRegistrations(list);
+  }
+}
+function renderAvailableSeasons(list) {
+  if (!seasons.length) {
+    list.innerHTML = `
+      <div class="sr-empty">
+        <h3>No seasons available</h3>
+        <p>There are currently no seasons open for registration.</p>
+      </div>
+    `;
+    return;
+  }
+  list.innerHTML = seasons.map(season => {
+    const registered = registrations.some(registration =>
+      String(registration.tournament_id) === String(season.tournament_id) &&
+      registration.payment_status === "paid"
+    );
+    const deadline = season.registration_deadline
+      ? new Date(Number(season.registration_deadline)).toLocaleDateString(
+          "en-NG",
+          { day: "numeric", month: "short", year: "numeric" }
+        )
+      : "No deadline";
+    return `
+      <article class="sr-season-card">
+        <div class="sr-season-info">
+          <p class="sr-competition-name">${escapeHtml(season.competition_name || "")}</p>
+          <p>Season: ${escapeHtml(season.season ?? "N/A")}</p>
+          <p>${escapeHtml(String(season.available_spaces ?? 0))} spaces remaining</p>
+          <p>Registration deadline: ${escapeHtml(deadline)}</p>
+        </div>
+        <div class="sr-fees">
+          <div>
+            <span>Registration fee</span>
+            <strong>${formatMoney(season.registration_fee)}</strong>
+          </div>
+          <div>
+            <span>Admin fee</span>
+            <strong>${formatMoney(season.admin_fee)}</strong>
+          </div>
+          <div class="sr-total">
+            <span>Total</span>
+            <strong>${formatMoney(season.total_amount)}</strong>
+          </div>
+        </div>
+        <button
+          type="button"
+          class="sr-register-btn"
+          data-register-season="${escapeHtml(season.tournament_id)}"
+          ${loading || registered ? "disabled" : ""}
+        >
+          ${registered ? "Already Registered" : "Register & Pay"}
+        </button>
+      </article>
+    `;
+  }).join("");
+}
+function renderMySeasonRegistrations(list) {
+  if (!registrations.length) {
+    list.innerHTML = `
+      <div class="sr-empty">
+        <h3>No registrations yet</h3>
+        <p>Your season registrations will appear here.</p>
+        <button type="button" data-view="available">Explore Seasons</button>
+      </div>
+    `;
+    bindSeasonRegistrationEvents();
+    return;
+  }
+  list.innerHTML = registrations.map(registration => {
+    const status = String(registration.payment_status || "pending")
+      .toLowerCase();
+    const statusLabels = {
+      paid: "Paid",
+      pending: "Payment Pending",
+      submitted: "Submitted",
+      rejected: "Rejected"
+    };
+    return `
+      <article class="sr-season-card">
+        <div class="sr-season-info">
+          <p class="sr-competition-name">${escapeHtml(registration.competition_name || "")}</p>
+          <h3>${escapeHtml(registration.tournament_name || "Season")}</h3>
+          <p>Season: ${escapeHtml(registration.season ?? "N/A")}</p>
+          <p>Reference: ${escapeHtml(registration.payment_reference || "Not available")}</p>
+        </div>
+        <div class="sr-fees">
+          <div>
+            <span>Registration fee</span>
+            <strong>${formatMoney(registration.league_entry_fee)}</strong>
+          </div>
+          <div>
+            <span>Admin fee</span>
+            <strong>${formatMoney(registration.admin_fee)}</strong>
+          </div>
+          <div class="sr-total">
+            <span>Total</span>
+            <strong>${formatMoney(registration.total_amount)}</strong>
+          </div>
+        </div>
+        <span class="sr-status sr-status-${escapeHtml(status)}">
+          ${escapeHtml(statusLabels[status] || status)}
+        </span>
+        ${
+          status !== "paid"
+            ? `<button
+                type="button"
+                class="sr-register-btn"
+                data-register-season="${escapeHtml(registration.tournament_id)}"
+              >Try Registration Again</button>`
+            : ""
+        }
+      </article>
+    `;
+  }).join("");
+  bindSeasonRegistrationEvents();
+}
+
+function openSeasonRegistration() {
+  const page = document.getElementById("seasonRegistrationApp");
+  
+  if (!page) {
+    console.error("Season Registration page not found.");
+    return;
+  }
+  
+  page.hidden = false;
+  currentView = "available";
+  
+  bindSeasonRegistrationEvents();
+  renderSeasonRegistration();
+  
+  loadSeasonRegistrationData();
+}
+function closeSeasonRegistration() {
+  const page = document.getElementById("seasonRegistrationApp");
+  
+  if (page) {
+    page.hidden = true;
+  }
+  
+  if (typeof window.showHomepage === "function") {
+    window.showHomepage();
+  } else {
+    history.back();
+  }
+}
+
+function clearMessage() {
+  const message = document.getElementById("srMessage");
+  if (!message) return;
+  message.textContent = "";
+  message.hidden = true;
+  message.className = "sr-message";
+}
+
+openSeasonRegistration();
+
+
+
+function comparisonSearchEscapeHtml(value) {
+  return String(value ?? "").replace(
+    /[&<>"']/g,
+    character => ({
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#39;"
+    })[character]
+  );
+}
+
+function comparisonResultsEscape(value) {
+  return String(value ?? "").replace(
+    /[&<>"']/g,
+    character => ({
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#39;"
+    })[character]
+  );
+}
+
+
+window.addEventListener("load", async () => {
+  showLoader();
+  try {
+    const loggedIn = await verifySession();
     if (loggedIn) {
       hideAllPages();
-      
       await goToCompetitionPage();
-      
       loadMyCompetitions();
-      
       await renderCompetitionList();
-      
-      
-      
-      
-      
       await registerSW();
       await subscribeUser();
-      
+      bindSeasonRegistrationEvents();
+      handlePaymentReturn();
     } else {
       goToLoginPage();
     }
-    
+  } catch (error) {
+    console.error("Application initialization error:", error);
+  } finally {
     hideLoader();
   }
-);
+});

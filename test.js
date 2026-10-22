@@ -4711,3 +4711,9 @@ async function onFixtureClick(match) {
     hideLoader();
   }
 }
+
+
+
+
+
+

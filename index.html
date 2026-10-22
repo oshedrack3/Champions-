@@ -1395,18 +1395,17 @@
       </div>
     </div>
   </div>
-  
-  
-  <div id="confirmModal" class="modal-overlay" style="display:none;">
-    <div class="modal-box">
-      <p id="confirmText">Are you sure?</p>
-      
-      <div style="margin-top:15px;">
-        <button id="confirmYesBtn" onclick="confirmYes()">Yes</button>
-        <button id="confirmNoBtn" onclick="confirmNo()">No</button>
-      </div>
+
+
+  <div id="confirmModal" class="confirm-modal-overlay" style="display: none;">
+  <div class="confirm-modal-box">
+    <p id="confirmText" class="confirm-modal-text">Are you sure?</p>
+    <div class="confirm-modal-actions">
+      <button id="confirmYesBtn" class="confirm-modal-yes" onclick="confirmYes()">Yes</button>
+      <button id="confirmNoBtn" class="confirm-modal-no" onclick="confirmNo()">No</button>
     </div>
   </div>
+</div>
   
   <div id="actionModal" class="action-modal"></div>
   
@@ -1966,6 +1965,49 @@
     </div>
   </div>
   
+  <div id="seasonRegistrationApp" hidden>
+  <section class="sr-page">
+    <header class="sr-header">
+      <button class="sr-back" id="srBack" type="button" aria-label="Go back">‹</button>
+      <div>
+        <h1>Season Registration</h1>
+        <p>Join a Galatico competition</p>
+      </div>
+    </header>
+    <div class="sr-hero">
+      <div class="sr-hero-content">
+        <span class="sr-eyebrow">GALATICO eTOURNAMENTS</span>
+        <h2>Your next season starts here.</h2>
+        <p>Register for available competitions and track your payments in one place.</p>
+      </div>
+      <div class="sr-hero-icon">🏆</div>
+    </div>
+    <nav class="sr-tabs" aria-label="Registration views">
+      <button type="button" class="active" data-view="available">Available Seasons</button>
+      <button type="button" data-view="mine">My Registrations</button>
+    </nav>
+    <div class="sr-summary">
+      <div class="sr-summary-item">
+        <span>Available seasons</span>
+        <strong id="srAvailableCount">0</strong>
+      </div>
+      <div class="sr-summary-item">
+        <span>My registrations</span>
+        <strong id="srRegistrationCount">0</strong>
+      </div>
+    </div>
+    <div class="sr-section-heading">
+      <div>
+        <h2 id="srSectionTitle">Open for registration</h2>
+        <p id="srSectionDescription">Choose a competition to get started.</p>
+      </div>
+      <button class="sr-refresh" id="srRefresh" type="button" aria-label="Refresh">↻</button>
+    </div>
+    <div id="srMessage" class="sr-message" hidden></div>
+    <div id="srList" class="sr-list"></div>
+    <p class="sr-footer">Secure registration · Galatico eTournaments</p>
+  </section>
+</div>
   
   
   <nav id="homepageNav" style="display: none;">
@@ -2246,6 +2288,13 @@
       
     </div>
   </div>
+  
+  
+  
+  
+
+  
+  
   
   
   <script src="https://docs.opencv.org/4.x/opencv.js"></script>
