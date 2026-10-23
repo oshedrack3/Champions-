@@ -370,32 +370,7 @@ function formatMatchDay(
   return `${weekday} ${day}<br>${monthYear}`;
 }
 
-function formatRecordedTime(
-  value
-) {
-  if (!value) {
-    return "";
-  }
-  const date =
-    new Date(value);
-  if (
-    isNaN(date.getTime())
-  ) {
-    return "";
-  }
-  const day =
-    date.getDate();
-  const month =
-    date.toLocaleDateString(
-      "en-GB",
-      {
-        month: "short"
-      }
-    );
-  const year =
-    date.getFullYear();
-  return `${day} ${month}, ${year}`;
-}
+
 
 function renderEmptyFixtures(container, search) {
   
@@ -436,18 +411,31 @@ function formatMatchDay(value) {
 
 
 function formatRecordedTime(value) {
-  if (!value) return "";
-  
-  const date = new Date(value);
-  if (isNaN(date.getTime())) return "";
-  
-  const day = date.getDate();
-  const month = date.toLocaleDateString("en-GB", { month: "short" });
-  const year = date.getFullYear();
-  
-  return `${day} ${month}, ${year}`;
+  if (value === null || value === undefined || value === "") {
+    return "Unknown";
+  }
+  const timestamp = Number(value);
+  if (!Number.isFinite(timestamp)) {
+    return "Unknown";
+  }
+  const date = new Date(timestamp);
+  if (Number.isNaN(date.getTime())) {
+    return "Unknown";
+  }
+  const formattedDate = new Intl.DateTimeFormat("en-NG", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    timeZone: "Africa/Lagos"
+  }).format(date);
+  const formattedTime = new Intl.DateTimeFormat("en-NG", {
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+    timeZone: "Africa/Lagos"
+  }).format(date);
+  return `${formattedDate}, ${formattedTime}`;
 }
-
 
 function setCurrentRound(round) {
   const tournament =

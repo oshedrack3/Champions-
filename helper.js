@@ -1823,74 +1823,6 @@ function getReviewTeamName(team) {
   return "";
 }
 
-function openSubmissionReview(match, submission) {
-  currentReviewMatch = match;
-  currentReviewSubmission = submission;
-  
-  document.getElementById(
-      "reviewModalFixture"
-    ).textContent =
-    `${getReviewTeamName(match.home)} vs ${getReviewTeamName(match.away)}`;
-  
-  document.getElementById(
-      "reviewModalScore"
-    ).textContent =
-    `${submission.home_goals} - ${submission.away_goals}`;
-  
-  document.getElementById(
-      "reviewModalImage"
-    ).src =
-    submission.screenshot || "";
-  
-  document.getElementById(
-      "reviewModalPlayer"
-    ).textContent =
-    submission.username ||
-    "unknown player";
-  
-  document.getElementById(
-      "reviewModalTime"
-    ).textContent =
-    formatRecordedTime(
-      submission.created_at
-    );
-  
-  const statusEl =
-    document.getElementById(
-      "reviewModalStatus"
-    );
-  
-  const status =
-    String(
-      submission.status || ""
-    ).toLowerCase();
-  
-  statusEl.textContent =
-    submission.status || "";
-  
-  statusEl.className =
-    status;
-  
-  document.getElementById(
-      "reviewModalReasonRow"
-    ).style.display =
-    "none";
-  
-  document.getElementById(
-      "reviewModalRejectInputRow"
-    ).style.display =
-    "none";
-  
-  buildReviewActions(
-    match,
-    submission
-  );
-  
-  document.getElementById(
-      "reviewModal"
-    ).style.display =
-    "flex";
-}
 
 function closeReviewModal() {
   
@@ -1901,139 +1833,127 @@ function closeReviewModal() {
   
 }
 
+function openSubmissionReview(match, submission) {
+  currentReviewMatch = match;
+  currentReviewSubmission = submission;
+  const fixtureEl = document.getElementById("reviewModalFixture");
+  const imageEl = document.getElementById("reviewModalImage");
+  const playerEl = document.getElementById("reviewModalPlayer");
+  const timeEl = document.getElementById("reviewModalTime");
+  const statusEl = document.getElementById("reviewModalStatus");
+  const reasonRow = document.getElementById("reviewModalReasonRow");
+  const rejectInputRow = document.getElementById("reviewModalRejectInputRow");
+  const modal = document.getElementById("reviewModal");
+  if (!fixtureEl || !modal) return;
+  fixtureEl.innerHTML = "";
+  const homeTeam = document.createElement("span");
+  homeTeam.className = "review-fixture-team review-fixture-home";
+  homeTeam.textContent = getReviewTeamName(match.home);
+  const awayTeam = document.createElement("span");
+  awayTeam.className = "review-fixture-team review-fixture-away";
+  awayTeam.textContent = getReviewTeamName(match.away);
+  const score = document.createElement("span");
+  score.className = "review-fixture-score";
+  score.textContent = `${submission.home_goals} - ${submission.away_goals}`;
+  fixtureEl.append(homeTeam, score, awayTeam);
+  if (imageEl) {
+    imageEl.src = submission.screenshot || "";
+  }
+  if (playerEl) {
+    playerEl.textContent = submission.username || "Unknown player";
+  }
+  if (timeEl) {
+    timeEl.textContent = formatRecordedTime(submission.created_at);
+    const timeLabel = timeEl
+      .closest(".row")
+      ?.querySelector(".team-label");
+    if (timeLabel) {
+      timeLabel.textContent = "Submitted on";
+    }
+  }
+  if (statusEl) {
+    const status = String(submission.status || "").toLowerCase();
+    statusEl.textContent = submission.status || "Unknown";
+    statusEl.className = status;
+  }
+  if (reasonRow) {
+    reasonRow.style.display = "none";
+  }
+  if (rejectInputRow) {
+    rejectInputRow.style.display = "none";
+  }
+  buildReviewActions(match, submission);
+  modal.style.display = "flex";
+}
 function buildReviewActions(match, submission) {
-  
-  const actions =
-    document.getElementById(
-      "reviewModalActions"
-    );
-  
+  const actions = document.getElementById("reviewModalActions");
+  const rejectInputRow = document.getElementById("reviewModalRejectInputRow");
+  const reasonRow = document.getElementById("reviewModalReasonRow");
+  const reasonEl = document.getElementById("reviewModalReason");
+  if (!actions) return;
   actions.innerHTML = "";
-  
-  document.getElementById(
-    "reviewModalRejectInputRow"
-  ).style.display = "none";
-  
-  document.getElementById(
-    "reviewModalReasonRow"
-  ).style.display = "none";
-  
+  if (rejectInputRow) {
+    rejectInputRow.style.display = "none";
+  }
+  if (reasonRow) {
+    reasonRow.style.display = "none";
+  }
   if (APP_MODE === "admin") {
-    
     if (submission.status !== "pending") {
-      
       if (submission.status === "rejected") {
-        
-        document.getElementById(
-          "reviewModalReasonRow"
-        ).style.display = "block";
-        
-        document.getElementById(
-            "reviewModalReason"
-          ).textContent =
-          submission.rejection_reason ||
-          "No reason provided.";
+        if (reasonRow) {
+          reasonRow.style.display = "block";
+        }
+        if (reasonEl) {
+          reasonEl.textContent =
+            submission.rejection_reason || "No reason provided.";
+        }
       }
-      
       return;
     }
-    
-    const approveBtn =
-      document.createElement("button");
-    
-    approveBtn.className =
-      "btn-save";
-    
-    approveBtn.textContent =
-      "✅ Approve";
-    
-    approveBtn.onclick =
-      approveSubmission;
-    
-    const rejectBtn =
-      document.createElement("button");
-    
-    rejectBtn.className =
-      "btn-clear";
-    
-    rejectBtn.textContent =
-      "❌ Reject";
-    
+    const approveBtn = document.createElement("button");
+    approveBtn.className = "btn-save";
+    approveBtn.textContent = "✅ Approve";
+    approveBtn.onclick = approveSubmission;
+    const rejectBtn = document.createElement("button");
+    rejectBtn.className = "btn-clear";
+    rejectBtn.textContent = "❌ Reject";
     rejectBtn.onclick = () => {
-      
-      document.getElementById(
-          "reviewModalRejectInputRow"
-        ).style.display =
-        "block";
-      
+      if (rejectInputRow) {
+        rejectInputRow.style.display = "block";
+      }
       rejectBtn.remove();
-      
-      const confirmBtn =
-        document.createElement("button");
-      
-      confirmBtn.className =
-        "btn-clear";
-      
-      confirmBtn.textContent =
-        "Confirm Reject";
-      
-      confirmBtn.onclick =
-        rejectSubmission;
-      
-      actions.appendChild(
-        confirmBtn
-      );
+      const confirmBtn = document.createElement("button");
+      confirmBtn.className = "btn-clear";
+      confirmBtn.textContent = "Confirm Reject";
+      confirmBtn.onclick = rejectSubmission;
+      actions.appendChild(confirmBtn);
     };
-    
-    actions.appendChild(
-      approveBtn
-    );
-    
-    actions.appendChild(
-      rejectBtn
-    );
-    
+    actions.append(approveBtn, rejectBtn);
     return;
   }
-  
-  if (submission.status === "pending") {
+  if (
+    submission.status === "pending" ||
+    submission.status === "approved"
+  ) {
     return;
   }
-  
-  if (submission.status === "approved") {
-    return;
+  if (reasonRow) {
+    reasonRow.style.display = "block";
   }
-  
-  document.getElementById(
-      "reviewModalReasonRow"
-    ).style.display =
-    "block";
-  
-  document.getElementById(
-      "reviewModalReason"
-    ).textContent =
-    submission.rejection_reason ||
-    "No reason provided.";
-  
-  const resubmitBtn =
-    document.createElement("button");
-  
-  resubmitBtn.className =
-    "btn-resubmit";
-  
-  resubmitBtn.textContent =
-    "Resubmit";
-  
+  if (reasonEl) {
+    reasonEl.textContent =
+      submission.rejection_reason || "No reason provided.";
+  }
+  const resubmitBtn = document.createElement("button");
+  resubmitBtn.className = "btn-resubmit";
+  resubmitBtn.textContent = "Resubmit";
   resubmitBtn.onclick = () => {
     closeReviewModal();
     openLeagueRecorder(match);
   };
-  
-  actions.appendChild(
-    resubmitBtn
-  );
+  actions.appendChild(resubmitBtn);
 }
-
 
 function startLoadRegulator(
   retryCallback,

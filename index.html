@@ -1530,73 +1530,42 @@
     
   </div>
   
-  <div id="reviewModal" class="modal-overlay" style="display:none">
-    
-    <div class="score-box">
-      
-      <button class="modal-close" onclick="closeReviewModal()">
-        ✕
-      </button>
-      
-      <h3 id="reviewModalTitle">
-        Match Submission
-      </h3>
-      
-      <p id="reviewModalSubtitle" class="result-subtitle"></p>
-      
-      <div class="row">
-        <span class="team-label">Fixture</span>
-        <div id="reviewModalFixture"></div>
-      </div>
-      
-      <div class="row">
-        <span class="team-label">Score</span>
-        <div id="reviewModalScore"></div>
-      </div>
-      
-      <div class="row">
-        <span class="team-label">Screenshot</span>
-        
-        <img id="reviewModalImage" class="review-modal-image">
-      </div>
-      
-      <div class="row">
-        <span class="team-label">Submitted By</span>
-        <div id="reviewModalPlayer"></div>
-      </div>
-      
-      <div class="row">
-        <span class="team-label">Submitted At</span>
-        <div id="reviewModalTime"></div>
-      </div>
-      
-      <div class="row">
-        <span class="team-label">Status</span>
-        <div id="reviewModalStatus"></div>
-      </div>
-      
-      <div class="row" id="reviewModalReasonRow" style="display:none">
-        <span class="team-label">
-          Rejection Reason
-        </span>
-        
-        <div id="reviewModalReason"></div>
-      </div>
-      
-      <div class="row" id="reviewModalRejectInputRow" style="display:none">
-        <span class="team-label">
-          Enter Reason
-        </span>
-        
-        <textarea id="reviewModalRejectReason" placeholder="Reason for rejection..."></textarea>
-      </div>
-      
-      <div id="reviewModalActions" class="review-actions"></div>
-      
+<div id="reviewModal" class="review-modal-overlay" style="display:none">
+  <div class="score-box review-modal-box">
+    <button class="modal-close" onclick="closeReviewModal()">✕</button>
+    <h3 id="reviewModalTitle">Match Submission</h3>
+    <p id="reviewModalSubtitle" class="result-subtitle"></p>
+    <div class="row review-fixture-row">
+      <span class="team-label">Fixture</span>
+      <div id="reviewModalFixture"></div>
     </div>
-    
+    <div class="row review-screenshot-row">
+      <span class="team-label">Screenshot</span>
+      <img id="reviewModalImage" class="review-modal-image" alt="Match result screenshot">
+    </div>
+    <div class="row">
+      <span class="team-label">Submitted By</span>
+      <div id="reviewModalPlayer"></div>
+    </div>
+    <div class="row">
+      <span class="team-label">Submitted on</span>
+      <div id="reviewModalTime"></div>
+    </div>
+    <div class="row">
+      <span class="team-label">Status</span>
+      <div id="reviewModalStatus"></div>
+    </div>
+    <div class="row" id="reviewModalReasonRow" style="display:none">
+      <span class="team-label">Rejection Reason</span>
+      <div id="reviewModalReason"></div>
+    </div>
+    <div class="row" id="reviewModalRejectInputRow" style="display:none">
+      <span class="team-label">Enter Reason</span>
+      <textarea id="reviewModalRejectReason" placeholder="Reason for rejection..."></textarea>
+    </div>
+    <div id="reviewModalActions" class="review-actions"></div>
   </div>
-  
+</div>  
   
   
   
