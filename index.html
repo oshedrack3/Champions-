@@ -239,24 +239,24 @@
       </section>
       
       <div id="galaticoGlow" class="competition-branding">
-  <div class="competition-branding-content">
-    <div class="competition-logo-wrap">
-      <div class="competition-gold-ring"></div>
-      <img src="galaticoLogo1.png" alt="Galatico Esports" class="competition-brand-logo">
-    </div>
-    <h1 class="competition-brand-name">GALATICO</h1>
-    <div class="competition-brand-divider">
-      <span></span>
-      <div></div>
-      <span></span>
-    </div>
-    <p class="competition-brand-subtitle">ESPORTS</p>
-    <p class="competition-brand-tagline">COMPETE. CONQUER. MAKE HISTORY.</p>
-  </div>
-  <div class="competition-brand-footer">
-    <span>THE HOME OF COMPETITION</span>
-  </div>
-</div>
+        <div class="competition-branding-content">
+          <div class="competition-logo-wrap">
+            <div class="competition-gold-ring"></div>
+            <img src="galaticoLogo1.png" alt="Galatico Esports" class="competition-brand-logo">
+          </div>
+          <h1 class="competition-brand-name">GALATICO</h1>
+          <div class="competition-brand-divider">
+            <span></span>
+            <div></div>
+            <span></span>
+          </div>
+          <p class="competition-brand-subtitle">ESPORTS</p>
+          <p class="competition-brand-tagline">COMPETE. CONQUER. MAKE HISTORY.</p>
+        </div>
+        <div class="competition-brand-footer">
+          <span>THE HOME OF COMPETITION</span>
+        </div>
+      </div>
       <div id="mySection">
         <div id="competitionList"></div>
         
@@ -365,6 +365,9 @@
             My Profile
           </h2>
           <div class="profile-modal-page-header-spacer"></div>
+            <button type="button" onclick="openUpdateProfile()" class="profile-page-update-profile-btn">
+    Update Profile
+  </button>
         </div>
         <div class="profile-page-content">
           <div class="profile-page-user-section">
@@ -377,11 +380,45 @@
               WhatsApp number not added
             </div>
             
-            <button type="button" onclick="openUpdateProfile()" class="profile-page-update-profile-btn">
-              Update Profile
-            </button>
+            
             
           </div>
+          <div class="profile-page-bank-section">
+            <div class="profile-page-bank-header">
+              <h4>Prize Payout Details</h4>
+              <span id="profileBankStatus">Incomplete</span>
+            </div>
+            <div class="profile-page-bank-details">
+              <div class="profile-page-bank-row">
+                <span>Bank Name</span>
+                <strong id="profileBankName">Not added</strong>
+              </div>
+              <div class="profile-page-bank-row">
+                <span>Account Name</span>
+                <strong id="profileBankAccountName">Not added</strong>
+              </div>
+              <div class="profile-page-bank-row">
+                <span>Account Number</span>
+                <strong id="profileBankAccountNumber">Not added</strong>
+              </div>
+            </div>
+            <p id="profileBankMessage">
+              Add your bank details to receive tournament prize payments.
+            </p>
+          </div>
+          <section class="profile-page-squad-section">
+            <div class="profile-page-section-header">
+              <h3 class="profile-page-section-title">
+                Registered Squad
+              </h3>
+            </div>
+            <div id="profilePageSquadContent">
+              <div class="profile-page-squad-loading">
+                Loading squad information...
+              </div>
+            </div>
+          
+          </section>
           <section class="profile-page-teams-section">
             <div class="profile-page-section-header">
               <h3 class="profile-page-section-title">
@@ -1395,17 +1432,17 @@
       </div>
     </div>
   </div>
-
-
+  
+  
   <div id="confirmModal" class="confirm-modal-overlay" style="display: none;">
-  <div class="confirm-modal-box">
-    <p id="confirmText" class="confirm-modal-text">Are you sure?</p>
-    <div class="confirm-modal-actions">
-      <button id="confirmYesBtn" class="confirm-modal-yes" onclick="confirmYes()">Yes</button>
-      <button id="confirmNoBtn" class="confirm-modal-no" onclick="confirmNo()">No</button>
+    <div class="confirm-modal-box">
+      <p id="confirmText" class="confirm-modal-text">Are you sure?</p>
+      <div class="confirm-modal-actions">
+        <button id="confirmYesBtn" class="confirm-modal-yes" onclick="confirmYes()">Yes</button>
+        <button id="confirmNoBtn" class="confirm-modal-no" onclick="confirmNo()">No</button>
+      </div>
     </div>
   </div>
-</div>
   
   <div id="actionModal" class="action-modal"></div>
   
@@ -1966,50 +2003,50 @@
   </div>
   
   <div id="seasonRegistrationApp" hidden>
-  <section class="sr-page">
-    <header class="sr-header">
-      <button class="sr-back" id="srBack" type="button" aria-label="Go back">‹</button>
-      <div>
-        <h1>Season Registration</h1>
-        <p>Join a Galatico competition</p>
+    <section class="sr-page">
+      <header class="sr-header">
+        <button class="sr-back" id="srBack" type="button" aria-label="Go back">‹</button>
+        <div>
+          <h1>Season Registration</h1>
+          <p>Join a Galatico competition</p>
+        </div>
+      </header>
+      <div class="sr-hero">
+        <div class="sr-hero-content">
+          <span class="sr-eyebrow">GALATICO eSports</span>
+          <h2>Your next season starts here.</h2>
+          <p>Register for New Season competitions and track your payments in one place.</p>
+        </div>
+        <div class="sr-hero-icon">
+          <img src="galaticoLogo1.png" alt="Galatico Logo">
+        </div>
       </div>
-    </header>
-    <div class="sr-hero">
-      <div class="sr-hero-content">
-        <span class="sr-eyebrow">GALATICO eSports</span>
-        <h2>Your next season starts here.</h2>
-        <p>Register for New Season competitions and track your payments in one place.</p>
+      <nav class="sr-tabs" aria-label="Registration views">
+        <button type="button" class="active" data-view="available">Available Seasons</button>
+        <button type="button" data-view="mine">My Registrations</button>
+      </nav>
+      <div class="sr-summary">
+        <div class="sr-summary-item">
+          <span>Available seasons</span>
+          <strong id="srAvailableCount">0</strong>
+        </div>
+        <div class="sr-summary-item">
+          <span>My registrations</span>
+          <strong id="srRegistrationCount">0</strong>
+        </div>
       </div>
-     <div class="sr-hero-icon">
-  <img src="galaticoLogo1.png" alt="Galatico Logo">
-</div>
-    </div>
-    <nav class="sr-tabs" aria-label="Registration views">
-      <button type="button" class="active" data-view="available">Available Seasons</button>
-      <button type="button" data-view="mine">My Registrations</button>
-    </nav>
-    <div class="sr-summary">
-      <div class="sr-summary-item">
-        <span>Available seasons</span>
-        <strong id="srAvailableCount">0</strong>
+      <div class="sr-section-heading">
+        <div>
+          <h2 id="srSectionTitle">Open for registration</h2>
+          <p id="srSectionDescription">Choose a competition to get started.</p>
+        </div>
+        <button class="sr-refresh" id="srRefresh" type="button" aria-label="Refresh">↻</button>
       </div>
-      <div class="sr-summary-item">
-        <span>My registrations</span>
-        <strong id="srRegistrationCount">0</strong>
-      </div>
-    </div>
-    <div class="sr-section-heading">
-      <div>
-        <h2 id="srSectionTitle">Open for registration</h2>
-        <p id="srSectionDescription">Choose a competition to get started.</p>
-      </div>
-      <button class="sr-refresh" id="srRefresh" type="button" aria-label="Refresh">↻</button>
-    </div>
-    <div id="srMessage" class="sr-message" hidden></div>
-    <div id="srList" class="sr-list"></div>
-    <p class="sr-footer">Secure registration · Galatico eSports</p>
-  </section>
-</div>
+      <div id="srMessage" class="sr-message" hidden></div>
+      <div id="srList" class="sr-list"></div>
+      <p class="sr-footer">Secure registration · Galatico eSports</p>
+    </section>
+  </div>
   
   
   <nav id="homepageNav" style="display: none;">
@@ -2218,13 +2255,38 @@
           <input type="text" id="updateProfileUsername" class="update-profile-input" placeholder="Enter username" autocomplete="username">
         </div>
         <div class="update-profile-input-group">
+          <p class="update-profile-description">
+            Your WhatsApp number is used by other tournament players to contact you. Ensure you enter your active WhatsApp number.
+          </p>
           <label for="updateProfilePhone" class="update-profile-input-label">
             WhatsApp Number
           </label>
           <input type="tel" id="updateProfilePhone" class="update-profile-input" placeholder="e.g. 08012345678" autocomplete="tel">
+          
+        </div>
+        <div class="update-profile-input-group">
+          <p class="update-profile-description">
+            Your bank details will be used to pay approved tournament prizes. Ensure that the account details are correct and belong to You.
+          </p>
+          
+          <label for="updateProfileBankName" class="update-profile-input-label">
+            Bank Name
+          </label>
+          <input type="text" id="updateProfileBankName" class="update-profile-input" placeholder="Enter bank name" autocomplete="off">
+        </div>
+        <div class="update-profile-input-group">
+          <label for="updateProfileAccountName" class="update-profile-input-label">
+            Account Name
+          </label>
+          <input type="text" id="updateProfileAccountName" class="update-profile-input" placeholder="Enter account holder's name" autocomplete="off">
+        </div>
+        <div class="update-profile-input-group">
+          <label for="updateProfileAccountNumber" class="update-profile-input-label">
+            Account Number
+          </label>
+          <input type="text" id="updateProfileAccountNumber" class="update-profile-input" placeholder="10-digit account number" inputmode="numeric" maxlength="10" autocomplete="off">
         </div>
         <div class="update-profile-squad">
-          
           <h4>Registered Squad</h4>
           <div id="profileSquadStatus">
             Loading squad information...
@@ -2241,13 +2303,9 @@
             </button>
           </div>
         </div>
-        <p class="update-profile-description">
-          Your WhatsApp number is used
-          by other tournament players to contact you. Ensure you enter your active whatsapp number.
-        </p>
+        
         <div id="updateProfileMessage" class="update-profile-status"></div>
       </div>
-      
       <div class="update-profile-modal-actions">
         <button type="button" class="update-profile-cancel-button" onclick="closeUpdateProfile()">
           Cancel
@@ -2258,7 +2316,6 @@
       </div>
     </div>
   </div>
-  
   <div id="tmPairingModal" class="tm-pairing-modal-overlay" style="display:none;">
     <div class="tm-pairing-modal">
       
@@ -2291,10 +2348,172 @@
     </div>
   </div>
   
-  
-  
-  
-
+  <section id="paymentHistorySection" class="payment-history-section" hidden>
+    <div class="payment-history-header">
+      <div>
+        <h2>Financial Management</h2>
+        <p>Manage registrations, prize payouts, expenses, and finances.</p>
+      </div>
+      <div class="payment-history-actions">
+        <button type="button" onclick="refreshFinancialPage()">
+          Refresh
+        </button>
+        <button type="button" class="payment-history-close" onclick="closePaymentHistoryPage()">
+          Close ✕
+        </button>
+      </div>
+    </div>
+    <nav class="financial-navigation" aria-label="Financial management sections">
+      <button type="button" class="financial-nav-btn" data-financial-tab="summary" onclick="switchFinancialTab('summary')">
+        Financial Summary
+      </button>
+      <button type="button" class="financial-nav-btn" data-financial-tab="contributions" onclick="switchFinancialTab('contributions')">
+        Sponsorship & Contributions
+      </button>
+      <button type="button" class="financial-nav-btn active" data-financial-tab="history" onclick="switchFinancialTab('history')">
+        Payment History
+      </button>
+      <button type="button" class="financial-nav-btn" data-financial-tab="prizes" onclick="switchFinancialTab('prizes')">
+        Prize Payouts
+      </button>
+      <button type="button" class="financial-nav-btn" data-financial-tab="expenses" onclick="switchFinancialTab('expenses')">
+        Expenses
+      </button>
+      
+    </nav>
+    <div id="financialHistoryTab" class="financial-tab-content">
+      <div id="paymentHistorySummary" class="payment-history-summary"></div>
+      <div id="paymentHistoryContent">
+        <div class="payment-history-empty">
+          Payment history will appear here.
+        </div>
+      </div>
+    </div>
+    <div id="financialPrizesTab" class="financial-tab-content" hidden>
+      <div class="financial-section-heading">
+        <div>
+          <h3>Prize Payouts</h3>
+          <p>Manage prizes for the current tournament.</p>
+        </div>
+        <button type="button" id="createPrizeBtn" onclick="openCreatePrizeForm()" hidden>
+          + Add Prize
+        </button>
+      </div>
+      <div id="financialPrizeSummary" class="payment-history-summary"></div>
+      <div id="financialPrizeContent">
+        <div class="payment-history-empty">
+          Prize payout records will appear here.
+        </div>
+      </div>
+    </div>
+    <div id="financialContributionsTab" class="financial-tab-content" hidden>
+      <div class="financial-section-heading">
+        <div>
+          <h3>Sponsorship & Contributions</h3>
+          <p>Record sponsorship funds and contributions received by the administration.</p>
+        </div>
+        <button type="button" id="createFinancialContributionBtn" onclick="openCreateFinancialContributionForm()" hidden>
+          + Add Contribution
+        </button>
+      </div>
+      
+      <div id="financialContributionSummary" class="payment-history-summary"></div>
+      
+      <div id="financialContributionContent">
+        <div class="payment-history-empty">
+          Sponsorship and contribution records will appear here.
+        </div>
+      </div>
+    </div>
+    <div id="financialExpensesTab" class="financial-tab-content" hidden>
+      <div class="financial-section-heading">
+        <div>
+          <h3>Expenses</h3>
+          <p>Track tournament costs and general operating expenses.</p>
+        </div>
+        <div class="payment-history-actions">
+          <button type="button" id="createTournamentExpenseBtn" onclick="openCreateExpenseForm(true)" hidden>
+            + Add Tournament Expense
+          </button>
+          <button type="button" id="createGeneralExpenseBtn" onclick="openCreateExpenseForm(false)" hidden>
+            + Add General Expense
+          </button>
+        </div>
+      </div>
+      <div id="financialExpenseSummary" class="payment-history-summary"></div>
+      <div id="financialExpenseContent">
+        <div class="payment-history-empty">
+          Expense records will appear here.
+        </div>
+      </div>
+    </div>
+    <div id="financialSummaryTab" class="financial-tab-content" hidden>
+      <div class="financial-section-heading">
+        <div>
+          <h3>Financial Summary</h3>
+          <p>Review revenue, payouts, expenses, and available balance.</p>
+        </div>
+      </div>
+      <div id="financialOverviewContent">
+        <div class="payment-history-empty">
+          Financial summary will appear here.
+        </div>
+      </div>
+    </div>
+    
+    <div id="financialContributionModal" class="financial-modal" hidden>
+      <div class="financial-modal-content">
+        <div class="financial-section-heading">
+          <div>
+            <h3>Add Contribution</h3>
+            <p>Record funds already received by the administration.</p>
+          </div>
+        </div>
+        
+        <form id="financialContributionForm">
+          <label for="contributionType">Contribution Type</label>
+          <select id="contributionType" name="contribution_type" required>
+            <option value="sponsorship">Sponsorship</option>
+            <option value="admin_contribution">Admin Contribution</option>
+          </select>
+          
+          <label for="contributorName">Sponsor / Contributor Name</label>
+          <input type="text" id="contributorName" name="contributor_name" maxlength="150" required>
+          
+          <label for="contributionAmount">Amount (₦)</label>
+          <input type="number" id="contributionAmount" name="amount" min="1" step="1" required>
+          
+          <label for="contributionPaymentMethod">Payment Method</label>
+          <select id="contributionPaymentMethod" name="payment_method">
+            <option value="">Select payment method</option>
+            <option value="bank_transfer">Bank Transfer</option>
+            <option value="cash">Cash</option>
+            <option value="online_payment">Online Payment</option>
+            <option value="other">Other</option>
+          </select>
+          
+          <label for="contributionPaymentReference">Payment Reference</label>
+          <input type="text" id="contributionPaymentReference" name="payment_reference" maxlength="200">
+          
+          <label for="contributionReceivedAt">Date Received</label>
+          <input type="date" id="contributionReceivedAt" name="received_at">
+          
+          <label for="contributionNotes">Notes</label>
+          <textarea id="contributionNotes" name="notes" rows="3" maxlength="1000"></textarea>
+          
+          <div class="financial-modal-actions">
+            <button type="button" onclick="closeFinancialContributionForm()">
+              Cancel
+            </button>
+            
+            <button type="submit" id="submitFinancialContributionBtn">
+              Save Contribution
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </section>
   
   
   

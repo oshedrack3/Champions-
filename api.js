@@ -2308,24 +2308,26 @@ async function updateMatch(matchId, updates) {
 }
 
 async function getUserProfile() {
-  const cachedProfile =
-    await getCachedData("profile");
-  
+  const cachedProfile = await getCachedData("profile");
+
   let profile =
-    cachedProfile &&
-    typeof cachedProfile === "object" ?
-    cachedProfile :
-    {
-      username: "",
-      teams: []
-    };
-  
+    cachedProfile && typeof cachedProfile === "object"
+      ? cachedProfile
+      : {
+          username: "",
+          phone: "",
+          payout_account_name: "",
+          payout_account_number: "",
+          payout_bank_name: "",
+          teams: []
+        };
+
   const token = getToken();
-  
+
   if (!token) {
     return profile;
   }
-  
+
   const res = await apiRequest(
     `${API}/profile`,
     {
@@ -2336,105 +2338,137 @@ async function getUserProfile() {
     },
     getUserProfile
   );
-  
+
   if (!res) {
     return profile;
   }
-  
+
   const result = await res.json();
-  
+
   if (!res.ok || !result.success) {
     throw new Error(
-      result.message ||
-      "Failed to load profile."
+      result.message || "Failed to load profile."
     );
   }
-  
-  profile =
-    result.profile || {
-      username: "",
-      teams: []
-    };
-  
-  await saveCachedData(
-    "profile",
-    "",
-    profile
-  );
-  
+
+  profile = {
+    ...profile,
+    ...(result.profile || {})
+  };
+
+  await saveCachedData("profile", "", profile);
+
   return profile;
 }
-
-
-function openUpdateProfile() {
+async function openProfileModal() {
+  goBackHome()
   const modal =
     document.getElementById(
-      "updateProfileModal"
+      "profileModal"
     );
-  const usernameInput =
-    document.getElementById(
-      "updateProfileUsername"
-    );
-  const phoneInput =
-    document.getElementById(
-      "updateProfilePhone"
-    );
-  const message =
-    document.getElementById(
-      "updateProfileMessage"
-    );
-  if (!modal) {
-    return;
-  }
-  const username =
-    document.getElementById(
-      "profileUsername"
-    )?.textContent
-    ?.trim() || "";
-  const phoneText =
-    document.getElementById(
-      "profilePhone"
-    )?.textContent
-    ?.trim() || "";
-  let phone =
-    phoneText.replace(
-      /^WhatsApp:\s*/i,
-      ""
-    ).trim();
-  if (
-    phone ===
-    "WhatsApp number not added"
-  ) {
-    phone = "";
-  }
-  if (usernameInput) {
-    usernameInput.value =
-      username === "Username" ?
-      "" :
-      username;
-  }
-  if (phoneInput) {
-    phoneInput.value =
-      phone;
-  }
-  if (message) {
-    message.style.display =
-      "none";
-    message.textContent =
-      "";
-    message.className =
-      "update-profile-status";
-  }
-  modal.style.display =
-    "flex";
+  if (!modal) return;
+  modal.classList.add("active");
   modal.setAttribute(
     "aria-hidden",
     "false"
   );
+  try {
+    const profile =
+      await getUserProfile();
+    renderUserProfile(profile);
+    renderProfilePageSquad();
+  } catch (error) {
+    console.error(
+      "Failed to load profile:",
+      error
+    );
+  }
+}
+
+
+async function openUpdateProfile() {
+  const modal = document.getElementById("updateProfileModal");
+
+  if (!modal) {
+    return;
+  }
+
+  const usernameInput = document.getElementById("updateProfileUsername");
+  const phoneInput = document.getElementById("updateProfilePhone");
+  const bankNameInput = document.getElementById("updateProfileBankName");
+  const accountNameInput = document.getElementById("updateProfileAccountName");
+  const accountNumberInput = document.getElementById("updateProfileAccountNumber");
+  const message = document.getElementById("updateProfileMessage");
+
+  const cachedProfile = await getCachedData("profile");
+
+  let profile =
+    cachedProfile && typeof cachedProfile === "object"
+      ? cachedProfile
+      : {};
+
+  if (usernameInput) {
+    usernameInput.value = profile.username || "";
+  }
+
+  if (phoneInput) {
+    phoneInput.value = profile.phone || "";
+  }
+
+  if (bankNameInput) {
+    bankNameInput.value = profile.payout_bank_name || "";
+  }
+
+  if (accountNameInput) {
+    accountNameInput.value = profile.payout_account_name || "";
+  }
+
+  if (accountNumberInput) {
+    accountNumberInput.value = profile.payout_account_number || "";
+  }
+
+  if (message) {
+    message.style.display = "none";
+    message.textContent = "";
+    message.className = "update-profile-status";
+  }
+
+  modal.style.display = "flex";
+  modal.setAttribute("aria-hidden", "false");
+
   loadProfileSquad();
+
   setTimeout(() => {
     usernameInput?.focus();
   }, 50);
+
+  if (!getToken()) {
+    return;
+  }
+
+  try {
+    const latestProfile = await getUserProfile();
+
+    profile = latestProfile || profile;
+    
+    if (usernameInput) {
+      usernameInput.value = profile.username || "";
+    }
+    if (phoneInput) {
+      phoneInput.value = profile.phone || "";
+    }
+    if (bankNameInput) {
+      bankNameInput.value = profile.payout_bank_name || "";
+    }
+    if (accountNameInput) {
+      accountNameInput.value = profile.payout_account_name || "";
+    }
+    if (accountNumberInput) {
+      accountNumberInput.value = profile.payout_account_number || "";
+    }
+  } catch (error) {
+    console.error("Failed to refresh profile:", error);
+  }
 }
 
 function closeUpdateProfile() {
@@ -2452,183 +2486,321 @@ function closeUpdateProfile() {
     "true"
   );
 }
+
 async function saveUpdatedProfile() {
-  const usernameInput =
-    document.getElementById(
-      "updateProfileUsername"
-    );
-  const phoneInput =
-    document.getElementById(
-      "updateProfilePhone"
-    );
-  const saveButton =
-    document.getElementById(
-      "saveProfileBtn"
-    );
-  const message =
-    document.getElementById(
-      "updateProfileMessage"
-    );
+  const usernameInput = document.getElementById("updateProfileUsername");
+  const phoneInput = document.getElementById("updateProfilePhone");
+  const bankNameInput = document.getElementById("updateProfileBankName");
+  const accountNameInput = document.getElementById("updateProfileAccountName");
+  const accountNumberInput = document.getElementById("updateProfileAccountNumber");
+  const saveButton = document.getElementById("saveProfileBtn");
+  const message = document.getElementById("updateProfileMessage");
+
   if (
     !usernameInput ||
     !phoneInput ||
+    !bankNameInput ||
+    !accountNameInput ||
+    !accountNumberInput ||
     !saveButton
   ) {
     return;
   }
-  const username =
-    usernameInput.value.trim();
-  const phone =
-    phoneInput.value.trim();
-  const cachedProfile =
-    await getCachedData(
-      "profile"
-    );
+
+  const username = usernameInput.value.trim();
+  const phone = phoneInput.value.trim();
+  const payoutBankName = bankNameInput.value.trim();
+  const payoutAccountName = accountNameInput.value.trim();
+  const payoutAccountNumber = accountNumberInput.value.trim();
+
+  const cachedProfile = await getCachedData("profile");
   const currentProfile =
-    cachedProfile &&
-    typeof cachedProfile === "object" ?
-    cachedProfile : {};
-  const currentUsername =
-    String(
-      currentProfile.username ||
-      ""
-    ).trim();
-  const currentPhone =
-    String(
-      currentProfile.phone ||
-      ""
-    ).trim();
-  if (!username) {
-    if (message) {
-      message.textContent =
-        "Username is required.";
-      message.className =
-        "update-profile-status update-profile-status-error";
-      message.style.display =
-        "block";
+    cachedProfile && typeof cachedProfile === "object" ? cachedProfile : {};
+
+  const currentUsername = String(currentProfile.username || "").trim();
+  const currentPhone = String(currentProfile.phone || "").trim();
+  const currentBankName = String(currentProfile.payout_bank_name || "").trim();
+  const currentAccountName = String(currentProfile.payout_account_name || "").trim();
+  const currentAccountNumber = String(currentProfile.payout_account_number || "").trim();
+
+  function showProfileMessage(text, type = "error") {
+    if (!message) {
+      return;
     }
+
+    message.textContent = text;
+    message.className =
+      type === "success"
+        ? "update-profile-status update-profile-status-success"
+        : "update-profile-status update-profile-status-error";
+    message.style.display = "block";
+  }
+
+  if (!username) {
+    showProfileMessage("Username is required.");
     usernameInput.focus();
     return;
   }
+
+  if (payoutAccountNumber && !/^\d{10}$/.test(payoutAccountNumber)) {
+    showProfileMessage("Bank account number must contain exactly 10 digits.");
+    accountNumberInput.focus();
+    return;
+  }
+
+  if (
+    payoutBankName.length > 100 ||
+    payoutAccountName.length > 100 ||
+    payoutAccountNumber.length > 100
+  ) {
+    showProfileMessage("Bank details cannot exceed 100 characters.");
+    return;
+  }
+
   const updates = {};
-  if (
-    username !== currentUsername
-  ) {
-    updates.username =
-      username;
+
+  if (username !== currentUsername) {
+    updates.username = username;
   }
-  if (
-    phone !== currentPhone
-  ) {
-    updates.phone =
-      phone;
+
+  if (phone !== currentPhone) {
+    updates.phone = phone;
   }
-  if (
-    Object.keys(updates).length === 0
-  ) {
+
+  if (payoutBankName !== currentBankName) {
+    updates.payout_bank_name = payoutBankName;
+  }
+
+  if (payoutAccountName !== currentAccountName) {
+    updates.payout_account_name = payoutAccountName;
+  }
+
+  if (payoutAccountNumber !== currentAccountNumber) {
+    updates.payout_account_number = payoutAccountNumber;
+  }
+
+  if (!Object.keys(updates).length) {
     closeUpdateProfile();
     return;
   }
-  const token =
-    getToken();
+
+  const token = getToken();
+
   if (!token) {
-    if (message) {
-      message.textContent =
-        "Please log in again.";
-      message.className =
-        "update-profile-status update-profile-status-error";
-      message.style.display =
-        "block";
-    }
+    showProfileMessage("Please log in again.");
     return;
   }
-  saveButton.disabled =
-    true;
-  saveButton.textContent =
-    "Saving...";
+
+  saveButton.disabled = true;
+  saveButton.textContent = "Saving...";
+
   if (message) {
-    message.style.display =
-      "none";
-    message.textContent =
-      "";
-    message.className =
-      "update-profile-status";
+    message.style.display = "none";
+    message.textContent = "";
+    message.className = "update-profile-status";
   }
+
   try {
-    const res =
-      await apiRequest(
-        `${API}/profile`,
-        {
-          method: "PUT",
-          headers: {
-            Authorization: token,
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify(
-            updates
-          )
+    const res = await apiRequest(
+      `${API}/profile`,
+      {
+        method: "PUT",
+        headers: {
+          Authorization: token,
+          "Content-Type": "application/json"
         },
-        saveUpdatedProfile
-      );
+        body: JSON.stringify(updates)
+      },
+      saveUpdatedProfile
+    );
+
     if (!res) {
       return;
     }
-    const result =
-      await res.json();
-    if (
-      !res.ok ||
-      !result.success
-    ) {
-      throw new Error(
-        result.message ||
-        "Failed to update profile."
-      );
+    
+    const result = await res.json();
+    if (!res.ok || !result.success) {
+      throw new Error(result.message || "Failed to update profile.");
     }
-    const profile =
-      result.profile || {
-        ...currentProfile,
-        ...updates
-      };
-    await saveCachedData(
-      "profile",
-      "",
-      profile
-    );
-    renderUserProfile(
-      profile
-    );
-    if (message) {
-      message.textContent =
-        "Profile updated successfully.";
-      message.className =
-        "update-profile-status update-profile-status-success";
-      message.style.display =
-        "block";
-    }
+    
+    const profile = {
+      ...currentProfile,
+      ...updates,
+      ...(result.profile || {})
+    };
+    
+    await saveCachedData("profile", "", profile);
+    renderUserProfile(profile);
+    showProfileMessage("Profile updated successfully.", "success");
+    
     setTimeout(() => {
       closeUpdateProfile();
     }, 700);
+
   } catch (error) {
-    console.error(
-      "Failed to update profile:",
-      error
-    );
-    if (message) {
-      message.textContent =
-        error.message ||
-        "Failed to update profile.";
-      message.className =
-        "update-profile-status update-profile-status-error";
-      message.style.display =
-        "block";
-    }
+    console.error("Failed to update profile:", error);
+    showProfileMessage(error.message || "Failed to update profile.");
   } finally {
-    saveButton.disabled =
-      false;
-    saveButton.textContent =
-      "Save Changes";
+    saveButton.disabled = false;
+    saveButton.textContent = "Save Changes";
   }
 }
+
+function renderUserProfile(profile) {
+  const usernameElement = document.getElementById("profileUsername");
+  const phoneElement = document.getElementById("profilePhone");
+  const bankNameElement = document.getElementById("profileBankName");
+  const accountNameElement = document.getElementById("profileBankAccountName");
+  const accountNumberElement = document.getElementById("profileBankAccountNumber");
+  const bankStatusElement = document.getElementById("profileBankStatus");
+  const bankMessageElement = document.getElementById("profileBankMessage");
+  const teamsElement = document.getElementById("profileTeams");
+  const emptyElement = document.getElementById("profileTeamsEmpty");
+  if (!usernameElement || !phoneElement || !teamsElement || !emptyElement) {
+    return;
+  }
+  usernameElement.textContent = profile?.username || "Username";
+  phoneElement.textContent = profile?.phone ?
+    ` ${profile.phone}` :
+    "WhatsApp number not added";
+  const bankName = String(profile?.payout_bank_name || "").trim();
+  const accountName = String(profile?.payout_account_name || "").trim();
+  const accountNumber = String(profile?.payout_account_number || "").trim();
+  if (bankNameElement) {
+    bankNameElement.textContent = bankName || "Not added";
+  }
+  if (accountNameElement) {
+    accountNameElement.textContent = accountName || "Not added";
+  }
+  if (accountNumberElement) {
+    accountNumberElement.textContent = accountNumber ?
+      `******${accountNumber.slice(-4)}` :
+      "Not added";
+  }
+  const bankDetailsComplete = Boolean(
+    bankName && accountName && /^\d{10}$/.test(accountNumber)
+  );
+  if (bankStatusElement) {
+    bankStatusElement.textContent = bankDetailsComplete ?
+      "Complete" :
+      "Incomplete";
+    bankStatusElement.classList.toggle(
+      "complete",
+      bankDetailsComplete
+    );
+    bankStatusElement.classList.toggle(
+      "incomplete",
+      !bankDetailsComplete
+    );
+  }
+  if (bankMessageElement) {
+    bankMessageElement.textContent = bankDetailsComplete ?
+      "Your prize payout details are saved." :
+      "Add your bank name, account name, and 10-digit account number to receive tournament prize payments.";
+  }
+  teamsElement.replaceChildren();
+  const teams = Array.isArray(profile?.teams) ? profile.teams : [];
+  if (!teams.length) {
+    emptyElement.hidden = false;
+    return;
+  }
+  emptyElement.hidden = true;
+  teams.forEach(team => {
+    const teamElement = document.createElement("div");
+    teamElement.className = "profile-page-team-card";
+    const logoContainer = document.createElement("div");
+    logoContainer.className = "profile-page-team-logo";
+    if (team.logo) {
+      const image = document.createElement("img");
+      image.src = team.logo;
+      image.alt = "";
+      image.loading = "lazy";
+      logoContainer.appendChild(image);
+    } else {
+      const placeholder = document.createElement("div");
+      placeholder.className = "profile-page-team-logo-placeholder";
+      logoContainer.appendChild(placeholder);
+    }
+    const nameElement = document.createElement("div");
+    nameElement.className = "profile-page-team-name";
+    nameElement.textContent = team.name || "Unnamed Team";
+    teamElement.append(logoContainer, nameElement);
+    teamsElement.appendChild(teamElement);
+  });
+}
+
+async function renderProfilePageSquad() {
+  const container = document.getElementById(
+    "profilePageSquadContent"
+  );
+  if (!container) return;
+  container.className = "profile-page-squad-loading";
+  container.textContent = "Loading squad information...";
+  try {
+    const result = await getMySquad();
+    container.replaceChildren();
+    container.className = "";
+    if (!result?.success || !result.squad) {
+      const empty = document.createElement("div");
+      empty.className = "profile-page-squad-empty";
+      empty.textContent = result?.message ||
+        "You have not registered a squad yet.";
+      container.appendChild(empty);
+      return;
+    }
+    const squad = result.squad;
+    const card = document.createElement("div");
+    card.className = "profile-page-squad-card";
+    const imageUrl =
+      squad.image_url ||
+      squad.logo_url ||
+      squad.image ||
+      squad.logo ||
+      "";
+    if (imageUrl) {
+      const image = document.createElement("img");
+      image.className = "profile-page-squad-image";
+      image.src = imageUrl;
+      image.alt = `${squad.name || "Registered"} squad`;
+      image.loading = "lazy";
+      image.onerror = () => image.remove();
+      card.appendChild(image);
+    }
+    const info = document.createElement("div");
+    info.className = "profile-page-squad-info";
+    const name = document.createElement("h4");
+    name.className = "profile-page-squad-name";
+    name.textContent =
+      squad.name ||
+      squad.squad_name ||
+      "Registered Squad";
+    const status = document.createElement("span");
+    status.className = "profile-page-squad-status";
+    status.textContent =
+      squad.status ||
+      "Registered";
+    const message = document.createElement("p");
+    message.className = "profile-page-squad-message";
+    message.textContent =
+      "This is your currently registered squad.";
+    info.append(name, status, message);
+    card.appendChild(info);
+    container.appendChild(card);
+  } catch (error) {
+    container.replaceChildren();
+    container.className = "";
+    const message = document.createElement("div");
+    message.className = "profile-page-squad-empty";
+    message.textContent =
+      "Unable to load your squad. Please try again later.";
+    container.appendChild(message);
+    console.error(
+      "Failed to render profile squad:",
+      error
+    );
+  }
+}
+
 async function loadProfileSquad() {
   const status =
     document.getElementById(
@@ -3118,8 +3290,7 @@ async function extractMatchStats(file) {
           }
         }
         
-        // 3. Sort numbers from LEFT to RIGHT visually across the screen
-        numericWords.sort((a, b) => a.x - b.x);
+         numericWords.sort((a, b) => a.x - b.x);
         
         if (numericWords.length >= 2) {
           const home = numericWords[0].value;
@@ -3415,6 +3586,13 @@ async function getMySquad() {
   );
   if (!res) return null;
   const result = await res.json();
+  if (res.status === 404) {
+    return {
+      success: true,
+      squad: null,
+      message: "You have not registered a squad yet."
+    };
+  }
   if (!res.ok || !result.success) {
     throw new Error(
       result.message ||
@@ -3423,7 +3601,6 @@ async function getMySquad() {
   }
   return result;
 }
-
 async function registerSquad(image) {
   const token = getToken();
   const res = await apiRequest(
@@ -6136,6 +6313,2586 @@ function clearMessage() {
 
 
 
+
+
+function formatPaymentMoney(amount) {
+  return "₦" + (Number(amount) || 0).toLocaleString("en-NG");
+}
+function formatPaymentDate(timestamp) {
+  if (!timestamp) return "Date unavailable";
+  const date = new Date(Number(timestamp));
+  if (Number.isNaN(date.getTime())) {
+    return "Date unavailable";
+  }
+  return date.toLocaleString("en-NG", {
+    dateStyle: "medium",
+    timeStyle: "short"
+  });
+}
+function getPaymentStatusClass(status) {
+  const allowed = [
+    "paid",
+    "pending",
+    "submitted",
+    "rejected",
+    "refunded"
+  ];
+  return allowed.includes(String(status).toLowerCase())
+    ? String(status).toLowerCase()
+    : "unknown";
+}
+function renderPaymentStat(label, value) {
+  return `
+    <div class="payment-history-stat">
+      <span>${escapeHtml(label)}</span>
+      <strong>${escapeHtml(String(value))}</strong>
+    </div>
+  `;
+}
+function renderPaymentHistoryItem(registration) {
+  const status = String(
+    registration.payment_status || "unknown"
+  ).toLowerCase();
+  const username = registration.username || "Player";
+  const amount = formatPaymentMoney(registration.total_amount);
+  const date = formatPaymentDate(registration.created_at);
+  return `
+    <div class="payment-history-item">
+      <div>
+        <div class="payment-history-player">
+          ${escapeHtml(username)}
+        </div>
+        <div class="payment-history-date">
+          ${escapeHtml(date)}
+        </div>
+        <span class="payment-history-status ${getPaymentStatusClass(status)}">
+          ${escapeHtml(status)}
+        </span>
+      </div>
+      <div class="payment-history-amount">
+        ${escapeHtml(amount)}
+      </div>
+    </div>
+  `;
+}
+function renderTournamentPaymentHistory(tournament) {
+  const registrations = tournament.registrations || [];
+  const summary = tournament.summary || {};
+  return `
+    <div class="payment-history-group">
+      <div class="payment-history-group-header">
+        <h3>${escapeHtml(tournament.tournament_name || "Tournament")}</h3>
+        <p>Season: ${escapeHtml(String(tournament.season ?? "N/A"))}</p>
+      </div>
+      <div class="payment-history-group-summary">
+        <div>
+          Registrations
+          <strong>${Number(summary.total_registrations) || 0}</strong>
+        </div>
+        <div>
+          Payments received
+          <strong>${formatPaymentMoney(summary.total_amount_paid)}</strong>
+        </div>
+        <div>
+          Pending amount
+          <strong>${formatPaymentMoney(summary.pending_amount)}</strong>
+        </div>
+      </div>
+      <div class="payment-history-list">
+        ${
+          registrations.length
+            ? registrations.map(renderPaymentHistoryItem).join("")
+            : `<div class="payment-history-empty">No registrations found.</div>`
+        }
+      </div>
+    </div>
+  `;
+}
+function renderSingleTournamentPaymentHistory(data) {
+  const tournament = data.tournament || {};
+  const registrations = data.registrations || [];
+  const summary = data.summary || {};
+  document.getElementById("paymentHistorySummary").innerHTML = `
+    ${renderPaymentStat(
+      "Registrations",
+      Number(summary.total_registrations) || 0
+    )}
+    ${renderPaymentStat(
+      "Payments received",
+      formatPaymentMoney(summary.total_amount_paid)
+    )}
+    ${renderPaymentStat(
+      "Pending amount",
+      formatPaymentMoney(summary.pending_amount)
+    )}
+    ${renderPaymentStat(
+      "Refunded amount",
+      formatPaymentMoney(summary.total_amount_refunded)
+    )}
+  `;
+  document.getElementById("paymentHistoryContent").innerHTML = `
+    <div class="payment-history-group">
+      <div class="payment-history-group-header">
+        <h3>${escapeHtml(tournament.name || "Tournament")}</h3>
+        <p>Season: ${escapeHtml(String(tournament.season ?? "N/A"))}</p>
+      </div>
+      <div class="payment-history-list">
+        ${
+          registrations.length
+            ? registrations.map(renderPaymentHistoryItem).join("")
+            : `<div class="payment-history-empty">No payment registrations found for this tournament.</div>`
+        }
+      </div>
+    </div>
+  `;
+}
+function renderAdminPaymentHistory(tournaments) {
+  const totals = tournaments.reduce((acc, tournament) => {
+    const summary = tournament.summary || {};
+    acc.registrations += Number(summary.total_registrations) || 0;
+    acc.paid += Number(summary.total_amount_paid) || 0;
+    acc.pending += Number(summary.pending_amount) || 0;
+    acc.refunded += Number(summary.total_amount_refunded) || 0;
+    return acc;
+  }, {
+    registrations: 0,
+    paid: 0,
+    pending: 0,
+    refunded: 0
+  });
+  document.getElementById("paymentHistorySummary").innerHTML = `
+    ${renderPaymentStat("Tournaments", tournaments.length)}
+    ${renderPaymentStat("Registrations", totals.registrations)}
+    ${renderPaymentStat("Payments received", formatPaymentMoney(totals.paid))}
+    ${renderPaymentStat("Pending amount", formatPaymentMoney(totals.pending))}
+  `;
+  document.getElementById("paymentHistoryContent").innerHTML =
+    tournaments.length
+      ? tournaments.map(renderTournamentPaymentHistory).join("")
+      : `<div class="payment-history-empty">No payment history found for your tournaments.</div>`;
+}
+
+async function loadPaymentHistory(tournamentId = null) {
+  const summary = document.getElementById("paymentHistorySummary");
+  const content = document.getElementById("paymentHistoryContent");
+  
+  if (!summary || !content) return;
+  
+  const user = getCurrentUser();
+  
+  if (!user) {
+    summary.innerHTML = "";
+    content.innerHTML = `
+      <div class="payment-history-empty">
+        Please log in to view payment history.
+      </div>
+    `;
+    return;
+  }
+  
+  if (user.role === "player" && !tournamentId) {
+    summary.innerHTML = "";
+    content.innerHTML = `
+      <div class="payment-history-empty">
+        Please open a tournament first to view payment history.
+      </div>
+    `;
+    return;
+  }
+  
+  if (user.role !== "admin" && user.role !== "player") {
+    summary.innerHTML = "";
+    content.innerHTML = `
+      <div class="payment-history-empty">
+        You do not have permission to view payment history.
+      </div>
+    `;
+    return;
+  }
+  
+  const query = tournamentId ?
+    `?tournament_id=${encodeURIComponent(tournamentId)}` :
+    "";
+  
+  summary.innerHTML = "";
+  content.innerHTML = `
+    <div class="payment-history-empty">
+      Loading payment history...
+    </div>
+  `;
+  
+  showLoader();
+  
+  try {
+    const response = await apiRequest(
+      `${API}/season-registrations/history${query}`,
+      {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${getToken()}`
+        }
+      },
+      () => loadPaymentHistory(tournamentId)
+    );
+    
+    if (!response) return;
+    
+    const result = await response.json();
+    
+    if (!response.ok || !result.success) {
+      throw new Error(
+        result.message || "Failed to load payment history."
+      );
+    }
+    
+    if (tournamentId) {
+      renderSingleTournamentPaymentHistory(result.data || {});
+    } else {
+      renderAdminPaymentHistory(
+        Array.isArray(result.data) ? result.data : []
+      );
+    }
+  } catch (error) {
+    summary.innerHTML = "";
+    content.innerHTML = `
+      <div class="payment-history-empty">
+        ${escapeHtml(
+          error.message || "Unable to load payment history."
+        )}
+        <br><br>
+        <button type="button" id="retryPaymentBtn" class="retry-btn">
+          Try Again
+        </button>
+      </div>
+    `;
+    
+    const retryBtn = document.getElementById("retryPaymentBtn");
+    
+    if (retryBtn) {
+      retryBtn.addEventListener("click", () => loadPaymentHistory(tournamentId));
+    }
+  } finally {
+    hideLoader();
+  }
+}
+
+
+async function openPaymentHistoryPage() {
+  const user = getCurrentUser();
+  
+  if (!user) {
+    showAlert("Please log in to view payment history.");
+    return;
+  }
+  
+  const section = document.getElementById("paymentHistorySection");
+  
+  if (!section) {
+    showAlert("Payment history page was not found.");
+    return;
+  }
+  
+  section.hidden = false;
+  
+  if (user.role === "admin") {
+    await loadPaymentHistory();
+    return;
+  }
+  
+  if (user.role === "player") {
+    if (!currentTournament?.id) {
+      showAlert("Please open a tournament first.");
+      return;
+    }
+    document.getElementById("nav").style.display="none";
+
+    await loadPaymentHistory(currentTournament.id);
+    return;
+  }
+  
+  showAlert("You do not have permission to view payment history.");
+}
+function closePaymentHistoryPage() {
+  document.getElementById("nav").style.display="flex";
+  const section = document.getElementById("paymentHistorySection");
+  if (section) {
+    section.hidden = true;
+  }
+}
+
+
+function switchFinancialTab(tab) {
+  const user = getCurrentUser();
+  
+  if (!user) {
+    showAlert("Please log in to continue.");
+    return;
+  }
+  
+  const allowedTabs = [
+    "history",
+    "prizes",
+    "expenses",
+    "summary",
+    "contributions"
+  ];
+  
+  if (!allowedTabs.includes(tab)) {
+    return;
+  }
+  
+  if (user.role !== "admin" && tab !== "history") {
+    showAlert("You do not have permission to access this section.");
+    return;
+  }
+  
+  document.querySelectorAll(".financial-tab-content").forEach(section => {
+    section.hidden = true;
+  });
+  
+  document.querySelectorAll(".financial-nav-btn").forEach(button => {
+    button.classList.toggle(
+      "active",
+      button.dataset.financialTab === tab
+    );
+  });
+  
+  const sections = {
+    history: "financialHistoryTab",
+    prizes: "financialPrizesTab",
+    expenses: "financialExpensesTab",
+    summary: "financialSummaryTab",
+    contributions: "financialContributionsTab"
+  };
+  
+  const section = document.getElementById(sections[tab]);
+  
+  if (!section) {
+    showAlert("Financial section was not found.");
+    return;
+  }
+  
+  section.hidden = false;
+  
+  if (tab === "history") {
+    const tournamentId = currentTournament?.id || null;
+    loadPaymentHistory(tournamentId);
+    return;
+  }
+  
+  if (tab === "prizes") {
+    loadFinancialPrizes();
+    return;
+  }
+  
+  if (tab === "expenses") {
+    loadFinancialExpenses();
+    return;
+  }
+  
+  if (tab === "summary") {
+    loadFinancialSummary();
+    return;
+  }
+  
+  if (tab === "contributions") {
+    loadFinancialContributions();
+  }
+}
+
+
+async function refreshFinancialPage() {
+  const activeButton = document.querySelector(
+    ".financial-nav-btn.active"
+  );
+  const tab = activeButton?.dataset.financialTab || "history";
+  switchFinancialTab(tab);
+}
+async function openPaymentHistoryPage() {
+  const user = getCurrentUser();
+  if (!user) {
+    showAlert("Please log in to view financial management.");
+    return;
+  }
+  const section = document.getElementById("paymentHistorySection");
+  if (!section) {
+    showAlert("Financial management page was not found.");
+    return;
+  }
+  section.hidden = false;
+  updateFinancialActionButtons();
+  const adminTabs = document.querySelectorAll(
+  '[data-financial-tab="prizes"], [data-financial-tab="expenses"], [data-financial-tab="summary"], [data-financial-tab="contributions"]'
+);
+adminTabs.forEach(button => {
+    button.hidden = user.role !== "admin";
+  });
+  if (user.role === "admin") {
+    switchFinancialTab("summary");
+    return;
+  }
+  if (user.role === "player") {
+    document.getElementById("nav").style.display = "none";
+    switchFinancialTab("history");
+    return;
+  }
+  showAlert("You do not have permission to access this page.");
+}
+function closePaymentHistoryPage() {
+  const section = document.getElementById("paymentHistorySection");
+  if (section) {
+    section.hidden = true;
+  }
+  const nav = document.getElementById("nav");
+  if (nav) {
+    nav.style.display = "flex";
+  }
+}
+function renderFinancialSummary(data) {
+  const container = document.getElementById("financialOverviewContent");
+  if (!container) return;
+  const summary = data.summary || {};
+  const registrations = summary.registrations || {};
+  const contributions = summary.contributions || {};
+  const prizes = summary.prizes || {};
+  const expenses = summary.expenses || {};
+  const amountReceived = Number(registrations.amount_received) || 0;
+  const amountRefunded = Number(registrations.amount_refunded) || 0;
+  const sponsorshipAmount = Number(contributions.sponsorship_amount) || 0;
+  const adminContributionAmount = Number(contributions.admin_contribution_amount) || 0;
+  const additionalIncome = Number(contributions.total_amount) ||
+    sponsorshipAmount + adminContributionAmount;
+  const prizesPaid = Number(prizes.amount_paid) || 0;
+  const expensesPaid = Number(expenses.amount_paid) || 0;
+  const netBalance = Number(summary.net_balance) || 0;
+  const totalFundsReceived = Number(summary.total_funds_received) ||
+    amountReceived + additionalIncome;
+  container.innerHTML = `
+    <div class="financial-overview-grid">
+      <div class="financial-overview-card">
+        <span>Registration Revenue</span>
+        <strong>${escapeHtml(formatPaymentMoney(amountReceived))}</strong>
+        <small>${Number(registrations.paid) || 0} paid registrations</small>
+      </div>
+      <div class="financial-overview-card">
+        <span>Sponsorship Income</span>
+        <strong>${escapeHtml(formatPaymentMoney(sponsorshipAmount))}</strong>
+        <small>${Number(contributions.sponsorship_count) || 0} sponsorship records</small>
+      </div>
+      <div class="financial-overview-card">
+        <span>Admin Contributions</span>
+        <strong>${escapeHtml(formatPaymentMoney(adminContributionAmount))}</strong>
+        <small>${Number(contributions.admin_contribution_count) || 0} contribution records</small>
+      </div>
+      <div class="financial-overview-card">
+        <span>Total Funds Received</span>
+        <strong>${escapeHtml(formatPaymentMoney(totalFundsReceived))}</strong>
+        <small>Registration revenue and additional income</small>
+      </div>
+      <div class="financial-overview-card">
+        <span>Prize Money Paid</span>
+        <strong>${escapeHtml(formatPaymentMoney(prizesPaid))}</strong>
+        <small>${Number(prizes.paid) || 0} paid prizes</small>
+      </div>
+      <div class="financial-overview-card">
+        <span>Expenses Paid</span>
+        <strong>${escapeHtml(formatPaymentMoney(expensesPaid))}</strong>
+        <small>${Number(expenses.paid) || 0} paid expenses</small>
+      </div>
+      <div class="financial-overview-card">
+        <span>Net Balance</span>
+        <strong class="${netBalance < 0 ? "negative" : "positive"}">
+          ${escapeHtml(formatPaymentMoney(netBalance))}
+        </strong>
+        <small>After recorded payouts and expenses</small>
+      </div>
+    </div>
+    <div class="financial-breakdown">
+      <h3>Registration Payments</h3>
+      <div class="financial-breakdown-row">
+        <span>Total registrations</span>
+        <strong>${Number(registrations.total) || 0}</strong>
+      </div>
+      <div class="financial-breakdown-row">
+        <span>Pending registrations</span>
+        <strong>${Number(registrations.pending) || 0}</strong>
+      </div>
+      <div class="financial-breakdown-row">
+        <span>Pending amount</span>
+        <strong>${escapeHtml(formatPaymentMoney(registrations.pending_amount))}</strong>
+      </div>
+      <div class="financial-breakdown-row">
+        <span>Refunded registrations</span>
+        <strong>${Number(registrations.refunded) || 0}</strong>
+      </div>
+      <div class="financial-breakdown-row">
+        <span>Amount refunded</span>
+        <strong>${escapeHtml(formatPaymentMoney(amountRefunded))}</strong>
+      </div>
+    </div>
+    <div class="financial-breakdown">
+      <h3>Sponsorships & Admin Contributions</h3>
+      <div class="financial-breakdown-row">
+        <span>Total contribution records</span>
+        <strong>${Number(contributions.total) || 0}</strong>
+      </div>
+      <div class="financial-breakdown-row">
+        <span>Sponsorship records</span>
+        <strong>${Number(contributions.sponsorship_count) || 0}</strong>
+      </div>
+      <div class="financial-breakdown-row">
+        <span>Sponsorship income</span>
+        <strong>${escapeHtml(formatPaymentMoney(sponsorshipAmount))}</strong>
+      </div>
+      <div class="financial-breakdown-row">
+        <span>Admin contribution records</span>
+        <strong>${Number(contributions.admin_contribution_count) || 0}</strong>
+      </div>
+      <div class="financial-breakdown-row">
+        <span>Admin contributions</span>
+        <strong>${escapeHtml(formatPaymentMoney(adminContributionAmount))}</strong>
+      </div>
+      <div class="financial-breakdown-row">
+        <span>Total additional income</span>
+        <strong>${escapeHtml(formatPaymentMoney(additionalIncome))}</strong>
+      </div>
+    </div>
+    <div class="financial-breakdown">
+      <h3>Prize Payouts</h3>
+      <div class="financial-breakdown-row">
+        <span>Total prize records</span>
+        <strong>${Number(prizes.total) || 0}</strong>
+      </div>
+      <div class="financial-breakdown-row">
+        <span>Pending approval</span>
+        <strong>${Number(prizes.pending) || 0}</strong>
+      </div>
+      <div class="financial-breakdown-row">
+        <span>Approved, awaiting payment</span>
+        <strong>${Number(prizes.approved) || 0}</strong>
+      </div>
+      <div class="financial-breakdown-row">
+        <span>Approved amount</span>
+        <strong>${escapeHtml(formatPaymentMoney(prizes.approved_amount))}</strong>
+      </div>
+      <div class="financial-breakdown-row">
+        <span>Pending prize amount</span>
+        <strong>${escapeHtml(formatPaymentMoney(prizes.pending_amount))}</strong>
+      </div>
+      <div class="financial-breakdown-row">
+        <span>Cancelled prizes</span>
+        <strong>${Number(prizes.cancelled) || 0}</strong>
+      </div>
+    </div>
+    <div class="financial-breakdown">
+      <h3>Expenses</h3>
+      <div class="financial-breakdown-row">
+        <span>Total expense records</span>
+        <strong>${Number(expenses.total) || 0}</strong>
+      </div>
+      <div class="financial-breakdown-row">
+        <span>Pending approval</span>
+        <strong>${Number(expenses.pending) || 0}</strong>
+      </div>
+      <div class="financial-breakdown-row">
+        <span>Approved, awaiting payment</span>
+        <strong>${Number(expenses.approved) || 0}</strong>
+      </div>
+      <div class="financial-breakdown-row">
+        <span>Approved amount</span>
+        <strong>${escapeHtml(formatPaymentMoney(expenses.approved_amount))}</strong>
+      </div>
+      <div class="financial-breakdown-row">
+        <span>Pending expense amount</span>
+        <strong>${escapeHtml(formatPaymentMoney(expenses.pending_amount))}</strong>
+      </div>
+      <div class="financial-breakdown-row">
+        <span>Rejected expenses</span>
+        <strong>${Number(expenses.rejected) || 0}</strong>
+      </div>
+      <div class="financial-breakdown-row">
+        <span>Cancelled expenses</span>
+        <strong>${Number(expenses.cancelled) || 0}</strong>
+      </div>
+    </div>
+  `;
+}
+async function loadFinancialSummary() {
+  const container = document.getElementById("financialOverviewContent");
+  if (!container) return;
+  
+  const tournamentId = currentTournament?.id || null;
+  
+  const query = tournamentId ?
+    `?tournament_id=${encodeURIComponent(tournamentId)}` :
+    "";
+  
+  container.innerHTML = `
+    <div class="payment-history-empty">
+      Loading financial summary...
+    </div>
+  `;
+  
+  showLoader();
+  
+  try {
+    const res = await apiRequest(
+      `${API}/financial/summary${query}`,
+      {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${getToken()}`
+        }
+      },
+      () => loadFinancialSummary()
+    );
+    
+    if (!res) return;
+    
+    const result = await res.json();
+    
+    if (!res.ok || !result.success) {
+      throw new Error(
+        result.message || "Failed to load financial summary."
+      );
+    }
+    
+    renderFinancialSummary(result);
+  } catch (error) {
+    container.innerHTML = `
+      <div class="payment-history-empty">
+        ${escapeHtml(error.message || "Unable to load financial summary.")}
+      </div>
+    `;
+  } finally {
+    hideLoader();
+  }
+}
+function renderFinancialPrizes(data) {
+  const summary = document.getElementById("financialPrizeSummary");
+  const content = document.getElementById("financialPrizeContent");
+  if (!summary || !content) return;
+  const prizes = Array.isArray(data) ? data : [];
+  const totals = prizes.reduce((result, prize) => {
+    const amount = Number(prize.amount) || 0;
+    const status = String(prize.status || "").toLowerCase();
+    result.total += amount;
+    result.count++;
+    if (status === "pending") {
+      result.pending += amount;
+      result.pendingCount++;
+    } else if (status === "approved") {
+      result.approved += amount;
+      result.approvedCount++;
+    } else if (status === "paid") {
+      result.paid += amount;
+      result.paidCount++;
+    }
+    return result;
+  }, {
+    total: 0,
+    count: 0,
+    pending: 0,
+    pendingCount: 0,
+    approved: 0,
+    approvedCount: 0,
+    paid: 0,
+    paidCount: 0
+  });
+  summary.innerHTML = `
+    <div class="payment-history-stat">
+      <div class="payment-history-stat-label">Total Prize Records</div>
+      <div class="payment-history-stat-value">${totals.count}</div>
+    </div>
+    <div class="payment-history-stat">
+      <div class="payment-history-stat-label">Pending Payouts</div>
+      <div class="payment-history-stat-value">${formatPaymentMoney(totals.pending)}</div>
+      <div class="payment-history-stat-description">${totals.pendingCount} records</div>
+    </div>
+    <div class="payment-history-stat">
+      <div class="payment-history-stat-label">Awaiting Payment</div>
+      <div class="payment-history-stat-value">${formatPaymentMoney(totals.approved)}</div>
+      <div class="payment-history-stat-description">${totals.approvedCount} records approved</div>
+    </div>
+    <div class="payment-history-stat">
+      <div class="payment-history-stat-label">Total Paid</div>
+      <div class="payment-history-stat-value">${formatPaymentMoney(totals.paid)}</div>
+      <div class="payment-history-stat-description">${totals.paidCount} completed payouts</div>
+    </div>
+  `;
+  if (!prizes.length) {
+    content.innerHTML = `
+      <div class="payment-history-empty">
+        No prize payout records found.
+      </div>
+    `;
+    return;
+  }
+  content.innerHTML = `
+    <div class="payment-history-list">
+      ${prizes.map(prize => {
+        const status = String(prize.status || "unknown").toLowerCase();
+        const allowedStatuses = ["pending", "approved", "paid", "cancelled"];
+        const statusClass = allowedStatuses.includes(status) ? status : "unknown";
+        const username = escapeHtml(prize.username || "Unknown player");
+        const tournament = escapeHtml(prize.tournament_name || "Tournament");
+        const prizeName = escapeHtml(prize.prize_name || "Prize");
+        const position = escapeHtml(prize.position || "");
+        const amount = formatPaymentMoney(prize.amount);
+        const dateValue = prize.awarded_at || prize.created_at;
+        const date = dateValue
+          ? formatFinancialDate(dateValue)
+          : "Date unavailable";
+        const bankName = String(prize.payout_bank_name || "").trim();
+        const accountName = String(prize.payout_account_name || "").trim();
+        const accountNumber = String(prize.payout_account_number || "").trim();
+        const hasBankDetails = Boolean(
+          bankName || accountName || accountNumber
+        );
+        const bankDetails = hasBankDetails ? `
+          <div class="financial-prize-bank-details">
+            <div class="financial-prize-bank-heading">Player Payout Details</div>
+            ${bankName ? `
+              <div class="financial-prize-bank-row">
+                <span>Bank</span>
+                <strong>${escapeHtml(bankName)}</strong>
+              </div>
+            ` : ""}
+            ${accountName ? `
+              <div class="financial-prize-bank-row">
+                <span>Account Name</span>
+                <strong>${escapeHtml(accountName)}</strong>
+              </div>
+            ` : ""}
+            ${accountNumber ? `
+              <div class="financial-prize-bank-row">
+                <span>Account Number</span>
+                <div class="financial-prize-account-copy">
+                  <button
+                    type="button"
+                    class="financial-prize-copy-btn"
+                    data-account-number="${escapeHtml(accountNumber)}"
+                    aria-label="Copy account number"
+                    title="Copy account number"
+                  >
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                      <rect x="8" y="8" width="12" height="12" rx="2"></rect>
+                      <path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3"></path>
+                    </svg>
+                  </button>
+                  <strong>${escapeHtml(accountNumber)}</strong>
+                </div>
+              </div>
+            ` : ""}
+          </div>
+        ` : "";
+        let actions = "";
+        if (status === "pending") {
+          actions = `
+            <button type="button" class="financial-approve-btn" onclick="approveFinancialPrize('${escapeHtml(prize.id)}')">
+              Approve
+            </button>
+          `;
+        } else if (status === "approved") {
+          actions = `
+            <button type="button" class="financial-pay-btn" onclick="payFinancialPrize('${escapeHtml(prize.id)}')">
+              Mark as Paid
+            </button>
+          `;
+        }
+        return `
+          <article class="payment-history-item">
+            <div class="payment-history-item-main">
+              <h4 class="payment-history-item-title">${prizeName}</h4>
+              <div class="payment-history-item-details">
+                <span>Player: ${username}</span>
+                <span>Tournament: ${tournament}</span>
+                ${position ? `<span>Position: ${position}</span>` : ""}
+                <span>Date: ${escapeHtml(date)}</span>
+              </div>
+              ${bankDetails}
+              ${actions ? `<div class="financial-action-buttons">${actions}</div>` : ""}
+            </div>
+            <div class="payment-history-item-side">
+              <div class="payment-history-item-amount">${amount}</div>
+              <span class="payment-history-status ${statusClass}">${escapeHtml(status)}</span>
+            </div>
+          </article>
+        `;
+      }).join("")}
+    </div>
+  `;
+}
+document.addEventListener("click", async event => {
+  const button = event.target.closest(".financial-prize-copy-btn");
+  if (!button) return;
+  const accountNumber = button.dataset.accountNumber;
+  if (!accountNumber) return;
+  try {
+    if (navigator.clipboard && window.isSecureContext) {
+      await navigator.clipboard.writeText(accountNumber);
+    } else {
+      const textarea = document.createElement("textarea");
+      textarea.value = accountNumber;
+      textarea.style.position = "fixed";
+      textarea.style.opacity = "0";
+      document.body.appendChild(textarea);
+      textarea.select();
+      const copied = document.execCommand("copy");
+      textarea.remove();
+      if (!copied) throw new Error("Copy failed");
+    }
+    button.classList.add("copied");
+    button.title = "Copied!";
+    button.setAttribute("aria-label", "Account number copied");
+    setTimeout(() => {
+      button.classList.remove("copied");
+      button.title = "Copy account number";
+      button.setAttribute("aria-label", "Copy account number");
+    }, 1500);
+  } catch (error) {
+    console.error("Failed to copy account number:", error);
+    showAlert("Unable to copy account number. Please copy it manually.");
+  }
+});
+async function loadFinancialPrizes() {
+  const content = document.getElementById("financialPrizeContent");
+  if (!content) return;
+  
+  const user = getCurrentUser();
+  
+  if (!user) {
+    content.innerHTML = `
+      <div class="payment-history-empty">
+        Please log in to view prize payouts.
+      </div>
+    `;
+    return;
+  }
+  
+  let url = `${API}/financial/prizes`;
+  const tournamentId = currentTournament?.id;
+  
+  if (user.role === "player") {
+    if (!tournamentId) {
+      content.innerHTML = `
+        <div class="payment-history-empty">
+          Please open a tournament first to view prize payouts.
+        </div>
+      `;
+      return;
+    }
+    
+    url += `?tournament_id=${encodeURIComponent(tournamentId)}`;
+  } else if (user.role === "admin") {
+    if (tournamentId) {
+      url += `?tournament_id=${encodeURIComponent(tournamentId)}`;
+    }
+  } else {
+    content.innerHTML = `
+      <div class="payment-history-empty">
+        You do not have permission to view prize payouts.
+      </div>
+    `;
+    return;
+  }
+  
+  content.innerHTML = `
+    <div class="payment-history-empty">
+      Loading prize payouts...
+    </div>
+  `;
+  
+  showLoader();
+  
+  try {
+    const response = await apiRequest(url, {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${getToken()}`
+      }
+    });
+    
+    if (!response) return;
+    
+    const result = await response.json();
+    
+    if (!response.ok || !result.success) {
+      throw new Error(
+        result.message || "Unable to load prize payouts."
+      );
+    }
+    
+    renderFinancialPrizes(result.data);
+    
+  } catch (error) {
+    content.innerHTML = `
+      <div class="payment-history-empty">
+        ${escapeHtml(error.message || "Unable to load prize payouts.")}
+        <br><br>
+        <button type="button" onclick="loadFinancialPrizes()">
+          Try Again
+        </button>
+      </div>
+    `;
+  } finally {
+    hideLoader();
+  }
+}
+
+function formatFinancialDate(timestamp) {
+  if (!timestamp) return "Date unavailable";
+
+  let dateValue = Number(timestamp);
+
+  if (!Number.isFinite(dateValue)) {
+    dateValue = Date.parse(timestamp);
+  } else if (dateValue < 1e12) {
+    dateValue *= 1000;
+  }
+
+  const date = new Date(dateValue);
+
+  if (Number.isNaN(date.getTime())) {
+    return "Date unavailable";
+  }
+
+  return date.toLocaleString("en-NG", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: true
+  });
+}
+
+async function approveFinancialPrize(id) {
+  if (!id) return;
+  const confirmed = await showConfirmModal(
+    "Are you sure you want to approve this prize payout?",
+    "Approve Prize",
+    "Cancel"
+  );
+  if (!confirmed) return;
+  showLoader();
+  try {
+    const response = await apiRequest(
+      `${API}/financial/prizes/${encodeURIComponent(id)}/approve`,
+      {
+        method: "PATCH",
+        headers: {
+          Authorization: `Bearer ${getToken()}`
+        }
+      }
+    );
+    if (!response) {
+      throw new Error("No response received. Please try again.");
+    }
+    const result = await response.json();
+    if (!response.ok || !result.success) {
+      throw new Error(
+        result.message || "Failed to approve prize payout."
+      );
+    }
+    showAlert("Prize payout approved successfully.");
+    await loadFinancialPrizes();
+  } catch (error) {
+    showAlert(
+      error.message || "Unable to approve prize payout."
+    );
+  } finally {
+    hideLoader();
+  }
+}
+
+async function payFinancialPrize(id) {
+  if (!id) return;
+  document.getElementById("prizePaymentModal")?.remove();
+  const modal = document.createElement("div");
+  modal.id = "prizePaymentModal";
+  modal.style.cssText = `
+    position:fixed;
+    inset:0;
+    z-index:100000;
+    background:rgba(0,0,0,0.65);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:16px;
+    box-sizing:border-box;
+    overflow-y:auto;
+  `;
+  modal.innerHTML = `
+    <div class="prize-preview-container">
+      <h2 style="margin:0 0 6px;">Record Prize Payment</h2>
+      <p style="margin:0 0 20px;color:#666;font-size:14px;">
+        Enter the payment details. Only record a payment that has actually been made.
+      </p>
+      <form id="prizePaymentForm">
+        <label for="prizePaymentReference">Payment Reference *</label>
+        <input
+          id="prizePaymentReference"
+          name="payout_reference"
+          type="text"
+          maxlength="200"
+          required
+          placeholder="Enter transaction reference"
+        >
+        <label for="prizePaymentMethod">Payment Method *</label>
+        <select id="prizePaymentMethod" name="payment_method" required>
+          <option value="">Select payment method</option>
+          <option value="Bank Transfer">Bank Transfer</option>
+          <option value="USSD">USSD</option>
+          <option value="Mobile Banking">Mobile Banking</option>
+          <option value="Cash">Cash</option>
+          <option value="Other">Other</option>
+        </select>
+        <div
+          id="prizePaymentReview"
+          style="display:none;background:#eff6ff;border:1px solid #bfdbfe;padding:14px;border-radius:8px;margin:18px 0;overflow-wrap:anywhere;"
+        >
+          <h3 style="margin:0 0 10px;">Review Payment</h3>
+          <div id="prizePaymentReviewContent"></div>
+        </div>
+        <div
+          id="prizePaymentError"
+          role="alert"
+          style="display:none;color:#b91c1c;margin-bottom:12px;overflow-wrap:anywhere;"
+        ></div>
+        <div class="prize-preview-actions">
+          <button
+            type="button"
+            id="prizePaymentCancel"
+            class="prize-preview-cancel"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            id="prizePaymentReviewButton"
+            class="prize-preview-review"
+          >
+            Review Details
+          </button>
+          <button
+            type="submit"
+            id="prizePaymentSubmit"
+            class="prize-preview-submit"
+          >
+            Confirm Payment
+          </button>
+        </div>
+      </form>
+    </div>
+  `;
+  document.body.appendChild(modal);
+  const form = modal.querySelector("#prizePaymentForm");
+  const cancelBtn = modal.querySelector("#prizePaymentCancel");
+  const reviewBtn = modal.querySelector("#prizePaymentReviewButton");
+  const submitBtn = modal.querySelector("#prizePaymentSubmit");
+  const errorBox = modal.querySelector("#prizePaymentError");
+  const reviewPanel = modal.querySelector("#prizePaymentReview");
+  const reviewContent = modal.querySelector("#prizePaymentReviewContent");
+  function getPaymentData() {
+    return {
+      payout_reference: form.elements.payout_reference.value.trim(),
+      payment_method: form.elements.payment_method.value
+    };
+  }
+  function showReview() {
+    if (!form.reportValidity()) return false;
+    const data = getPaymentData();
+    if (!data.payout_reference || !data.payment_method) {
+      errorBox.textContent = "Complete all payment details.";
+      errorBox.style.display = "block";
+      return false;
+    }
+    reviewContent.innerHTML = `
+      <div><strong>Payment Reference:</strong> ${escapeHtml(data.payout_reference)}</div>
+      <div><strong>Payment Method:</strong> ${escapeHtml(data.payment_method)}</div>
+    `;
+    reviewPanel.style.display = "block";
+    errorBox.style.display = "none";
+    reviewBtn.textContent = "Update Review";
+    return true;
+  }
+  cancelBtn.addEventListener("click", () => {
+    modal.remove();
+  });
+  modal.addEventListener("click", event => {
+    if (event.target === modal) {
+      modal.remove();
+    }
+  });
+  reviewBtn.addEventListener("click", showReview);
+  form.addEventListener("input", () => {
+    reviewPanel.style.display = "none";
+    reviewBtn.textContent = "Review Details";
+    errorBox.style.display = "none";
+  });
+  form.addEventListener("change", () => {
+    reviewPanel.style.display = "none";
+    reviewBtn.textContent = "Review Details";
+    errorBox.style.display = "none";
+  });
+  form.addEventListener("submit", async event => {
+    event.preventDefault();
+    if (submitBtn.disabled || !showReview()) return;
+    const data = getPaymentData();
+    const confirmed = await showConfirmModal(
+      "Confirm that this prize payout has actually been paid. This will mark the payout as paid.",
+      "Confirm Payment",
+      "Cancel"
+    );
+    if (!confirmed) return;
+    submitBtn.disabled = true;
+    reviewBtn.disabled = true;
+    cancelBtn.disabled = true;
+    submitBtn.textContent = "Recording Payment...";
+    errorBox.style.display = "none";
+    showLoader();
+    try {
+      const response = await apiRequest(
+        `${API}/financial/prizes/${encodeURIComponent(id)}/pay`,
+        {
+          method: "PATCH",
+          headers: {
+            Authorization: `Bearer ${getToken()}`,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify(data)
+        }
+      );
+      if (!response) {
+        throw new Error(
+          "No response received. Check your connection and try again."
+        );
+      }
+      const responseText = await response.text();
+      let result;
+      try {
+        result = JSON.parse(responseText);
+      } catch {
+        result = {
+          success: false,
+          message: responseText || "Server returned an empty response."
+        };
+      }
+      if (!response.ok || !result.success) {
+        throw new Error(
+          result.message ||
+          `Failed to record payment. HTTP ${response.status}.`
+        );
+      }
+      modal.remove();
+      showAlert(
+        result.message || "Prize payout marked as paid successfully."
+      );
+      await loadFinancialPrizes();
+    } catch (error) {
+      errorBox.textContent =
+        error?.message || "Unable to record prize payment.";
+      errorBox.style.display = "block";
+      submitBtn.disabled = false;
+      reviewBtn.disabled = false;
+      cancelBtn.disabled = false;
+      submitBtn.textContent = "Confirm Payment";
+    } finally {
+      hideLoader();
+    }
+  });
+}
+async function loadFinancialExpenses() {
+  const content = document.getElementById("financialExpenseContent");
+  if (!content) return;
+  const user = getCurrentUser();
+  if (!user || user.role !== "admin") {
+    content.innerHTML = `
+      <div class="payment-history-empty">
+        Only administrators can view expense records.
+      </div>
+    `;
+    return;
+  }
+  const tournamentId = currentTournament?.id;
+  let url = `${API}/financial/expenses`;
+  if (tournamentId) {
+    url += `?tournament_id=${encodeURIComponent(tournamentId)}`;
+  } else {
+    url += "?scope=general";
+  }
+  content.innerHTML = `
+    <div class="payment-history-empty">
+      Loading expenses...
+    </div>
+  `;
+  showLoader();
+  try {
+    const response = await apiRequest(url, {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${getToken()}`
+      }
+    });
+    if (!response) return;
+    const result = await response.json();
+    if (!response.ok || !result.success) {
+      throw new Error(
+        result.message || "Unable to load expenses."
+      );
+    }
+    renderFinancialExpenses(result.data || []);
+  } catch (error) {
+    content.innerHTML = `
+      <div class="payment-history-empty">
+        ${escapeHtml(error.message || "Unable to load expenses.")}
+        <br><br>
+        <button type="button" onclick="loadFinancialExpenses()">
+          Try Again
+        </button>
+      </div>
+    `;
+  } finally {
+    hideLoader();
+  }
+}
+
+function renderFinancialExpenses(data) {
+  const summary = document.getElementById("financialExpenseSummary");
+  const content = document.getElementById("financialExpenseContent");
+
+  if (!summary || !content) return;
+
+  const expenses = Array.isArray(data) ? data : [];
+
+  const totals = {
+    total: 0,
+    pending: 0,
+    approved: 0,
+    paid: 0,
+    pendingCount: 0,
+    approvedCount: 0,
+    paidCount: 0
+  };
+
+  expenses.forEach(expense => {
+    const amount = Number(expense.amount) || 0;
+    const status = String(expense.status || "").toLowerCase();
+
+    totals.total += amount;
+    if (status === "pending") {
+      totals.pending += amount;
+      totals.pendingCount++;
+    } else if (status === "approved") {
+      totals.approved += amount;
+      totals.approvedCount++;
+    } else if (status === "paid") {
+      totals.paid += amount;
+      totals.paidCount++;
+    }
+  });
+
+  summary.innerHTML = `
+    <div class="payment-history-stat"> 
+      <div class="payment-history-stat-label">Total Expenses</div> 
+      <div class="payment-history-stat-value">${expenses.length}</div> 
+      <div class="payment-history-stat-description">${escapeHtml(formatPaymentMoney(totals.total))}</div> 
+    </div> 
+    <div class="payment-history-stat"> 
+      <div class="payment-history-stat-label">Pending</div> 
+      <div class="payment-history-stat-value">${escapeHtml(formatPaymentMoney(totals.pending))}</div> 
+      <div class="payment-history-stat-description">${totals.pendingCount} records</div> 
+    </div> 
+    <div class="payment-history-stat"> 
+      <div class="payment-history-stat-label">Awaiting Payment</div> 
+      <div class="payment-history-stat-value">${escapeHtml(formatPaymentMoney(totals.approved))}</div> 
+      <div class="payment-history-stat-description">${totals.approvedCount} approved</div> 
+    </div> 
+    <div class="payment-history-stat"> 
+      <div class="payment-history-stat-label">Total Paid</div> 
+      <div class="payment-history-stat-value">${escapeHtml(formatPaymentMoney(totals.paid))}</div> 
+      <div class="payment-history-stat-description">${totals.paidCount} completed</div> 
+    </div>
+  `;
+
+  if (!expenses.length) {
+    content.innerHTML = `<div class="payment-history-empty">No expenses found.</div>`;
+    return;
+  }
+
+  content.innerHTML = `
+    <div class="payment-history-list">
+      ${expenses.map(expense => {
+        const status = String(expense.status || "unknown").toLowerCase();
+        const allowed = ["pending", "approved", "paid", "rejected", "cancelled"];
+        const statusClass = allowed.includes(status) ? status : "unknown";
+        const name = escapeHtml(expense.expense_name || expense.description || "Expense");
+        const recipient = escapeHtml(expense.recipient || "Not specified");
+        const tournament = escapeHtml(expense.tournament_name || "General expense");
+        const amount = escapeHtml(formatPaymentMoney(expense.amount));
+        const dateValue = expense.expense_date || expense.created_at;
+        const date = dateValue ? formatFinancialDate(dateValue) : "Date unavailable";
+
+        let actions = "";
+        if (status === "pending") {
+          actions = `<button type="button" class="financial-approve-btn" onclick="approveFinancialExpense('${escapeHtml(expense.id)}')">Approve</button>`;
+        } else if (status === "approved") {
+          actions = `<button type="button" class="financial-pay-btn" onclick="payFinancialExpense('${escapeHtml(expense.id)}')">Mark as Paid</button>`;
+        }
+        return `
+          <article class="payment-history-item">
+            <div class="payment-history-item-main">
+              <h4 class="payment-history-item-title">${name}</h4>
+              <div class="payment-history-item-details">
+                <span>Recipient: ${recipient}</span>
+                <span>Tournament: ${tournament}</span>
+                <span>Date: ${escapeHtml(date)}</span>
+              </div>
+              ${actions ? `<div class="financial-action-buttons">${actions}</div>` : ""}
+            </div>
+            <div class="payment-history-item-side">
+              <div class="payment-history-item-amount">${amount}</div>
+              <span class="payment-history-status ${statusClass}">${escapeHtml(status)}</span>
+            </div>
+          </article>
+        `;
+      }).join("")}
+    </div>
+  `;
+}
+
+
+function updateFinancialActionButtons() {
+  const user = getCurrentUser();
+  const isAdmin = user?.role === "admin";
+  const hasTournament = Boolean(currentTournament?.id);
+  
+  const prizeBtn = document.getElementById("createPrizeBtn");
+  const tournamentExpenseBtn = document.getElementById("createTournamentExpenseBtn");
+  const generalExpenseBtn = document.getElementById("createGeneralExpenseBtn");
+  const contributionBtn = document.getElementById("createFinancialContributionBtn");
+  
+  if (prizeBtn) {
+    prizeBtn.hidden = !(isAdmin && hasTournament);
+  }
+  
+  if (tournamentExpenseBtn) {
+    tournamentExpenseBtn.hidden = !(isAdmin && hasTournament);
+  }
+  
+  if (generalExpenseBtn) {
+    generalExpenseBtn.hidden = !isAdmin;
+  }
+  
+  if (contributionBtn) {
+    contributionBtn.hidden = !isAdmin;
+  }
+}
+
+async function openCreatePrizeForm() {
+  const user = getCurrentUser();
+  const tournamentId = currentTournament?.id;
+  if (user?.role !== "admin") {
+    showAlert("Only admins can create prize payouts.");
+    return;
+  }
+  if (!tournamentId) {
+    showAlert("Open a tournament before creating a prize payout.");
+    return;
+  }
+  const players = (currentTournament?.tournament_players || [])
+    .filter(player => player.status === "accepted" && player.user_id)
+    .sort((a, b) =>
+      String(a.team_name || "").localeCompare(String(b.team_name || ""))
+    );
+  if (!players.length) {
+    showAlert("There are no accepted players in this tournament.");
+    return;
+  }
+  document.getElementById("prizePreviewModal")?.remove();
+  const tournamentName =
+    currentTournament?.name ||
+    currentTournament?.title ||
+    "Current tournament";
+  const modal = document.createElement("div");
+  modal.id = "prizePreviewModal";
+  modal.style.cssText = `
+    position:fixed;
+    inset:0;
+    z-index:100000;
+    background:rgba(0,0,0,0.65);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:16px;
+    box-sizing:border-box;
+    overflow-x:hidden;
+    overflow-y:auto;
+  `;
+  modal.innerHTML = `
+    <div class="prize-preview-container">
+      <h2 style="margin:0 0 6px;">Create Prize Payout</h2>
+      <p style="margin:0 0 20px;color:#666;font-size:14px;">
+        Enter the prize details and review before submitting.
+      </p>
+      <form id="prizePreviewForm">
+        <label for="prizePreviewUserId">Prize Recipient *</label>
+        <select id="prizePreviewUserId" name="user_id" required>
+          <option value="">Select a tournament player</option>
+          ${players.map(player => `
+            <option value="${escapeHtml(player.user_id)}">
+              ${escapeHtml(player.team_name || "Unknown Team")}
+            </option>
+          `).join("")}
+        </select>
+        <label for="prizePreviewName">Prize Name *</label>
+        <input
+          id="prizePreviewName"
+          name="prize_name"
+          type="text"
+          maxlength="200"
+          required
+          placeholder="e.g. League Champion"
+        >
+        <label for="prizePreviewPosition">Finishing Position *</label>
+        <input
+          id="prizePreviewPosition"
+          name="position"
+          type="number"
+          min="1"
+          step="1"
+          required
+          placeholder="e.g. 1"
+        >
+        <label for="prizePreviewAmount">Prize Amount (₦) *</label>
+        <input
+          id="prizePreviewAmount"
+          name="amount"
+          type="number"
+          min="1"
+          step="1"
+          required
+          placeholder="Enter prize amount"
+        >
+        <div class="prize-preview-type">
+          <strong>Tournament:</strong>
+          <div>${escapeHtml(tournamentName)}</div>
+        </div>
+        <div
+          id="prizePreviewReview"
+          style="display:none;background:#eff6ff;border:1px solid #bfdbfe;padding:14px;border-radius:8px;margin-bottom:18px;overflow-wrap:anywhere;"
+        >
+          <h3>Review Prize Payout</h3>
+          <div id="prizePreviewReviewContent"></div>
+        </div>
+        <div
+          id="prizePreviewError"
+          role="alert"
+          style="display:none;color:#b91c1c;margin-bottom:12px;overflow-wrap:anywhere;"
+        ></div>
+        <div class="prize-preview-actions">
+          <button type="button" id="prizePreviewCancel" class="prize-preview-cancel">
+            Cancel
+          </button>
+          <button type="button" id="prizePreviewReviewButton" class="prize-preview-review">
+            Review Details
+          </button>
+          <button type="submit" id="prizePreviewSubmit" class="prize-preview-submit">
+            Confirm & Submit
+          </button>
+        </div>
+      </form>
+    </div>
+  `;
+  document.body.appendChild(modal);
+  const form = modal.querySelector("#prizePreviewForm");
+  const cancelBtn = modal.querySelector("#prizePreviewCancel");
+  const reviewBtn = modal.querySelector("#prizePreviewReviewButton");
+  const submitBtn = modal.querySelector("#prizePreviewSubmit");
+  const errorBox = modal.querySelector("#prizePreviewError");
+  const reviewPanel = modal.querySelector("#prizePreviewReview");
+  const reviewContent = modal.querySelector("#prizePreviewReviewContent");
+  function getFormData() {
+    const rawPosition = form.elements.position.value;
+    const rawAmount = form.elements.amount.value;
+    return {
+      user_id: form.elements.user_id.value,
+      prize_name: form.elements.prize_name.value.trim(),
+      position: rawPosition === "" ? null : Number(rawPosition),
+      amount: rawAmount === "" ? NaN : Number(rawAmount)
+    };
+  }
+  function validateForm(data) {
+    if (!data.user_id || !data.prize_name) {
+      return "Select a recipient and enter a prize name.";
+    }
+    if (!players.some(player => player.user_id === data.user_id)) {
+      return "Selected player was not found in the tournament player list.";
+    }
+    if (!Number.isSafeInteger(data.position) || data.position < 1) {
+      return "Enter a valid positive whole finishing position.";
+    }
+    if (!Number.isSafeInteger(data.amount) || data.amount <= 0) {
+      return "Enter a valid positive whole prize amount in naira.";
+    }
+    return null;
+  }
+  function showReview() {
+    if (!form.reportValidity()) {
+      return false;
+    }
+    const data = getFormData();
+    const validationError = validateForm(data);
+    if (validationError) {
+      errorBox.textContent = validationError;
+      errorBox.style.display = "block";
+      return false;
+    }
+    const selectedPlayer = players.find(
+      player => player.user_id === data.user_id
+    );
+    reviewContent.innerHTML = `
+      <div><strong>Recipient:</strong> ${escapeHtml(selectedPlayer?.team_name || "Unknown Team")}</div>
+      <div><strong>User ID:</strong> ${escapeHtml(data.user_id)}</div>
+      <div><strong>Prize Name:</strong> ${escapeHtml(data.prize_name)}</div>
+      <div><strong>Position:</strong> ${data.position}</div>
+      <div><strong>Amount:</strong> ₦${data.amount.toLocaleString("en-NG")}</div>
+      <div><strong>Tournament:</strong> ${escapeHtml(tournamentName)}</div>
+    `;
+    reviewPanel.style.display = "block";
+    errorBox.style.display = "none";
+    reviewBtn.textContent = "Update Review";
+    return true;
+  }
+  cancelBtn.addEventListener("click", () => {
+    modal.remove();
+  });
+  modal.addEventListener("click", event => {
+    if (event.target === modal) {
+      modal.remove();
+    }
+  });
+  reviewBtn.addEventListener("click", showReview);
+  form.addEventListener("input", () => {
+    reviewPanel.style.display = "none";
+    reviewBtn.textContent = "Review Details";
+    errorBox.style.display = "none";
+  });
+  form.addEventListener("change", () => {
+    reviewPanel.style.display = "none";
+    reviewBtn.textContent = "Review Details";
+    errorBox.style.display = "none";
+  });
+  form.addEventListener("submit", async event => {
+    event.preventDefault();
+    if (submitBtn.disabled || !showReview()) {
+      return;
+    }
+    if (currentTournament?.id !== tournamentId) {
+      errorBox.textContent =
+        "The current tournament has changed. Close this form and try again.";
+      errorBox.style.display = "block";
+      return;
+    }
+    const data = getFormData();
+    const selectedPlayer = players.find(
+      player => player.user_id === data.user_id
+    );
+    const confirmed = await showConfirmModal(
+      `Create a prize payout of ₦${data.amount.toLocaleString("en-NG")} for ${selectedPlayer?.team_name || "the selected player"}?`,
+      "Create Prize",
+      "Cancel"
+    );
+    if (!confirmed) {
+      return;
+    }
+    if (currentTournament?.id !== tournamentId) {
+      errorBox.textContent =
+        "The current tournament has changed. Close this form and try again.";
+      errorBox.style.display = "block";
+      return;
+    }
+    const payload = {
+      tournament_id: tournamentId,
+      user_id: data.user_id,
+      prize_name: data.prize_name,
+      position: data.position,
+      amount: data.amount
+    };
+    submitBtn.disabled = true;
+    reviewBtn.disabled = true;
+    cancelBtn.disabled = true;
+    submitBtn.textContent = "Submitting...";
+    errorBox.style.display = "none";
+    showLoader();
+    try {
+      const response = await apiRequest(`${API}/financial/prizes`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${getToken()}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(payload)
+      });
+      if (!response) {
+        throw new Error(
+          "No response received. Check your network connection and try again."
+        );
+      }
+      const responseText = await response.text();
+      let result;
+      try {
+        result = JSON.parse(responseText);
+      } catch {
+        result = {
+          success: false,
+          message: responseText || "Server returned an empty response."
+        };
+      }
+      if (!response.ok || !result.success) {
+        throw new Error(
+          result.message || `Request failed with HTTP ${response.status}.`
+        );
+      }
+      modal.remove();
+      showAlert(result.message || "Prize payout created successfully.");
+      await loadFinancialPrizes();
+    } catch (error) {
+      errorBox.textContent =
+        error?.message || "An unknown error occurred.";
+      errorBox.style.display = "block";
+      submitBtn.disabled = false;
+      reviewBtn.disabled = false;
+      cancelBtn.disabled = false;
+      submitBtn.textContent = "Confirm & Submit";
+    } finally {
+      hideLoader();
+    }
+  });
+}
+
+async function openCreateExpenseForm(isTournamentExpense = false) {
+  const user = getCurrentUser();
+  const tournamentId = currentTournament?.id;
+  if (user?.role !== "admin") {
+    showAlert("Only admins can create expenses.");
+    return;
+  }
+  if (isTournamentExpense && !tournamentId) {
+    showAlert("Open a tournament before creating a tournament expense.");
+    updateFinancialActionButtons();
+    return;
+  }
+  const existingModal = document.getElementById("expensePreviewModal");
+  if (existingModal) existingModal.remove();
+  const expenseType = isTournamentExpense
+    ? "Tournament Expense"
+    : "General Expense";
+  const today = new Date();
+  const todayDate = `${today.getFullYear()}-${String(
+    today.getMonth() + 1
+  ).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+  const modal = document.createElement("div");
+  modal.id = "expensePreviewModal";
+  modal.style.cssText = `
+    position:fixed;
+    inset:0;
+    z-index:100000;
+    background:rgba(0,0,0,0.65);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:16px;
+    box-sizing:border-box;
+    overflow-x:hidden;
+    overflow-y:auto;
+  `;
+  modal.innerHTML = `
+    <div class="expense-preview-container">
+      <h2 style="margin:0 0 6px;">Add ${expenseType}</h2>
+      <p style="margin:0 0 20px;color:#666;font-size:14px;overflow-wrap:anywhere;">
+        Enter the expense details below. Review everything before submitting.
+      </p>
+      <form id="expensePreviewForm">
+        <label for="expensePreviewDescription">Description *</label>
+        <input
+          id="expensePreviewDescription"
+          name="description"
+          type="text"
+          maxlength="200"
+          required
+          placeholder="e.g. Internet subscription"
+        >
+        <label for="expensePreviewCategory">Category *</label>
+        <input
+          id="expensePreviewCategory"
+          name="category"
+          type="text"
+          maxlength="100"
+          list="expenseCategoryOptions"
+          required
+          placeholder="e.g. Internet, prizes, venue"
+        >
+        <datalist id="expenseCategoryOptions">
+          <option value="Prizes">
+          <option value="Venue">
+          <option value="Internet">
+          <option value="Marketing">
+          <option value="Equipment">
+          <option value="Operations">
+          <option value="Transportation">
+          <option value="Other">
+        </datalist>
+        <label for="expensePreviewAmount">Amount (₦) *</label>
+        <input
+          id="expensePreviewAmount"
+          name="amount"
+          type="number"
+          min="1"
+          step="1"
+          inputmode="numeric"
+          required
+          placeholder="Enter amount in naira"
+        >
+        <label for="expensePreviewRecipient">Recipient / Payee</label>
+        <input
+          id="expensePreviewRecipient"
+          name="recipient"
+          type="text"
+          maxlength="200"
+          placeholder="Optional"
+        >
+        <label for="expensePreviewDate">Expense Date *</label>
+        <input
+          id="expensePreviewDate"
+          name="expense_date"
+          type="date"
+          required
+          value="${todayDate}"
+        >
+        <label for="expensePreviewNotes">Additional Notes</label>
+        <textarea
+          id="expensePreviewNotes"
+          name="notes"
+          rows="3"
+          maxlength="2000"
+          placeholder="Optional details"
+        ></textarea>
+        <div class="expense-preview-type">
+          <strong>Expense Type:</strong> ${expenseType}
+          ${
+            isTournamentExpense
+              ? `<br><strong>Tournament:</strong> ${escapeHtml(
+                  currentTournament?.name ||
+                  currentTournament?.title ||
+                  "Current tournament"
+                )}`
+              : "<br><strong>Tournament:</strong> None — general expense"
+          }
+        </div>
+        <div
+          id="expensePreviewReview"
+          style="display:none;background:#eff6ff;border:1px solid #bfdbfe;padding:14px;border-radius:8px;margin-bottom:18px;min-width:0;overflow-wrap:anywhere;"
+        >
+          <h3 style="margin:0 0 12px;">Review Your Expense</h3>
+          <div
+            id="expensePreviewReviewContent"
+            style="font-size:14px;line-height:1.8;overflow-wrap:anywhere;word-break:break-word;"
+          ></div>
+          <p style="margin:12px 0 0;color:#1d4ed8;font-size:13px;">
+            Check these details before submitting. You can still edit the fields above.
+          </p>
+        </div>
+        <div
+          id="expensePreviewError"
+          role="alert"
+          style="display:none;color:#b91c1c;margin-bottom:12px;overflow-wrap:anywhere;"
+        ></div>
+        <div class="expense-preview-actions">
+          <button
+            type="button"
+            id="expensePreviewCancel"
+            class="expense-preview-cancel"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            id="expensePreviewReviewButton"
+            class="expense-preview-review"
+          >
+            Review Details
+          </button>
+          <button
+            type="submit"
+            id="expensePreviewSubmit"
+            class="expense-preview-submit"
+          >
+            Confirm & Submit
+          </button>
+        </div>
+      </form>
+    </div>
+  `;
+  document.body.appendChild(modal);
+  const form = modal.querySelector("#expensePreviewForm");
+  const cancelBtn = modal.querySelector("#expensePreviewCancel");
+  const reviewBtn = modal.querySelector("#expensePreviewReviewButton");
+  const submitBtn = modal.querySelector("#expensePreviewSubmit");
+  const errorBox = modal.querySelector("#expensePreviewError");
+  const reviewPanel = modal.querySelector("#expensePreviewReview");
+  const reviewContent = modal.querySelector("#expensePreviewReviewContent");
+  function isValidDate(value) {
+    const match = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (!match) return false;
+    const [, year, month, day] = match;
+    const date = new Date(
+      Date.UTC(Number(year), Number(month) - 1, Number(day))
+    );
+    return (
+      date.getUTCFullYear() === Number(year) &&
+      date.getUTCMonth() === Number(month) - 1 &&
+      date.getUTCDate() === Number(day)
+    );
+  }
+  function getFormData() {
+    return {
+      description: form.elements.description.value.trim(),
+      category: form.elements.category.value.trim(),
+      amount: Number(form.elements.amount.value),
+      recipient: form.elements.recipient.value.trim(),
+      expense_date: form.elements.expense_date.value,
+      notes: form.elements.notes.value.trim()
+    };
+  }
+  function validateForm(data) {
+    if (!data.description || !data.category) {
+      return "Description and category are required.";
+    }
+    if (!Number.isSafeInteger(data.amount) || data.amount <= 0) {
+      return "Enter a positive whole amount in naira.";
+    }
+    if (!isValidDate(data.expense_date)) {
+      return "Enter a valid expense date.";
+    }
+    return null;
+  }
+  function showReview() {
+    if (!form.reportValidity()) return false;
+    const data = getFormData();
+    const validationError = validateForm(data);
+    if (validationError) {
+      errorBox.textContent = validationError;
+      errorBox.style.display = "block";
+      return false;
+    }
+    reviewContent.innerHTML = `
+      <div><strong>Description:</strong> ${escapeHtml(data.description)}</div>
+      <div><strong>Category:</strong> ${escapeHtml(data.category)}</div>
+      <div><strong>Amount:</strong> ₦${data.amount.toLocaleString("en-NG")}</div>
+      <div><strong>Recipient:</strong> ${escapeHtml(data.recipient || "Not specified")}</div>
+      <div><strong>Date:</strong> ${escapeHtml(data.expense_date)}</div>
+      <div><strong>Notes:</strong> ${escapeHtml(data.notes || "None")}</div>
+      <div><strong>Type:</strong> ${expenseType}</div>
+      ${
+        isTournamentExpense
+          ? `<div><strong>Tournament:</strong> ${escapeHtml(
+              currentTournament?.name ||
+              currentTournament?.title ||
+              "Current tournament"
+            )}</div>`
+          : "<div><strong>Tournament:</strong> None</div>"
+      }
+    `;
+    reviewPanel.style.display = "block";
+    errorBox.style.display = "none";
+    reviewBtn.textContent = "Update Review";
+    return true;
+  }
+  cancelBtn.addEventListener("click", () => {
+    modal.remove();
+  });
+  modal.addEventListener("click", event => {
+    if (event.target === modal) modal.remove();
+  });
+  reviewBtn.addEventListener("click", showReview);
+  form.addEventListener("input", () => {
+    reviewPanel.style.display = "none";
+    reviewBtn.textContent = "Review Details";
+    errorBox.style.display = "none";
+  });
+  form.addEventListener("submit", async event => {
+    event.preventDefault();
+    if (submitBtn.disabled) return;
+    if (!showReview()) return;
+    if (isTournamentExpense && currentTournament?.id !== tournamentId) {
+      errorBox.textContent =
+        "The current tournament has changed. Close this form and try again.";
+      errorBox.style.display = "block";
+      return;
+    }
+    const data = getFormData();
+    const confirmed = confirm(
+      `Submit this ${expenseType.toLowerCase()} for ₦${data.amount.toLocaleString("en-NG")}?`
+    );
+    if (!confirmed) return;
+    const payload = {
+      description: data.description,
+      category: data.category,
+      amount: data.amount,
+      recipient: data.recipient || null,
+      expense_date: data.expense_date,
+      notes: data.notes || null
+    };
+    if (isTournamentExpense) {
+      payload.tournament_id = tournamentId;
+    }
+    submitBtn.disabled = true;
+    reviewBtn.disabled = true;
+    cancelBtn.disabled = true;
+    submitBtn.textContent = "Submitting...";
+    errorBox.style.display = "none";
+    showLoader();
+    try {
+      const response = await apiRequest(`${API}/financial/expenses`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${getToken()}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(payload)
+      });
+      if (!response) {
+        submitBtn.disabled = false;
+        reviewBtn.disabled = false;
+        cancelBtn.disabled = false;
+        submitBtn.textContent = "Confirm & Submit";
+        return;
+      }
+      const result = await response.json();
+      if (!response.ok || !result.success) {
+        throw new Error(result.message || "Unable to create expense.");
+      }
+      modal.remove();
+      showAlert("Expense created successfully.");
+      await loadFinancialExpenses();
+    } catch (error) {
+      errorBox.textContent =
+        error.message || "Unable to create expense.";
+      errorBox.style.display = "block";
+      submitBtn.disabled = false;
+      reviewBtn.disabled = false;
+      cancelBtn.disabled = false;
+      submitBtn.textContent = "Confirm & Submit";
+    } finally {
+      hideLoader();
+    }
+  });
+}
+
+async function approveFinancialExpense(id) {
+  if (!id) return;
+  const confirmed = await showConfirmModal(
+    "Are you sure you want to approve this expense?",
+    "Approve Expense",
+    "Cancel"
+  );
+  if (!confirmed) return;
+  showLoader();
+  try {
+    const response = await apiRequest(
+      `${API}/financial/expenses/${encodeURIComponent(id)}/approve`,
+      {
+        method: "PATCH",
+        headers: {
+          Authorization: `Bearer ${getToken()}`
+        }
+      }
+    );
+    if (!response) {
+      throw new Error("No response received. Please try again.");
+    }
+    const result = await response.json();
+    if (!response.ok || !result.success) {
+      throw new Error(
+        result.message || "Failed to approve expense."
+      );
+    }
+    showAlert(
+      result.message || "Expense approved successfully."
+    );
+    await loadFinancialExpenses();
+  } catch (error) {
+    showAlert(
+      error.message || "Unable to approve expense."
+    );
+  } finally {
+    hideLoader();
+  }
+}
+
+async function payFinancialExpense(id) {
+  if (!id) {
+    showAlert("Expense ID is missing.");
+    return;
+  }
+  document.getElementById("expensePaymentModal")?.remove();
+  const modal = document.createElement("div");
+  modal.id = "expensePaymentModal";
+  modal.style.cssText = `
+    position:fixed;
+    inset:0;
+    z-index:100000;
+    background:rgba(0,0,0,0.65);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:16px;
+    box-sizing:border-box;
+    overflow-y:auto;
+  `;
+  modal.innerHTML = `
+    <div style="
+      width:100%;
+      max-width:460px;
+      max-height:90vh;
+      overflow-y:auto;
+      box-sizing:border-box;
+      padding:22px;
+      border-radius:14px;
+      background:#fff;
+      color:#111827;
+      box-shadow:0 15px 45px rgba(0,0,0,0.2);
+      font-family:inherit;
+    ">
+      <h2 style="margin:0 0 8px;font-size:22px;">
+        Record Expense Payment
+      </h2>
+      <p style="margin:0 0 20px;color:#666;font-size:14px;">
+        Enter the details of the payment already made.
+      </p>
+      <form id="expensePaymentForm">
+        <label for="expensePaymentReference" style="
+          display:block;
+          margin-bottom:7px;
+          font-size:14px;
+          font-weight:600;
+        ">Payment Reference *</label>
+        <input
+          id="expensePaymentReference"
+          name="payment_reference"
+          type="text"
+          maxlength="200"
+          required
+          placeholder="Enter transaction reference"
+          style="
+            display:block;
+            width:100%;
+            box-sizing:border-box;
+            padding:12px;
+            margin-bottom:18px;
+            border:1px solid #d1d5db;
+            border-radius:8px;
+            background:#fff;
+            color:#111827;
+            font:inherit;
+          "
+        >
+        <label for="expensePaymentMethod" style="
+          display:block;
+          margin-bottom:7px;
+          font-size:14px;
+          font-weight:600;
+        ">Payment Method *</label>
+        <select
+          id="expensePaymentMethod"
+          name="payment_method"
+          required
+          style="
+            display:block;
+            width:100%;
+            box-sizing:border-box;
+            padding:12px;
+            margin-bottom:18px;
+            border:1px solid #d1d5db;
+            border-radius:8px;
+            background:#fff;
+            color:#111827;
+            font:inherit;
+          "
+        >
+          <option value="">Select payment method</option>
+          <option value="Bank Transfer">Bank Transfer</option>
+          <option value="USSD">USSD</option>
+          <option value="Mobile Banking">Mobile Banking</option>
+          <option value="Cash">Cash</option>
+          <option value="Other">Other</option>
+        </select>
+        <div id="expensePaymentReview" style="
+          display:none;
+          padding:14px;
+          margin-bottom:18px;
+          border:1px solid #bfdbfe;
+          border-radius:9px;
+          background:#eff6ff;
+          color:#1e3a8a;
+          font-size:14px;
+          line-height:1.8;
+          overflow-wrap:anywhere;
+        "></div>
+        <div id="expensePaymentError" style="
+          display:none;
+          margin-bottom:12px;
+          color:#b91c1c;
+          font-size:14px;
+          overflow-wrap:anywhere;
+        " role="alert"></div>
+        <div style="
+          display:flex;
+          flex-wrap:nowrap;
+          gap:7px;
+          margin-top:20px;
+        ">
+          <button
+            type="button"
+            id="expensePaymentCancel"
+            style="
+              flex:1;
+              min-width:0;
+              padding:10px 4px;
+              border:1px solid #e5e7eb;
+              border-radius:8px;
+              background:#f3f4f6;
+              color:#374151;
+              font-size:12px;
+              font-weight:600;
+            "
+          >Cancel</button>
+          <button
+            type="button"
+            id="expensePaymentReviewButton"
+            style="
+              flex:1;
+              min-width:0;
+              padding:10px 4px;
+              border:1px solid #bfdbfe;
+              border-radius:8px;
+              background:#eff6ff;
+              color:#1d4ed8;
+              font-size:12px;
+              font-weight:600;
+            "
+          >Review</button>
+          <button
+            type="submit"
+            id="expensePaymentSubmit"
+            style="
+              flex:1;
+              min-width:0;
+              padding:10px 4px;
+              border:0;
+              border-radius:8px;
+              background:#2563eb;
+              color:#fff;
+              font-size:12px;
+              font-weight:600;
+            "
+          >Confirm Payment</button>
+        </div>
+      </form>
+    </div>
+  `;
+  document.body.appendChild(modal);
+  const form = modal.querySelector("#expensePaymentForm");
+  const cancelBtn = modal.querySelector("#expensePaymentCancel");
+  const reviewBtn = modal.querySelector("#expensePaymentReviewButton");
+  const submitBtn = modal.querySelector("#expensePaymentSubmit");
+  const reviewPanel = modal.querySelector("#expensePaymentReview");
+  const errorBox = modal.querySelector("#expensePaymentError");
+  let reviewedReference = null;
+  let reviewedMethod = null;
+  let submitting = false;
+  function getPaymentData() {
+    return {
+      payment_reference: form.elements.payment_reference.value.trim(),
+      payment_method: form.elements.payment_method.value
+    };
+  }
+  function resetReview() {
+    reviewedReference = null;
+    reviewedMethod = null;
+    reviewPanel.style.display = "none";
+    reviewPanel.replaceChildren();
+    errorBox.style.display = "none";
+  }
+  cancelBtn.addEventListener("click", () => {
+    if (!submitting) modal.remove();
+  });
+  modal.addEventListener("click", event => {
+    if (event.target === modal && !submitting) {
+      modal.remove();
+    }
+  });
+  form.addEventListener("input", resetReview);
+  form.addEventListener("change", resetReview);
+  reviewBtn.addEventListener("click", () => {
+    if (!form.reportValidity()) return;
+    const data = getPaymentData();
+    if (!data.payment_reference || !data.payment_method) {
+      errorBox.textContent = "Complete all payment details.";
+      errorBox.style.display = "block";
+      return;
+    }
+    const reference = document.createElement("div");
+    reference.textContent = `Payment Reference: ${data.payment_reference}`;
+    const method = document.createElement("div");
+    method.textContent = `Payment Method: ${data.payment_method}`;
+    const warning = document.createElement("p");
+    warning.textContent = "Confirm that this expense has actually been paid before proceeding.";
+    reviewPanel.replaceChildren(reference, method, warning);
+    reviewPanel.style.display = "block";
+    reviewedReference = data.payment_reference;
+    reviewedMethod = data.payment_method;
+    errorBox.style.display = "none";
+  });
+  form.addEventListener("submit", async event => {
+    event.preventDefault();
+    if (submitting || !form.reportValidity()) return;
+    const data = getPaymentData();
+    if (
+      !data.payment_reference ||
+      !data.payment_method ||
+      data.payment_reference !== reviewedReference ||
+      data.payment_method !== reviewedMethod
+    ) {
+      errorBox.textContent = "Review your payment details before continuing.";
+      errorBox.style.display = "block";
+      return;
+    }
+    const confirmed = await showConfirmModal(
+      "Confirm that this expense has actually been paid. This will mark it as paid in your financial records.",
+      "Confirm Payment",
+      "Cancel"
+    );
+    if (!confirmed) return;
+    submitting = true;
+    submitBtn.disabled = true;
+    reviewBtn.disabled = true;
+    cancelBtn.disabled = true;
+    submitBtn.textContent = "Recording...";
+    showLoader();
+    try {
+      const response = await apiRequest(
+        `${API}/financial/expenses/${encodeURIComponent(id)}/pay`,
+        {
+          method: "PATCH",
+          headers: {
+            Authorization: `Bearer ${getToken()}`,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify(data)
+        }
+      );
+      if (!response) {
+        throw new Error("No response received. Please try again.");
+      }
+      const responseText = await response.text();
+      let result;
+      try {
+        result = JSON.parse(responseText);
+      } catch {
+        throw new Error(
+          responseText || `Invalid server response (${response.status}).`
+        );
+      }
+      if (!response.ok || !result.success) {
+        throw new Error(
+          result.message || `Failed to record payment (${response.status}).`
+        );
+      }
+      modal.remove();
+      showAlert(
+        result.message || "Expense payment recorded successfully."
+      );
+      await loadFinancialExpenses();
+    } catch (error) {
+      submitting = false;
+      submitBtn.disabled = false;
+      reviewBtn.disabled = false;
+      cancelBtn.disabled = false;
+      submitBtn.textContent = "Confirm Payment";
+      errorBox.textContent =
+        error.message || "Unable to record expense payment.";
+      errorBox.style.display = "block";
+    } finally {
+      hideLoader();
+    }
+  });
+}
+
+
+async function loadFinancialContributions() {
+  const container = document.getElementById("financialContributionContent");
+  const summary = document.getElementById("financialContributionSummary");
+  if (!container || !summary) {
+    console.error("Financial contribution containers were not found.");
+    return;
+  }
+  container.innerHTML = `
+    <div class="payment-history-empty">
+      Loading contributions...
+    </div>
+  `;
+  try {
+    const tournamentId = currentTournament?.id;
+    const query = tournamentId ?
+      `?tournament_id=${encodeURIComponent(tournamentId)}` :
+      "";
+    const response = await apiRequest(
+      `${API}/financial/contributions${query}`,
+      {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${getToken()}`
+        }
+      }
+    );
+    const responseText = await response.text();
+    let result;
+    try {
+      result = JSON.parse(responseText);
+    } catch {
+      throw new Error(
+        responseText || `Invalid server response (${response.status}).`
+      );
+    }
+    if (!response.ok || !result.success) {
+      throw new Error(
+        result.message || `Failed to load contributions (${response.status}).`
+      );
+    }
+    const contributions = Array.isArray(result.contributions) ?
+      result.contributions :
+      [];
+    const sponsorships = contributions.filter(
+      item => item.contribution_type === "sponsorship"
+    );
+    const adminContributions = contributions.filter(
+      item => item.contribution_type === "admin_contribution"
+    );
+    const sponsorshipTotal = sponsorships.reduce(
+      (total, item) => total + Number(item.amount || 0),
+      0
+    );
+    const adminTotal = adminContributions.reduce(
+      (total, item) => total + Number(item.amount || 0),
+      0
+    );
+    summary.innerHTML = `
+      <div class="payment-history-summary-card">
+        <span>Total Sponsorships</span>
+        <strong>${escapeHtml(formatPaymentMoney(sponsorshipTotal))}</strong>
+        <small>${sponsorships.length} record(s)</small>
+      </div>
+      <div class="payment-history-summary-card">
+        <span>Admin Contributions</span>
+        <strong>${escapeHtml(formatPaymentMoney(adminTotal))}</strong>
+        <small>${adminContributions.length} record(s)</small>
+      </div>
+      <div class="payment-history-summary-card">
+        <span>Total Contributions</span>
+        <strong>${escapeHtml(formatPaymentMoney(sponsorshipTotal + adminTotal))}</strong>
+        <small>${contributions.length} record(s)</small>
+      </div>
+    `;
+    if (!contributions.length) {
+      container.innerHTML = `
+        <div class="payment-history-empty">
+          No sponsorships or contributions have been recorded yet.
+        </div>
+      `;
+      return;
+    }
+    container.innerHTML = contributions.map(item => {
+      const isSponsorship =
+        item.contribution_type === "sponsorship";
+      const type = isSponsorship ?
+        "Sponsorship" :
+        "Admin Contribution";
+      return `
+        <div class="financial-record-card">
+          <div class="financial-record-main">
+            <div>
+              <h4>${escapeHtml(item.contributor_name || "Unknown contributor")}</h4>
+              <span class="financial-record-type">
+                ${type}
+              </span>
+            </div>
+            <strong>
+              ${escapeHtml(formatPaymentMoney(Number(item.amount || 0)))}
+            </strong>
+          </div>
+          <div class="financial-record-details">
+            <span>
+              Date: ${escapeHtml(
+                item.received_at
+                  ? formatFinancialDate(item.received_at)
+                  : "Not specified"
+              )}
+            </span>
+            ${item.payment_method ? `
+              <span>
+                Method: ${escapeHtml(item.payment_method)}
+              </span>
+            ` : ""}
+            ${item.payment_reference ? `
+              <span>
+                Reference: ${escapeHtml(item.payment_reference)}
+              </span>
+            ` : ""}
+            ${item.notes ? `
+              <p>${escapeHtml(item.notes)}</p>
+            ` : ""}
+          </div>
+        </div>
+      `;
+    }).join("");
+  } catch (error) {
+    console.error("Load financial contributions error:", error);
+    summary.innerHTML = "";
+    container.innerHTML = `
+      <div class="payment-history-empty">
+        ${escapeHtml(error.message || "Unable to load contributions.")}
+        <button type="button" onclick="loadFinancialContributions()">
+          Try Again
+        </button>
+      </div>
+    `;
+  }
+}
+
+function openCreateFinancialContributionForm() {
+  const user = getCurrentUser();
+
+  if (!user || user.role !== "admin") {
+    showAlert("Only administrators can record contributions.");
+    return;
+  }
+
+  const modal = document.getElementById("financialContributionModal");
+  const form = document.getElementById("financialContributionForm");
+  const dateInput = document.getElementById("contributionReceivedAt");
+
+  if (!modal || !form) {
+    showAlert("Contribution form was not found.");
+    return;
+  }
+
+  form.reset();
+
+  if (dateInput) {
+    dateInput.value = new Date().toLocaleDateString("en-CA");
+  }
+
+  modal.hidden = false;
+}
+
+function closeFinancialContributionForm() {
+  const modal = document.getElementById("financialContributionModal");
+
+  if (modal) {
+    modal.hidden = true;
+  }
+}
+
+
+
+
+document.getElementById("financialContributionForm")?.addEventListener(
+  "submit",
+  async function (event) {
+    event.preventDefault();
+
+    const user = getCurrentUser();
+
+    if (!user || user.role !== "admin") {
+      showAlert("Only administrators can record contributions.");
+      return;
+    }
+
+    const submitButton = document.getElementById(
+      "submitFinancialContributionBtn"
+    );
+
+    const amount = Number(
+      document.getElementById("contributionAmount").value
+    );
+
+    if (!Number.isSafeInteger(amount) || amount <= 0) {
+      showAlert("Enter a valid positive amount in naira.");
+      return;
+    }
+
+    const payload = {
+      contribution_type: document.getElementById("contributionType").value,
+      contributor_name: document.getElementById("contributorName").value.trim(),
+      amount,
+      payment_method:
+        document.getElementById("contributionPaymentMethod").value || null,
+      payment_reference:
+        document.getElementById("contributionPaymentReference").value.trim() || null,
+      received_at:
+        document.getElementById("contributionReceivedAt").value || null,
+      notes:
+        document.getElementById("contributionNotes").value.trim() || null,
+      tournament_id: currentTournament?.id || null
+    };
+
+    if (!payload.contributor_name) {
+      showAlert("Enter the sponsor or contributor name.");
+      return;
+    }
+
+    if (!["sponsorship", "admin_contribution"].includes(payload.contribution_type)) {
+      showAlert("Select a valid contribution type.");
+      return;
+    }
+
+    submitButton.disabled = true;
+
+    try {
+      const response = await apiRequest(
+        `${API}/financial/contributions`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${getToken()}`
+          },
+          body: JSON.stringify(payload)
+        }
+      );
+
+      if (!response || response.success === false) {
+        throw new Error(response?.message || "Failed to save contribution.");
+      }
+
+      closeFinancialContributionForm();
+      showAlert("Contribution recorded successfully.");
+
+      await loadFinancialContributions();
+      await loadFinancialSummary();
+    } catch (error) {
+      showAlert(error.message || "Unable to save contribution.");
+    } finally {
+      submitButton.disabled = false;
+    }
+  }
+);
+
+
+
 function comparisonSearchEscapeHtml(value) {
   return String(value ?? "").replace(
     /[&<>"']/g,
@@ -6186,5 +8943,6 @@ window.addEventListener("load", async () => {
     hideLoader();
   }
 });
+
 
 

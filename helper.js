@@ -477,6 +477,7 @@ function handleMenuAction(action) {
   closeMenu();
   
   const actions = {
+    paymentHistory:openPaymentHistoryPage,
     registerSeason:openSeasonRegistration,
     seasonend:showSeasonKeyInputModal,
     reverseRule:showDisciplinaryReversalSection,
@@ -558,13 +559,13 @@ const menuConfig = {
       action: "registerSeason",
       roles: ["admin", "player"]
     },
-    /*
+    
     {
-      label: "Ranking",
-      action: "showRank",
-      roles: ["admin", "player"]
+      label: "Transactions",
+      action: "paymentHistory",
+      roles: ["admin"]
     },
-    */
+   
     /*
     {
       label: "Setup POTS Tournaments",
@@ -668,8 +669,13 @@ const menuConfig = {
     label: "See Point Deductions",
     action: "reverseRule",
     roles: ["admin", "player"]
-    
-     }
+   
+     },
+        {
+    label: "Transactions & Revenue",
+    action: "paymentHistory",
+    roles: [ "admin","player"]
+}
     
   ],
   group: [
