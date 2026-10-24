@@ -214,24 +214,27 @@ async function checkNotificationSubscription() {
     !("PushManager" in window) ||
     !("Notification" in window)
   ) {
+    console.log("This environment does not support Web Push.");
     return;
   }
   const dismissedKey = `notificationPromptDismissed:${userId}`;
   try {
-    await navigator.serviceWorker.ready;
     const reg = await navigator.serviceWorker.ready;
     let subscription = await reg.pushManager.getSubscription();
-    if (subscription && Notification.permission === "granted") {
+    if (Notification.permission === "denied") {
+      console.log("Notifications are blocked in device settings.");
+      return;
+    }
+    if (Notification.permission === "granted" && subscription) {
       await subscribeUser();
       localStorage.removeItem(dismissedKey);
       return;
     }
-    if (Notification.permission === "denied") return;
     if (localStorage.getItem(dismissedKey) === "true") {
       return;
     }
     const agreed = await showConfirmModal(
-      "Enable Notifications?\n\nReceive important Galatico eSport updates about your tournaments and matches.",
+      "Receive important Galatico eSport updates about your tournaments and matches?",
       "Enable Notifications",
       "Maybe Later"
     );
@@ -239,23 +242,19 @@ async function checkNotificationSubscription() {
       localStorage.setItem(dismissedKey, "true");
       return;
     }
-    if (Notification.permission === "default") {
-      const permission = await Notification.requestPermission();
-      if (permission !== "granted") {
-        if (permission === "denied") {
-          await showAlert(
-            "Notifications were blocked. You can enable them later in your browser or device settings."
-          );
-        }
-        return;
+    const permission = await Notification.requestPermission();
+    if (permission !== "granted") {
+      if (permission === "denied") {
+        await showAlert(
+          "Notifications were blocked. You can enable them later in your device settings."
+        );
       }
+      return;
     }
     subscription = await subscribeUser();
     if (subscription) {
       localStorage.removeItem(dismissedKey);
-      await showAlert(
-        "Notifications have been enabled successfully."
-      );
+      await showAlert("Notifications have been enabled successfully.");
     }
   } catch (error) {
     console.error("Notification setup failed:", error);
@@ -264,6 +263,7 @@ async function checkNotificationSubscription() {
     );
   }
 }
+
 async function registerSW() {
   const result = {
     secureContext: window.isSecureContext,
