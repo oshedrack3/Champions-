@@ -343,3 +343,379 @@ function showForgotPassword() {
   document.getElementById("registerSection").style.display = "none";
   document.getElementById("forgotPasswordSection").style.display = "block";
 }
+
+
+
+function base64UrlToBuffer(value) {
+  const base64 = value
+    .replace(/-/g, "+")
+    .replace(/_/g, "/");
+  const padded = base64.padEnd(
+    Math.ceil(base64.length / 4) * 4,
+    "="
+  );
+  const binary = atob(padded);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) {
+    bytes[i] = binary.charCodeAt(i);
+  }
+  return bytes.buffer;
+}
+function bufferToBase64Url(buffer) {
+  const bytes = new Uint8Array(buffer);
+  let binary = "";
+  for (const byte of bytes) {
+    binary += String.fromCharCode(byte);
+  }
+  return btoa(binary)
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=/g, "");
+}
+function prepareAuthenticationOptions(options) {
+  return {
+    ...options,
+    challenge: base64UrlToBuffer(options.challenge),
+    allowCredentials: options.allowCredentials?.map(
+      credential => ({
+        ...credential,
+        id: base64UrlToBuffer(credential.id)
+      })
+    )
+  };
+}
+function serializeAuthenticationCredential(credential) {
+  return {
+    id: credential.id,
+    rawId: bufferToBase64Url(credential.rawId),
+    type: credential.type,
+    authenticatorAttachment: credential.authenticatorAttachment,
+    response: {
+      clientDataJSON: bufferToBase64Url(
+        credential.response.clientDataJSON
+      ),
+      authenticatorData: bufferToBase64Url(
+        credential.response.authenticatorData
+      ),
+      signature: bufferToBase64Url(
+        credential.response.signature
+      ),
+      userHandle: credential.response.userHandle
+        ? bufferToBase64Url(credential.response.userHandle)
+        : null
+    },
+    clientExtensionResults:
+      credential.getClientExtensionResults()
+  };
+}
+async function handlePasskeyLogin() {
+  if (!window.isSecureContext || !navigator.credentials) {
+    await showAlert(
+      "Biometric login requires a supported browser and a secure connection."
+    );
+    return;
+  }
+  
+  if (!window.PublicKeyCredential) {
+    await showAlert(
+      "Your browser does not support passkey authentication."
+    );
+    return;
+  }
+  
+  showLoader();
+  
+  try {
+    const optionsResponse = await fetch(
+      `${API}/auth/passkey/login-options`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({})
+      }
+    );
+    
+    const optionsResult = await optionsResponse.json();
+    
+    if (!optionsResponse.ok || !optionsResult.success) {
+      throw new Error(
+        optionsResult.message ||
+        "Unable to start biometric login."
+      );
+    }
+    
+    const credential = await navigator.credentials.get({
+      publicKey: prepareAuthenticationOptions(
+        optionsResult.options
+      )
+    });
+    
+    if (!credential) {
+      throw new Error(
+        "Biometric authentication was not completed."
+      );
+    }
+    
+    const verificationResponse = await fetch(
+      `${API}/auth/passkey/login-verify`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          challengeId: optionsResult.challengeId,
+          response: serializeAuthenticationCredential(
+            credential
+          )
+        })
+      }
+    );
+    
+    const verificationResult =
+      await verificationResponse.json();
+    
+    if (
+      !verificationResponse.ok ||
+      !verificationResult.success
+    ) {
+      throw new Error(
+        verificationResult.message ||
+        "Biometric login failed."
+      );
+    }
+    
+    saveSession(
+      verificationResult.token,
+      verificationResult.user
+    );
+    
+    switchAppMode();
+    
+    myTournaments = await getMyTournaments();
+    
+    hideAllPages();
+    
+    const list = document.getElementById(
+      "tournamentList"
+    );
+    
+    if (list) {
+      list.innerHTML = "";
+    }
+    
+    window.location.reload();
+    
+  } catch (error) {
+    console.error("Biometric login error:", error);
+    
+    let message =
+      error.message ||
+      "Biometric login failed. Please try again.";
+    
+    if (error.name === "NotAllowedError") {
+      message =
+        "Biometric login was cancelled, timed out, or no eligible passkey was available. Please try again or use your password.";
+    }
+    
+    await showAlert(message);
+    
+  } finally {
+    hideLoader();
+  }
+}
+
+
+function prepareRegistrationOptions(options) {
+  return {
+    ...options,
+    challenge: base64UrlToBuffer(options.challenge),
+    user: {
+      ...options.user,
+      id: base64UrlToBuffer(options.user.id)
+    },
+    excludeCredentials: options.excludeCredentials?.map(
+      credential => ({
+        ...credential,
+        id: base64UrlToBuffer(credential.id)
+      })
+    )
+  };
+}
+
+function serializeRegistrationCredential(credential) {
+  const response = credential.response;
+  return {
+    id: credential.id,
+    rawId: bufferToBase64Url(credential.rawId),
+    type: credential.type,
+    authenticatorAttachment: credential.authenticatorAttachment,
+    response: {
+      clientDataJSON: bufferToBase64Url(
+        response.clientDataJSON
+      ),
+      attestationObject: bufferToBase64Url(
+        response.attestationObject
+      ),
+      transports: response.getTransports
+        ? response.getTransports()
+        : []
+    },
+    clientExtensionResults:
+      credential.getClientExtensionResults()
+  };
+}
+async function handlePasskeyRegistration() {
+  const token = getToken();
+  
+  if (!token) {
+    await showAlert(
+      "Please log in with your password before enabling biometric login."
+    );
+    return;
+  }
+  
+  if (
+    !window.isSecureContext ||
+    !navigator.credentials ||
+    !window.PublicKeyCredential
+  ) {
+    await showAlert(
+      "Passkey registration is not supported in this browser or requires a secure connection."
+    );
+    return;
+  }
+  
+  const button = document.getElementById(
+    "enableBiometricButton"
+  );
+  
+  if (button?.disabled) return;
+  
+  if (button) {
+    button.disabled = true;
+    button.textContent = "Setting up...";
+  }
+  
+  showLoader();
+  
+  try {
+    const optionsResponse = await fetch(
+      `${API}/auth/passkey/register-options`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ token })
+      }
+    );
+    
+    const optionsResult = await optionsResponse.json();
+    
+    if (!optionsResponse.ok || !optionsResult.success) {
+      throw new Error(
+        optionsResult.message ||
+        "Unable to start passkey registration."
+      );
+    }
+    
+    const credential = await navigator.credentials.create({
+      publicKey: prepareRegistrationOptions(
+        optionsResult.options
+      )
+    });
+    
+    if (!credential) {
+      throw new Error(
+        "Passkey registration was not completed."
+      );
+    }
+    
+    const verificationResponse = await fetch(
+      `${API}/auth/passkey/register-verify`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          token,
+          challengeId: optionsResult.challengeId,
+          deviceName: /iPhone|iPad|iPod/.test(
+              navigator.userAgent
+            ) ?
+            "Apple Device" :
+            "Personal Device",
+          response: serializeRegistrationCredential(
+            credential
+          )
+        })
+      }
+    );
+    
+    const verificationResult =
+      await verificationResponse.json();
+    
+    if (
+      !verificationResponse.ok ||
+      !verificationResult.success
+    ) {
+      throw new Error(
+        verificationResult.message ||
+        "Unable to save your passkey."
+      );
+    }
+    
+    const status = document.getElementById(
+      "profileBiometricStatus"
+    );
+    
+    if (status) {
+      status.textContent = "Passkey registered";
+    }
+    
+    if (button) {
+      button.textContent = "Biometric Login Enabled";
+    }
+    
+    await showAlert(
+      "Biometric login has been enabled for your Galatico account."
+    );
+    
+  } catch (error) {
+    console.error(
+      "Passkey registration error:",
+      error
+    );
+    
+    let message =
+      error.message ||
+      "Unable to enable biometric login. Please try again.";
+    
+    if (error.name === "NotAllowedError") {
+      message =
+        "Passkey setup was cancelled or timed out. Please try again.";
+    } else if (error.name === "InvalidStateError") {
+      message =
+        "This device may already have a passkey registered for this account.";
+    }
+    
+    await showAlert(message);
+    
+  } finally {
+    hideLoader();
+    
+    if (button) {
+      button.disabled = false;
+      
+      if (button.textContent === "Setting up...") {
+        button.textContent = "Enable Biometric Login";
+      }
+    }
+  }
+}

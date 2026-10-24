@@ -13015,4 +13015,117 @@ td.cup-eliminated {
 }
 
 
+.biometric-login-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 18px 0;
+  color: #64748b;
+  font-size: 12px;
+}
 
+.biometric-login-divider::before,
+.biometric-login-divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: #e2e8f0;
+}
+
+#biometricLoginButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  padding: 13px 16px;
+  border: 1px solid #2563eb;
+  border-radius: 10px;
+  background: #fff;
+  color: #2563eb;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background .2s, color .2s;
+}
+
+#biometricLoginButton:hover {
+  background: #eff6ff;
+}
+
+#biometricLoginButton:active {
+  background: #dbeafe;
+}
+
+.profile-page-biometric-section {
+  margin: 20px 0;
+  padding: 18px;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  background: #ffffff;
+}
+
+.profile-page-biometric-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.profile-page-biometric-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 46px;
+  height: 46px;
+  border-radius: 12px;
+  background: #eff6ff;
+  color: #2563eb;
+}
+
+.profile-page-biometric-info {
+  flex: 1;
+}
+
+.profile-page-biometric-info h3 {
+  margin: 2px 0 6px;
+  font-size: 16px;
+  color: #0f172a;
+}
+
+.profile-page-biometric-info p {
+  margin: 0;
+  color: #64748b;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.profile-page-biometric-status {
+  margin: 16px 0 12px;
+  color: #64748b;
+  font-size: 13px;
+}
+
+.profile-page-biometric-btn {
+  width: 100%;
+  padding: 13px 16px;
+  border: none;
+  border-radius: 10px;
+  background: #2563eb;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.profile-page-biometric-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.profile-page-biometric-note {
+  margin: 12px 0 0;
+  color: #64748b;
+  font-size: 12px;
+  line-height: 1.5;
+}
