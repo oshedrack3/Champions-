@@ -2362,6 +2362,7 @@ async function getUserProfile() {
 }
 async function openProfileModal() {
   goBackHome()
+  bindNotificationToggle();
   const modal =
     document.getElementById(
       "profileModal"
