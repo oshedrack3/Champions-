@@ -372,7 +372,35 @@ async function submitPasswordReset() {
 }
 
 
-
+document
+  .getElementById("enablePushButton")
+  .addEventListener("click", async function() {
+    try {
+      if (!("Notification" in window)) {
+        alert("Notifications are not supported.");
+        return;
+      }
+      if (!("serviceWorker" in navigator)) {
+        alert("Service workers are not supported.");
+        return;
+      }
+      const permission = await Notification.requestPermission();
+      console.log("Notification permission:", permission);
+      if (permission !== "granted") {
+        alert("Notification permission result: " + permission);
+        return;
+      }
+      alert("Permission granted. Now registering for push notifications.");
+      await registerSW();
+      const subscription = await subscribeUser();
+      if (subscription) {
+        alert("Galatico notifications enabled successfully.");
+      }
+    } catch (error) {
+      console.error("Enable notifications error:", error);
+      alert(error.message || "Unable to enable notifications.");
+    }
+  });
 
 function showLogin() {
   document.getElementById("loginSection").style.display = "block";
