@@ -259,52 +259,122 @@ async function subscribeUser() {
 async function checkNotificationSubscription() {
   const session = getSession();
   const userId = session?.user?.id;
-  const token = getToken();
-  if (!token || !userId) return;
-  const dismissedKey = `notificationPromptDismissed:${userId}`;
-  if (localStorage.getItem(dismissedKey) === "true") {
+  const toggle = document.getElementById("enablePushButton");
+  const status = document.getElementById("profileNotificationStatus");
+  
+  if (!userId || !toggle) return;
+  
+  toggle.checked = false;
+  
+  if (
+    !("Notification" in window) ||
+    !("serviceWorker" in navigator) ||
+    !("PushManager" in window)
+  ) {
     return;
   }
+  
   try {
-    if (
-      !("serviceWorker" in navigator) ||
-      !("PushManager" in window) ||
-      !("Notification" in window)
-    ) {
+    if (Notification.permission !== "granted") {
       return;
     }
-    if (Notification.permission === "granted") {
-      const registration = await navigator.serviceWorker.ready;
-      const subscription = await registration.pushManager.getSubscription();
-      if (subscription) {
-        return;
+    
+    const registration = await navigator.serviceWorker.ready;
+    const subscription =
+      await registration.pushManager.getSubscription();
+    
+    if (!subscription) {
+      if (status) {
+        status.textContent =
+          "Permission granted. Turn on the toggle to activate notifications.";
       }
-    }
-    if (Notification.permission === "denied") {
+      
       return;
     }
-    const agreed = await showConfirmModal(
-      "Enable Notifications?\n\nReceive important Galatico eSport updates about your tournaments, matches, and results.",
-      "Enable Notifications",
-      "Maybe Later"
-    );
-    if (agreed) {
-      openProfileModal();
-      return;
+    
+    toggle.checked = true;
+    
+    if (status) {
+      status.textContent = "Notifications are enabled.";
     }
-    const dismissPermanently = await showConfirmModal(
-      "Would you like to stop seeing reminders to enable notifications?",
-      "Don't Show Again",
-      "Keep Reminding Me"
-    );
-    if (dismissPermanently) {
-      localStorage.setItem(dismissedKey, "true");
-    }
+    
   } catch (error) {
-    console.error("Notification invitation error:", error);
+    console.error("Notification status check failed:", error);
   }
 }
 
+function bindNotificationToggle() {
+  const toggle = document.getElementById("enablePushButton");
+  const status = document.getElementById("profileNotificationStatus");
+  
+  if (!toggle || toggle.dataset.bound === "true") return;
+  
+  toggle.dataset.bound = "true";
+  
+  toggle.addEventListener("change", async () => {
+    if (!toggle.checked) {
+      if (status) {
+        status.textContent =
+          "Turning off notifications requires unsubscribing from push notifications.";
+      }
+      
+      return;
+    }
+    
+    toggle.disabled = true;
+    
+    try {
+      if (!("Notification" in window)) {
+        throw new Error("Notifications are not supported on this device.");
+      }
+      
+      if (Notification.permission !== "granted") {
+        const permissionGranted = await askPermission();
+        
+        if (!permissionGranted) {
+          toggle.checked = false;
+          return;
+        }
+      }
+      
+      const registration = await registerSW();
+      
+      if (!registration) {
+        throw new Error("Unable to prepare notifications. Please try again later.");
+      }
+      
+      const subscription = await subscribeUser();
+      
+      if (!subscription) {
+        toggle.checked = false;
+        return;
+      }
+      
+      if (status) {
+        status.textContent = "Notifications are enabled.";
+      }
+      
+      localStorage.removeItem(
+        `notificationPromptDismissed:${getSession()?.user?.id}`
+      );
+      
+    } catch (error) {
+      console.error("Notification toggle error:", error);
+      toggle.checked = false;
+      
+      if (status) {
+        status.textContent =
+          "Unable to enable notifications. Please try again.";
+      }
+      
+      await showAlert(
+        error.message || "Unable to enable notifications."
+      );
+    } finally {
+      toggle.disabled = false;
+    }
+  });
+}
 
 async function testPushNotification() {
   try {
