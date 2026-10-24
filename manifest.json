@@ -1,6 +1,6 @@
 {
   "name": "Galatico eSport",
-  "short_name": "Galatico",
+  "short_name": "Galatico eSport",
   "description": "Compete, manage tournaments, and climb the Galatico rankings.",
   "start_url": "./index.html",
   "scope": "./",
