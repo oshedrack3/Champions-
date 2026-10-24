@@ -160,96 +160,112 @@ async function askPermission() {
 async function subscribeUser() {
   try {
     if (!("serviceWorker" in navigator)) {
-      throw new Error(
-        "Service Worker is not supported."
-      );
+      throw new Error("Service Worker is not supported.");
     }
-    
     if (!("PushManager" in window)) {
-      throw new Error(
-        "Push notifications are not supported."
-      );
+      throw new Error("Push notifications are not supported.");
     }
-    
     if (!("Notification" in window)) {
-      throw new Error(
-        "Notifications are not supported."
-      );
+      throw new Error("Notifications are not supported.");
     }
-    
-    const permission =
-      await Notification.requestPermission();
-    
-    if (permission !== "granted") {
-      throw new Error(
-        "Notification permission was not granted."
-      );
+    if (Notification.permission !== "granted") {
+      return null;
     }
-    
-    const reg =
-      await navigator.serviceWorker.ready;
-    
+    const reg = await navigator.serviceWorker.ready;
     const publicKey =
       "BOJKZZBKMDY282dAfh2rgiLIeNuzUJmuu2qyZRO09rSyhX_SuXzT8f6dOJijBSuTLyOKuIOMh8mniyuXbqnVChM";
-    
-    let subscription =
-      await reg.pushManager.getSubscription();
-    
+    let subscription = await reg.pushManager.getSubscription();
     if (!subscription) {
-      subscription =
-        await reg.pushManager.subscribe({
-          userVisibleOnly: true,
-          applicationServerKey:
-            urlBase64ToUint8Array(
-              publicKey
-            )
-        });
+      subscription = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(publicKey)
+      });
     }
-    
-    console.log(
-      "Push subscription:",
-      subscription
-    );
-    
-    const res = await fetch(
-      `${API}/subscribe`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization:
-            `Bearer ${getToken()}`
-        },
-        body:
-          JSON.stringify(subscription)
-      }
-    );
-    
-    const result =
-      await res.json();
-    
+    const res = await fetch(`${API}/subscribe`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${getToken()}`
+      },
+      body: JSON.stringify(subscription)
+    });
+    const result = await res.json();
     if (!res.ok || !result.success) {
       throw new Error(
-        result.message ||
-        "Failed to save push subscription."
+        result.message || "Failed to save push subscription."
       );
     }
-    
-    console.log(
-      "Push subscription saved successfully."
-    );
-    
     return subscription;
-    
-  } catch (err) {
-    console.error(
-      "Push subscription failed:",
-      err
+  } catch (error) {
+    console.error("Push subscription failed:", error);
+    await showAlert(
+      error.message || "Unable to subscribe to notifications."
     );
-    
     return null;
   }
 }
+async function checkNotificationSubscription() {
+  const session = getSession();
+  const userId = session?.user?.id;
+  const token = getToken();
+  if (!userId || !token) return;
+  if (
+    !("serviceWorker" in navigator) ||
+    !("PushManager" in window) ||
+    !("Notification" in window)
+  ) {
+    return;
+  }
+  const dismissedKey = `notificationPromptDismissed:${userId}`;
+  try {
+    await navigator.serviceWorker.ready;
+    const reg = await navigator.serviceWorker.ready;
+    let subscription = await reg.pushManager.getSubscription();
+    if (subscription && Notification.permission === "granted") {
+      await subscribeUser();
+      localStorage.removeItem(dismissedKey);
+      return;
+    }
+    if (Notification.permission === "denied") return;
+    if (localStorage.getItem(dismissedKey) === "true") {
+      return;
+    }
+    const agreed = await showConfirmModal(
+      "Enable Notifications?\n\nReceive important Galatico eSport updates about your tournaments and matches.",
+      "Enable Notifications",
+      "Maybe Later"
+    );
+    if (!agreed) {
+      localStorage.setItem(dismissedKey, "true");
+      return;
+    }
+    if (Notification.permission === "default") {
+      const permission = await Notification.requestPermission();
+      if (permission !== "granted") {
+        if (permission === "denied") {
+          await showAlert(
+            "Notifications were blocked. You can enable them later in your browser or device settings."
+          );
+        }
+        return;
+      }
+    }
+    subscription = await subscribeUser();
+    if (subscription) {
+      localStorage.removeItem(dismissedKey);
+      await showAlert(
+        "Notifications have been enabled successfully."
+      );
+    }
+  } catch (error) {
+    console.error("Notification setup failed:", error);
+    await showAlert(
+      error.message || "Unable to set up notifications."
+    );
+  }
+}
+
+
 
 async function logout() {
   const token = getToken();
@@ -717,5 +733,76 @@ async function handlePasskeyRegistration() {
         button.textContent = "Enable Biometric Login";
       }
     }
+  }
+}
+async function loadPasskeyStatus() {
+  const token = getToken();
+  const button = document.getElementById(
+    "enableBiometricButton"
+  );
+  if (!token || !button) return;
+  try {
+    const response = await fetch(
+      `${API}/auth/passkey/status`,
+      {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      }
+    );
+    const result = await response.json();
+    if (!response.ok || !result.success) return;
+    button.textContent = result.enabled ?
+      "Biometric Login Enabled" :
+      "Enable Biometric Login";
+    button.disabled = result.enabled;
+  } catch (error) {
+    console.error("Unable to load passkey status:", error);
+  }
+}
+
+async function offerBiometricLogin() {
+  const token = getToken();
+  const session = getSession();
+  const userId = session?.user?.id;
+  if (!token || !userId) return;
+  const dismissedKey = `biometricPromptDismissed:${userId}`;
+  if (localStorage.getItem(dismissedKey) === "true") {
+    return;
+  }
+  try {
+    const response = await fetch(
+      `${API}/auth/passkey/status`,
+      {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      }
+    );
+    const result = await response.json();
+    if (!response.ok || !result.success || result.enabled) {
+      return;
+    }
+    const agreed = await showConfirmModal(
+      "Enable Biometric Login?\n\nSign in to Galatico eSport more easily using a passkey with your fingerprint, face recognition, or device screen lock.",
+      "Set Up Now",
+      "Maybe Later"
+    );
+    if (agreed) {
+      openProfileModal();
+      return;
+    }
+    const dismissPermanently = await showConfirmModal(
+      "Would you like to stop seeing reminders to enable biometric login?",
+      "Don't Show Again",
+      "Keep Reminding Me"
+    );
+    if (dismissPermanently) {
+      localStorage.setItem(dismissedKey, "true");
+    }
+  } catch (error) {
+    console.error("Biometric login invitation error:", error);
   }
 }

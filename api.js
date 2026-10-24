@@ -2375,8 +2375,10 @@ async function openProfileModal() {
   try {
     const profile =
       await getUserProfile();
+      loadPasskeyStatus();
     renderUserProfile(profile);
     renderProfilePageSquad();
+    
   } catch (error) {
     console.error(
       "Failed to load profile:",
@@ -8927,13 +8929,17 @@ window.addEventListener("load", async () => {
     const loggedIn = await verifySession();
     if (loggedIn) {
       hideAllPages();
-      await registerSW();
-      await subscribeUser();
+      
+await registerSW();
+await checkNotificationSubscription();      
       bindSeasonRegistrationEvents();
-      const returnedFromPayment = handlePaymentReturn();
+      const returnedFromPayment = 
       await goToCompetitionPage();
       loadMyCompetitions();
       await renderCompetitionList();
+      handlePaymentReturn();
+      offerBiometricLogin();
+      
     } else {
       goToLoginPage();
     }
