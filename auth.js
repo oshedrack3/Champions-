@@ -264,8 +264,38 @@ async function checkNotificationSubscription() {
     );
   }
 }
+async function registerSW() {
+  const result = {
+    secureContext: window.isSecureContext,
+    serviceWorker: "serviceWorker" in navigator,
+    pushManager: "PushManager" in window,
+    notification: "Notification" in window,
+    permission: "Notification" in window
+      ? Notification.permission
+      : "unsupported"
+  };
 
+  console.log("Push diagnostic:", result);
 
+  await showAlert(
+    "Push Support Check\n\n" +
+    "Secure Context: " + result.secureContext + "\n" +
+    "Service Worker: " + result.serviceWorker + "\n" +
+    "Push Manager: " + result.pushManager + "\n" +
+    "Notification API: " + result.notification + "\n" +
+    "Permission: " + result.permission
+  );
+
+  if (!result.serviceWorker) return;
+
+  try {
+    const reg = await navigator.serviceWorker.register("/sw.js");
+    console.log("Service Worker registered:", reg);
+  } catch (error) {
+    console.error("Service Worker registration failed:", error);
+    await showAlert("Service Worker Error: " + error.message);
+  }
+}
 
 async function logout() {
   const token = getToken();
