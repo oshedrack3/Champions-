@@ -256,50 +256,83 @@ async function subscribeUser() {
   }
 }
 
+
 async function checkNotificationSubscription() {
   const session = getSession();
-  const userId = session?.user?.id;
+  const token = getToken();
   const toggle = document.getElementById("enablePushButton");
   const status = document.getElementById("profileNotificationStatus");
   
-  if (!userId || !toggle) return;
+  if (!session?.user?.id || !token || !toggle) return;
   
   toggle.checked = false;
+  
+  if (status) {
+    status.textContent = "Checking notification status...";
+  }
   
   if (
     !("Notification" in window) ||
     !("serviceWorker" in navigator) ||
     !("PushManager" in window)
   ) {
+    if (status) {
+      status.textContent = "Push notifications are not supported in this environment.";
+    }
     return;
   }
   
   try {
+    const response = await fetch(
+      `${API}/notification-status`,
+      {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      }
+    );
+    
+    const result = await response.json();
+    
+    if (!response.ok || !result.success) {
+      throw new Error(
+        result.message || "Unable to check notification status."
+      );
+    }
+    
     if (Notification.permission !== "granted") {
+      if (status) {
+        status.textContent = "Notifications are not enabled on this device.";
+      }
       return;
     }
     
     const registration = await navigator.serviceWorker.ready;
-    const subscription =
-      await registration.pushManager.getSubscription();
+    const subscription = await registration.pushManager.getSubscription();
     
-    if (!subscription) {
-      if (status) {
-        status.textContent =
-          "Permission granted. Turn on the toggle to activate notifications.";
-      }
-      
-      return;
-    }
+    const enabled = Boolean(
+      subscription &&
+      result.enabled &&
+      subscription.endpoint === result.endpoint
+    );
     
-    toggle.checked = true;
+    toggle.checked = enabled;
     
     if (status) {
-      status.textContent = "Notifications are enabled.";
+      status.textContent = enabled ?
+        "Notifications are enabled." :
+        "Notifications are not activated on this device. Turn on the toggle to enable them.";
     }
-    
   } catch (error) {
-    console.error("Notification status check failed:", error);
+    console.error(
+      "Notification status check failed:",
+      error
+    );
+    
+    if (status) {
+      status.textContent = "Unable to check notification status. Please try again.";
+    }
   }
 }
 
@@ -938,3 +971,6 @@ async function offerBiometricLogin() {
     console.error("Biometric login invitation error:", error);
   }
 }
+
+
+
