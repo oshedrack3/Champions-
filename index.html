@@ -412,7 +412,7 @@
               </div>
               
               <div id="profileBiometricStatus" class="profile-page-biometric-status" aria-live="polite">
-               
+                
               </div>
               
               <button type="button" id="enableBiometricButton" class="profile-page-biometric-btn" onclick="handlePasskeyRegistration()">
@@ -425,14 +425,23 @@
             </section>
             
             
-            <button
-  type="button"
-  id="enablePushButton"
->
-  Enable Notifications
-</button>
             
           </div>
+          <section class="profile-page-notification-section">
+            <div class="profile-page-notification-header">
+              <div class="profile-page-notification-info">
+                <h3>Notifications</h3>
+                <p class="profile-page-notification-note">
+                  Receive important updates about your tournaments, matches, and results.
+                </p>
+              </div>
+              <label class="profile-page-notification-toggle">
+                <input type="checkbox" id="enablePushButton" aria-label="Enable notifications">
+                <span class="profile-page-notification-slider"></span>
+              </label>
+            </div>
+            <div id="profileNotificationStatus" class="profile-page-notification-status" aria-live="polite"></div>
+          </section>
           <div class="profile-page-bank-section">
             <div class="profile-page-bank-header">
               <h4>Prize Payout Details</h4>

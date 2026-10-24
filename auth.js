@@ -140,22 +140,73 @@ async function login(login, password) {
     
   }
 }
+
 async function registerSW() {
-  if (!("serviceWorker" in navigator)) return;
-  
+  if (!("serviceWorker" in navigator)) {
+    console.error("Service workers are not supported on this device.");
+    return null;
+  }
   try {
     const reg = await navigator.serviceWorker.register("/sw.js");
-    console.log("Service Worker registered ✅", reg);
-  } catch (err) {
-    console.error("SW failed ❌", err);
+    console.log("Service Worker registered:", reg);
+    return reg;
+  } catch (error) {
+    console.error("Service Worker registration failed:", error);
+    return null;
   }
 }
 async function askPermission() {
-  if (!("Notification" in window)) return;
+  if (!("Notification" in window)) {
+    await showAlert("Notifications are not supported on this device.");
+    return false;
+  }
+  try {
+    const permission = await Notification.requestPermission();
+    console.log("Notification permission:", permission);
+    if (permission === "granted") {
+      return true;
+    }
+    if (permission === "denied") {
+      await showAlert(
+        "Notifications are blocked. You can enable them in your device settings."
+      );
+      return false;
+    }
+    return false;
+  } catch (error) {
+    console.error("Notification permission error:", error);
+    await showAlert("Unable to request notification permission.");
+    return false;
+  }
+}
+async function askPermission() {
+  if (!("Notification" in window)) {
+    await showAlert("Notifications are not supported on this device.");
+    return false;
+  }
   
-  const permission = await Notification.requestPermission();
-  
-  console.log("Permission:", permission);
+  try {
+    const permission = await Notification.requestPermission();
+    
+    console.log("Notification permission:", permission);
+    
+    if (permission === "granted") {
+      return true;
+    }
+    
+    if (permission === "denied") {
+      await showAlert(
+        "Notifications are blocked. You can enable them in your device settings."
+      );
+      return false;
+    }
+    
+    return false;
+  } catch (error) {
+    console.error("Notification permission error:", error);
+    await showAlert("Unable to request notification permission.");
+    return false;
+  }
 }
 async function subscribeUser() {
   try {
@@ -204,98 +255,79 @@ async function subscribeUser() {
     return null;
   }
 }
+
 async function checkNotificationSubscription() {
   const session = getSession();
   const userId = session?.user?.id;
   const token = getToken();
-  if (!userId || !token) return;
-  if (
-    !("serviceWorker" in navigator) ||
-    !("PushManager" in window) ||
-    !("Notification" in window)
-  ) {
-    console.log("This environment does not support Web Push.");
+  if (!token || !userId) return;
+  const dismissedKey = `notificationPromptDismissed:${userId}`;
+  if (localStorage.getItem(dismissedKey) === "true") {
     return;
   }
-  const dismissedKey = `notificationPromptDismissed:${userId}`;
   try {
-    const reg = await navigator.serviceWorker.ready;
-    let subscription = await reg.pushManager.getSubscription();
+    if (
+      !("serviceWorker" in navigator) ||
+      !("PushManager" in window) ||
+      !("Notification" in window)
+    ) {
+      return;
+    }
+    if (Notification.permission === "granted") {
+      const registration = await navigator.serviceWorker.ready;
+      const subscription = await registration.pushManager.getSubscription();
+      if (subscription) {
+        return;
+      }
+    }
     if (Notification.permission === "denied") {
-      console.log("Notifications are blocked in device settings.");
-      return;
-    }
-    if (Notification.permission === "granted" && subscription) {
-      await subscribeUser();
-      localStorage.removeItem(dismissedKey);
-      return;
-    }
-    if (localStorage.getItem(dismissedKey) === "true") {
       return;
     }
     const agreed = await showConfirmModal(
-      "Receive important Galatico eSport updates about your tournaments and matches?",
+      "Enable Notifications?\n\nReceive important Galatico eSport updates about your tournaments, matches, and results.",
       "Enable Notifications",
       "Maybe Later"
     );
-    if (!agreed) {
-      localStorage.setItem(dismissedKey, "true");
+    if (agreed) {
+      openProfileModal();
       return;
     }
-    const permission = await Notification.requestPermission();
-    if (permission !== "granted") {
-      if (permission === "denied") {
-        await showAlert(
-          "Notifications were blocked. You can enable them later in your device settings."
-        );
-      }
-      return;
-    }
-    subscription = await subscribeUser();
-    if (subscription) {
-      localStorage.removeItem(dismissedKey);
-      await showAlert("Notifications have been enabled successfully.");
-    }
-  } catch (error) {
-    console.error("Notification setup failed:", error);
-    await showAlert(
-      error.message || "Unable to set up notifications."
+    const dismissPermanently = await showConfirmModal(
+      "Would you like to stop seeing reminders to enable notifications?",
+      "Don't Show Again",
+      "Keep Reminding Me"
     );
-  }
-}
-
-async function registerSW() {
-  const result = {
-    secureContext: window.isSecureContext,
-    serviceWorker: "serviceWorker" in navigator,
-    pushManager: "PushManager" in window,
-    notification: "Notification" in window,
-    permission: "Notification" in window
-      ? Notification.permission
-      : "unsupported"
-  };
-
-  console.log("Push diagnostic:", result);
-
-  await showAlert(
-    "Push Support Check\n\n" +
-    "Secure Context: " + result.secureContext + "\n" +
-    "Service Worker: " + result.serviceWorker + "\n" +
-    "Push Manager: " + result.pushManager + "\n" +
-    "Notification API: " + result.notification + "\n" +
-    "Permission: " + result.permission
-  );
-
-  if (!result.serviceWorker) return;
-
-  try {
-    const reg = await navigator.serviceWorker.register("/sw.js");
-    console.log("Service Worker registered:", reg);
+    if (dismissPermanently) {
+      localStorage.setItem(dismissedKey, "true");
+    }
   } catch (error) {
-    console.error("Service Worker registration failed:", error);
-    await showAlert("Service Worker Error: " + error.message);
+    console.error("Notification invitation error:", error);
   }
 }
+
+
+async function testPushNotification() {
+  try {
+    const res = await fetch(`${API}/test`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${getToken()}`
+      }
+    });
+    
+    const result = await res.json();
+    
+    console.log("Push test result:", result);
+    
+    await showAlert(
+      result.message || "Notification test completed."
+    );
+  } catch (error) {
+    console.error("Push test failed:", error);
+    await showAlert(error.message);
+  }
+}
+
 
 async function logout() {
   const token = getToken();
@@ -372,35 +404,7 @@ async function submitPasswordReset() {
 }
 
 
-document
-  .getElementById("enablePushButton")
-  .addEventListener("click", async function() {
-    try {
-      if (!("Notification" in window)) {
-        alert("Notifications are not supported.");
-        return;
-      }
-      if (!("serviceWorker" in navigator)) {
-        alert("Service workers are not supported.");
-        return;
-      }
-      const permission = await Notification.requestPermission();
-      console.log("Notification permission:", permission);
-      if (permission !== "granted") {
-        alert("Notification permission result: " + permission);
-        return;
-      }
-      alert("Permission granted. Now registering for push notifications.");
-      await registerSW();
-      const subscription = await subscribeUser();
-      if (subscription) {
-        alert("Galatico notifications enabled successfully.");
-      }
-    } catch (error) {
-      console.error("Enable notifications error:", error);
-      alert(error.message || "Unable to enable notifications.");
-    }
-  });
+
 
 function showLogin() {
   document.getElementById("loginSection").style.display = "block";
