@@ -3486,25 +3486,6 @@ td:nth-child(2) {
   color: #1a1a1a;
 }
 
-.profile-modal-page-back {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 40px;
-  height: 40px;
-  flex-shrink: 0;
-  padding: 0;
-  border: none;
-  background: transparent;
-  color: #1a1a1a;
-  font-size: 26px;
-  cursor: pointer;
-}
-
-.profile-modal-page-back:active {
-  transform: scale(0.94);
-}
-
 .profile-modal-page-title {
   margin: 0;
   color: #1a1a1a;
@@ -3651,7 +3632,7 @@ td:nth-child(2) {
   padding: 0 16px;
   border: none;
   border-radius: 10px;
-  background: #111111;
+  background: #2563eb;
   color: #ffffff;
   font-size: 14px;
   font-weight: 600;
@@ -3756,9 +3737,8 @@ td:nth-child(2) {
   flex: 1;
   min-height: 46px;
   padding: 0 16px;
-  border: none;
-  border-radius: 10px;
-  background: #111111;
+  border-radius: 25px;
+  background: #2563eb;
   color: #ffffff;
   font-size: 15px;
   font-weight: 600;
@@ -3868,10 +3848,9 @@ td:nth-child(2) {
 .profile-page-update-profile-btn {
   flex: 0 0 auto;
   padding: 8px 11px;
-  border: 1px solid #d4af37;
   border-radius: 8px;
-  background: #111827;
-  color: #f5d778;
+  background: #2563eb;
+  color: #fff;
   font-size: 11px;
   font-weight: 700;
   line-height: 1.2;
@@ -4409,7 +4388,7 @@ td:nth-child(2) {
 
 .update-profile-save-button {
   border: 0;
-  background: #111;
+  background: #2563eb;
   color: #fff;
 }
 
@@ -4490,8 +4469,8 @@ td:nth-child(2) {
   min-height: 44px;
   padding: 12px 16px;
   border: none;
-  border-radius: 8px;
-  background: #111;
+  border-radius: 15px;
+  background: #2563eb;
   color: #fff;
   font-family: inherit;
   font-size: 14px;
@@ -4733,7 +4712,7 @@ td:nth-child(2) {
 
 .team-selection-cancel-btn {
   border: 1px solid #ddd;
-  background: #fff;
+  background: #ddd;
   color: #333;
 }
 
@@ -4747,12 +4726,12 @@ td:nth-child(2) {
 
 .team-selection-confirm-btn {
   border: 0;
-  background: #111;
+  background: #2563eb;
   color: #fff;
 }
 
 .team-selection-confirm-btn:hover {
-  background: #222;
+  background: #2563eb;
 }
 
 .team-selection-confirm-btn:active {
@@ -7150,7 +7129,7 @@ button.knockout-score-cell:hover {
 }
 
 .tournament-rules-agree {
-  background: #171717 !important;
+  background: #2563eb !important;
   color: #fff !important;
 }
 
@@ -7160,8 +7139,8 @@ button.knockout-score-cell:hover {
 }
 
 .tournament-rules-close {
-  background: #171717 !important;
-  color: #fff !important;
+  background:  #ddd!important;
+  color: #171717 !important;
 }
 
 .rules-title {
@@ -9612,7 +9591,7 @@ button.knockout-score-cell:hover {
   font-size: 16px;
 }
 #seasonKeyInput:focus {
-  border-color: #b8860b;
+  border-color: #ddd;
   box-shadow: 0 0 0 2px rgba(184, 134, 11, 0.15);
 }
 .season-key-modal-actions {
@@ -9631,8 +9610,7 @@ button.knockout-score-cell:hover {
   cursor: pointer;
 }
 .season-key-modal-actions button:last-child {
-  border-color: #b8860b;
-  background: #5c4500;
+  background: #2563eb;
   color: #fff;
 }
 .season-key-modal-actions button:disabled {
@@ -12787,11 +12765,11 @@ td.cup-eliminated {
   min-height: 34px;
   margin: 0;
   padding: 0 11px;
-  border: 1px solid #d4af37;
-  border-radius: 8px;
-  background: #111827;
-  color: #f5d778;
-  -webkit-text-fill-color: #f5d778;
+  border: none ;
+  border-radius: 15px;
+  background: #2563eb;
+  color: #fff;
+  -webkit-text-fill-color: #fff;
   font-size: 11px;
   font-weight: 700;
   line-height: 1;

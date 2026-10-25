@@ -5553,7 +5553,7 @@ function submitSeasonKey() {
   }
   const seasonKey = input.value.trim();
   if (!seasonKey) {
-    showAlert("Please enter a season key.");
+    showAlert("Please enter a valid  season.");
     input.focus();
     return;
   }
