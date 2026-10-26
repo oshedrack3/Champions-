@@ -5796,69 +5796,44 @@ function updateChampionsLeaguePlayoffPositions() {
 
 async function registerForSeason(tournamentId) {
   if (!tournamentId || loading) return;
+  
   const season = seasons.find(
-    item => String(item.tournament_id) === String(tournamentId)
+    item =>
+    String(item.tournament_id) === String(tournamentId)
   );
+  
   if (!season) {
-    showMessage("This season is no longer available.", "error");
+    showMessage(
+      "This season is no longer available.",
+      "error"
+    );
     return;
   }
-  showConfirmModal(
-    `Register for ${season.competition_name || "this competition"}?\n\n` +
-    `Registration fee: ${formatMoney(season.registration_fee)}\n` +
-    `Admin fee: ${formatMoney(season.admin_fee)}\n` +
-    `Total: ${formatMoney(season.total_amount)}\n\n` +
-    "You will be redirected to Flutterwave to complete payment.",
-    "Continue to Payment",
-    "Cancel"
+  
+  const modal = document.getElementById(
+    "srPaymentMethodModal"
   );
-  confirmYes = async () => {
-    closeConfirmModal();
-    if (loading) return;
-    loading = true;
-    clearMessage();
-    renderSeasonRegistration();
-    try {
-      const token = getToken();
-      if (!token) {
-        throw new Error("Please log in to register for a season.");
-      }
-      const res = await apiRequest(
-        `${API}/season-registrations/pay`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: token
-          },
-          body: JSON.stringify({
-            tournament_id: tournamentId
-          })
-        },
-        () => registerForSeason(tournamentId)
-      );
-      if (!res) return;
-      const response = await res.json();
-      if (!res.ok || !response.success || !response.checkout_url) {
-        throw new Error(
-          response.message || "Unable to initialize payment."
-        );
-      }
-      window.location.href = response.checkout_url;
-    } catch (error) {
-      console.error("Season registration payment error:", error);
-      showMessage(
-        error.message || "Unable to start payment. Please try again.",
-        "error"
-      );
-    } finally {
-      loading = false;
-      renderSeasonRegistration();
-    }
-  };
-  confirmNo = () => {
-    closeConfirmModal();
-  };
+  
+  const description = document.getElementById(
+    "srPaymentMethodDescription"
+  );
+  
+  if (!modal || !description) {
+    showMessage(
+      "Payment options are unavailable. Please refresh the page.",
+      "error"
+    );
+    return;
+  }
+  
+  selectedSeasonForPayment = season;
+  
+  description.textContent =
+    `${season.competition_name || "Competition"} · ` +
+    `Season ${season.season ?? "N/A"} · ` +
+    `Total: ${formatMoney(season.total_amount)}`;
+  
+  modal.hidden = false;
 }
 
 async function verifyPayment(reference, showResultAlert = false) {
@@ -5966,50 +5941,965 @@ function formatMoney(amount) {
 }
 
 function bindSeasonRegistrationEvents() {
-  const page = document.getElementById("seasonRegistrationApp");
-  if (!page) return;
+  const page = document.getElementById(
+    "seasonRegistrationApp"
+  );
   
-  const backButton = document.getElementById("srBack");
-  const refreshButton = document.getElementById("srRefresh");
-  const list = document.getElementById("srList");
+  const adminReviewsList = document.getElementById(
+    "srAdminReviewsList"
+  );
   
-  if (backButton) {
-    backButton.onclick = closeSeasonRegistration;
+  const receiptModal = document.getElementById(
+    "srReceiptModal"
+  );
+  
+  const receiptClose = document.getElementById(
+    "srReceiptClose"
+  );
+  
+  const receiptImage = document.getElementById(
+    "srReceiptImage"
+  );
+  
+  function closeReceiptModal() {
+    if (!receiptModal) return;
+    
+    receiptModal.hidden = true;
+    
+    if (receiptImage) {
+      receiptImage.onload = null;
+      receiptImage.onerror = null;
+      receiptImage.removeAttribute("src");
+    }
+    
+    document.body.style.overflow = "";
   }
   
-  if (refreshButton) {
-    refreshButton.onclick = loadSeasonRegistrationData;
+  if (page) {
+    const backButton = document.getElementById("srBack");
+    const refreshButton = document.getElementById("srRefresh");
+    const list = document.getElementById("srList");
+    
+    const paymentMethodClose = document.getElementById(
+      "srPaymentMethodClose"
+    );
+    
+    const flutterwaveButton = document.getElementById(
+      "srChooseFlutterwave"
+    );
+    
+    const bankTransferButton = document.getElementById(
+      "srChooseBankTransfer"
+    );
+    
+    const bankTransferClose = document.getElementById(
+      "srBankClose"
+    );
+    
+    const bankTransferForm = document.getElementById(
+      "srBankTransferForm"
+    );
+    
+    const paymentProofInput = document.getElementById(
+      "srPaymentProof"
+    );
+    
+    const copyAccountButton = document.getElementById(
+      "srCopyAccount"
+    );
+    
+    if (backButton) {
+      backButton.onclick = closeSeasonRegistration;
+    }
+    
+    if (refreshButton) {
+      refreshButton.onclick = () => {
+        if (currentView === "admin-reviews") {
+          loadPendingBankTransfers();
+        } else {
+          loadSeasonRegistrationData();
+        }
+      };
+    }
+    
+    page.querySelectorAll("[data-view]").forEach(button => {
+      button.onclick = () => {
+        currentView = button.dataset.view;
+        
+        renderSeasonRegistration();
+        
+        bindSeasonRegistrationEvents();
+        
+        if (currentView === "admin-reviews") {
+          loadPendingBankTransfers();
+        }
+      };
+    });
+    
+    if (list) {
+      list.onclick = event => {
+        const button = event.target.closest(
+          "[data-register-season]"
+        );
+        
+        if (!button || button.disabled) return;
+        
+        registerForSeason(
+          button.dataset.registerSeason
+        );
+      };
+    }
+    
+    if (paymentMethodClose) {
+      paymentMethodClose.onclick =
+        closePaymentMethodModal;
+    }
+    
+    if (flutterwaveButton) {
+      flutterwaveButton.onclick =
+        continueWithFlutterwave;
+    }
+    
+    if (bankTransferButton) {
+      bankTransferButton.onclick =
+        openSelectedSeasonBankTransfer;
+    }
+    
+    if (bankTransferClose) {
+      bankTransferClose.onclick =
+        closeBankTransferModal;
+    }
+    
+    if (bankTransferForm) {
+      bankTransferForm.onsubmit =
+        submitBankTransferReceipt;
+    }
+    
+    if (paymentProofInput) {
+      paymentProofInput.onchange =
+        previewBankTransferReceipt;
+    }
+    
+    if (copyAccountButton) {
+      copyAccountButton.onclick = async () => {
+        const accountNumber = document.getElementById(
+          "srBankAccountNumber"
+        )?.textContent?.trim();
+        
+        if (
+          !accountNumber ||
+          accountNumber === "Loading..." ||
+          accountNumber === "Not configured"
+        ) {
+          showBankTransferMessage(
+            "Account number is not available yet."
+          );
+          return;
+        }
+        
+        try {
+          await navigator.clipboard.writeText(
+            accountNumber
+          );
+          
+          showBankTransferMessage(
+            "Account number copied.",
+            "success"
+          );
+        } catch (error) {
+          showBankTransferMessage(
+            "Unable to copy automatically. Please copy the account number manually."
+          );
+        }
+      };
+    }
   }
   
-  page.querySelectorAll("[data-view]").forEach(button => {
-    button.onclick = () => {
-      currentView = button.dataset.view;
-      renderSeasonRegistration();
-      bindSeasonRegistrationEvents();
-    };
-  });
-  
-  if (list) {
-    list.onclick = event => {
-      const button = event.target.closest("[data-register-season]");
+  if (adminReviewsList) {
+    adminReviewsList.onclick = async event => {
+      const retryButton = event.target.closest(
+        "[data-retry-bank-transfers], #srRetryAdminReviews"
+      );
+      
+      if (retryButton) {
+        await loadPendingBankTransfers();
+        return;
+      }
+      
+      const receiptButton = event.target.closest(
+        "[data-view-receipt]"
+      );
+      
+      if (receiptButton) {
+        const receiptUrl =
+          receiptButton.dataset.viewReceipt;
+        
+        if (!receiptUrl || !receiptModal || !receiptImage) {
+          showMessage(
+            "The payment receipt or receipt viewer is unavailable.",
+            "error"
+          );
+          return;
+        }
+        
+        receiptModal.hidden = false;
+        document.body.style.overflow = "hidden";
+        
+        receiptImage.onload = null;
+        receiptImage.onerror = null;
+        receiptImage.removeAttribute("src");
+        
+        receiptImage.onerror = () => {
+          receiptImage.onerror = null;
+          
+          showMessage(
+            "The receipt image could not be loaded. Check whether the stored receipt URL is valid and publicly accessible.",
+            "error"
+          );
+        };
+        
+        receiptImage.src = receiptUrl;
+        
+        return;
+      }
+      
+      const button = event.target.closest(
+        "[data-review-payment]"
+      );
       
       if (!button || button.disabled) return;
       
-      const tournamentId = button.dataset.registerSeason;
+      const registrationId =
+        button.dataset.registrationId;
       
-      console.log("Register button clicked:", tournamentId);
+      const decision =
+        button.dataset.reviewPayment;
       
-      registerForSeason(tournamentId);
+      if (!registrationId) {
+        console.error(
+          "Missing registration ID on review button:",
+          button
+        );
+        
+        showMessage(
+          "This payment has no registration ID. Refresh the list and try again.",
+          "error"
+        );
+        
+        return;
+      }
+      
+      await reviewBankTransfer(
+        registrationId,
+        decision
+      );
     };
   }
+  
+  if (receiptClose) {
+    receiptClose.onclick = closeReceiptModal;
+  }
+  
+  if (receiptModal) {
+    receiptModal.onclick = event => {
+      if (event.target === receiptModal) {
+        closeReceiptModal();
+      }
+    };
+  }
+  
+  document.onkeydown = event => {
+    if (
+      event.key === "Escape" &&
+      receiptModal &&
+      !receiptModal.hidden
+    ) {
+      closeReceiptModal();
+    }
+  };
 }
 
+
+
+let selectedSeasonForPayment = null;
 let currentView = "available";
 let seasons = [];
 let registrations = [];
 let loading = false;
 let seasonRegistrationError = "";
+let bankTransferSeason = null;
+let bankTransferSubmitting = false;
+let pendingBankTransfers = [];
+let pendingBankTransfersLoading = false;
+let pendingBankTransfersError = "";
 
+async function loadPendingBankTransfers() {
+  if (pendingBankTransfersLoading) return;
+  pendingBankTransfersLoading = true;
+  pendingBankTransfersError = "";
+  renderAdminBankTransfers();
+  try {
+    const token = getToken();
+    if (!token) {
+      throw new Error("Please log in to continue.");
+    }
+    const response = await apiRequest(
+      `${API}/season-registrations/bank-transfer/pending`,
+      {
+        method: "GET",
+        headers: {
+          Authorization: token
+        }
+      }
+    );
+    if (!response) return;
+    const result = await response.json();
+    if (!response.ok || !result.success) {
+      throw new Error(
+        result.message ||
+        "Unable to load pending bank transfers."
+      );
+    }
+    pendingBankTransfers = Array.isArray(result.transfers)
+      ? result.transfers
+      : [];
+  } catch (error) {
+    console.error("Pending bank transfers error:", error);
+    pendingBankTransfersError =
+      error.message ||
+      "Unable to load pending bank transfers.";
+  } finally {
+    pendingBankTransfersLoading = false;
+    renderAdminBankTransfers();
+  }
+}
+
+function renderAdminBankTransfers() {
+  const list = document.getElementById(
+    "srAdminReviewsList"
+  );
+  
+  const count = document.getElementById(
+    "srPendingReviewCount"
+  );
+  
+  if (!list) return;
+  
+  if (count) {
+    count.textContent = pendingBankTransfers.length;
+    count.hidden = pendingBankTransfers.length === 0;
+  }
+  
+  if (pendingBankTransfersLoading) {
+    list.innerHTML = `
+      <div class="sr-empty">
+        <p>Loading pending bank transfers...</p>
+      </div>
+    `;
+    return;
+  }
+  
+  if (pendingBankTransfersError) {
+    list.innerHTML = `
+      <div class="sr-empty">
+        <h3>Unable to load submissions</h3>
+        <p>${escapeHtml(pendingBankTransfersError)}</p>
+        <button
+          type="button"
+          class="sr-register-btn"
+          data-retry-bank-transfers
+        >
+          Try Again
+        </button>
+      </div>
+    `;
+    return;
+  }
+  
+  if (!pendingBankTransfers.length) {
+    list.innerHTML = `
+      <div class="sr-empty">
+        <h3>No pending payments</h3>
+        <p>New bank transfer submissions will appear here.</p>
+      </div>
+    `;
+    return;
+  }
+  
+  list.innerHTML = pendingBankTransfers.map(transfer => {
+    const registrationId =
+      transfer.registration_id ?? transfer.id ?? "";
+    
+    return `
+      <article class="sr-season-card">
+        <div class="sr-season-info">
+          <p class="sr-competition-name">
+            ${escapeHtml(
+              transfer.tournament_name ||
+              "Season Registration"
+            )}
+          </p>
+
+          <p>
+            <strong>Season:</strong>
+            ${escapeHtml(
+              String(transfer.season ?? "N/A")
+            )}
+          </p>
+
+          <p>
+            <strong>Player:</strong>
+            ${escapeHtml(
+              transfer.username || "Unknown"
+            )}
+          </p>
+
+          <p>
+            <strong>Email:</strong>
+            ${escapeHtml(
+              transfer.email || "Not available"
+            )}
+          </p>
+
+          <p>
+            <strong>Payment Reference:</strong>
+            ${escapeHtml(
+              transfer.payment_reference || "N/A"
+            )}
+          </p>
+        </div>
+
+        <div class="sr-fees">
+          <div>
+            <span>Registration fee</span>
+            <strong>
+              ${formatMoney(transfer.league_entry_fee)}
+            </strong>
+          </div>
+
+          <div>
+            <span>Admin fee</span>
+            <strong>
+              ${formatMoney(transfer.admin_fee)}
+            </strong>
+          </div>
+
+          <div class="sr-total">
+            <span>Total</span>
+            <strong>
+              ${formatMoney(transfer.total_amount)}
+            </strong>
+          </div>
+        </div>
+
+        ${
+          transfer.payment_proof_url
+            ? `
+              <button
+                type="button"
+                class="sr-register-btn"
+                data-view-receipt="${escapeHtml(
+                  transfer.payment_proof_url
+                )}"
+              >
+                View Payment Receipt
+              </button>
+            `
+            : `
+              <p class="sr-message error">
+                No receipt image is available.
+              </p>
+            `
+        }
+
+        <div class="sr-admin-review-actions">
+          <button
+            type="button"
+            class="sr-register-btn"
+            data-review-payment="approve"
+            data-registration-id="${escapeHtml(
+              String(registrationId)
+            )}"
+          >
+            Approve Payment
+          </button>
+
+          <button
+            type="button"
+            class="sr-review-reject"
+            data-review-payment="reject"
+            data-registration-id="${escapeHtml(
+              String(registrationId)
+            )}"
+          >
+            Reject Payment
+          </button>
+        </div>
+      </article>
+    `;
+  }).join("");
+  
+  bindSeasonRegistrationEvents();
+}
+
+
+function closePaymentMethodModal() {
+  const modal = document.getElementById(
+    "srPaymentMethodModal"
+  );
+  
+  if (modal) {
+    modal.hidden = true;
+  }
+  
+  selectedSeasonForPayment = null;
+}
+function continueWithFlutterwave() {
+  if (!selectedSeasonForPayment) {
+    showMessage(
+      "Please select a season first.",
+      "error"
+    );
+    return;
+  }
+  
+  const tournamentId =
+    selectedSeasonForPayment.tournament_id;
+  
+  closePaymentMethodModal();
+  
+  selectedSeasonForPayment = null;
+  
+  startFlutterwavePayment(tournamentId);
+}
+function openSelectedSeasonBankTransfer() {
+  if (!selectedSeasonForPayment) {
+    showMessage(
+      "Please select a season first.",
+      "error"
+    );
+    return;
+  }
+  const season = selectedSeasonForPayment;
+  closePaymentMethodModal();
+  openBankTransferModal(season);
+}
+function closeBankTransferModal() {
+  const modal = document.getElementById(
+    "srBankTransferModal"
+  );
+  
+  if (modal) {
+    modal.hidden = true;
+  }
+  
+  bankTransferSeason = null;
+  bankTransferSubmitting = false;
+  
+  const form = document.getElementById(
+    "srBankTransferForm"
+  );
+  
+  if (form) {
+    form.reset();
+  }
+  
+  const preview = document.getElementById(
+    "srPaymentProofPreview"
+  );
+  
+  if (preview) {
+    preview.removeAttribute("src");
+    preview.hidden = true;
+  }
+  
+  const message = document.getElementById(
+    "srBankMessage"
+  );
+  
+  if (message) {
+    message.textContent = "";
+    message.hidden = true;
+    message.className = "sr-message";
+  }
+}
+
+async function openBankTransferModal(season) {
+  if (!season || loading || bankTransferSubmitting) {
+    return;
+  }
+  if (!getToken()) {
+    showMessage("Please log in to continue.", "error");
+    return;
+  }
+  bankTransferSeason = season;
+  const modal = document.getElementById(
+    "srBankTransferModal"
+  );
+  const competition = document.getElementById(
+    "srBankCompetition"
+  );
+  const bankName = document.getElementById(
+    "srBankName"
+  );
+  const accountName = document.getElementById(
+    "srBankAccountName"
+  );
+  const accountNumber = document.getElementById(
+    "srBankAccountNumber"
+  );
+  const total = document.getElementById(
+    "srBankTotal"
+  );
+  const form = document.getElementById(
+    "srBankTransferForm"
+  );
+  const preview = document.getElementById(
+    "srPaymentProofPreview"
+  );
+  const message = document.getElementById(
+    "srBankMessage"
+  );
+  if (
+    !modal ||
+    !competition ||
+    !bankName ||
+    !accountName ||
+    !accountNumber ||
+    !total
+  ) {
+    console.error("Bank transfer modal elements are missing.");
+    return;
+  }
+  competition.textContent =
+    season.tournament_name ||
+    season.name ||
+    "Season Registration";
+  total.textContent = formatMoney(
+    Number(season.registration_fee || season.league_entry_fee || 0) +
+    Number(season.admin_fee || 0)
+  );
+  bankName.textContent = "Loading...";
+  accountName.textContent = "Loading...";
+  accountNumber.textContent = "Loading...";
+  if (form) {
+    form.reset();
+  }
+  if (preview) {
+    preview.src = "";
+    preview.hidden = true;
+  }
+  if (message) {
+    message.textContent = "";
+    message.hidden = true;
+  }
+  modal.hidden = false;
+  try {
+    const response = await apiRequest(
+      `${API}/season-registrations/bank-transfer/details`,
+      {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${getToken()}`
+        }
+      }
+    );
+    const result =
+      typeof response.json === "function" ?
+      await response.json() :
+      response;
+    if (
+      response.ok === false ||
+      !result.success ||
+      !result.bank_details
+    ) {
+      throw new Error(
+        result.message ||
+        "Unable to load bank transfer details."
+      );
+    }
+    bankName.textContent =
+      result.bank_details.bank_name;
+    accountName.textContent =
+      result.bank_details.account_name;
+    accountNumber.textContent =
+      result.bank_details.account_number;
+  } catch (error) {
+    console.error("Bank transfer details error:", error);
+    showBankTransferMessage(
+      error.message ||
+      "Unable to load bank details. Please try again.",
+      "error"
+    );
+  }
+}
+function showBankTransferMessage(
+  message,
+  type = "error"
+) {
+  const element = document.getElementById(
+    "srBankMessage"
+  );
+  
+  if (!element) {
+    return;
+  }
+  
+  element.textContent = message;
+  element.hidden = false;
+  element.className = `sr-message ${type}`;
+}
+function previewBankTransferReceipt() {
+  const input = document.getElementById(
+    "srPaymentProof"
+  );
+  
+  const preview = document.getElementById(
+    "srPaymentProofPreview"
+  );
+  
+  if (!input || !preview) {
+    return;
+  }
+  
+  const file = input.files?.[0];
+  
+  preview.removeAttribute("src");
+  preview.hidden = true;
+  
+  if (!file) {
+    return;
+  }
+  
+  if (!file.type.startsWith("image/")) {
+    input.value = "";
+    
+    showBankTransferMessage(
+      "Please select an image of your payment receipt."
+    );
+    
+    return;
+  }
+  
+  if (file.size > 500 * 1024) {
+    input.value = "";
+    
+    showBankTransferMessage(
+      "Your receipt image must not exceed 500 KB."
+    );
+    
+    return;
+  }
+  
+  const reader = new FileReader();
+  
+  reader.onload = () => {
+    preview.src = reader.result;
+    preview.hidden = false;
+  };
+  
+  reader.onerror = () => {
+    showBankTransferMessage(
+      "Unable to preview this image. Please select it again."
+    );
+  };
+  
+  reader.readAsDataURL(file);
+}
+function readImageAsBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    
+    reader.onload = () => {
+      if (
+        typeof reader.result !== "string" ||
+        !reader.result.startsWith("data:image/")
+      ) {
+        reject(
+          new Error(
+            "The selected file is not a valid image."
+          )
+        );
+        
+        return;
+      }
+      
+      resolve(reader.result);
+    };
+    
+    reader.onerror = () => {
+      reject(
+        new Error(
+          "Unable to read the receipt image."
+        )
+      );
+    };
+    
+    reader.readAsDataURL(file);
+  });
+}
+async function submitBankTransferReceipt(event) {
+  event.preventDefault();
+  if (bankTransferSubmitting) {
+    return;
+  }
+  if (!bankTransferSeason) {
+    showBankTransferMessage(
+      "Please select a season and try again."
+    );
+    return;
+  }
+  const input = document.getElementById(
+    "srPaymentProof"
+  );
+  const submitButton = document.getElementById(
+    "srSubmitBankTransfer"
+  );
+  const file = input?.files?.[0];
+  if (!file) {
+    showBankTransferMessage(
+      "Please select your payment receipt image."
+    );
+    return;
+  }
+  if (!file.type.startsWith("image/")) {
+    showBankTransferMessage(
+      "Please select a valid image."
+    );
+    return;
+  }
+  const token = getToken();
+  if (!token) {
+    showBankTransferMessage(
+      "Please log in to submit your receipt."
+    );
+    return;
+  }
+  bankTransferSubmitting = true;
+  if (submitButton) {
+    submitButton.disabled = true;
+    submitButton.textContent = "Compressing Receipt...";
+  }
+  try {
+    const image = await fileToBase64(file);
+    if (submitButton) {
+      submitButton.textContent = "Submitting Receipt...";
+    }
+    const response = await apiRequest(
+      `${API}/season-registrations/bank-transfer/submit`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: token
+        },
+        body: JSON.stringify({
+          tournament_id:
+            bankTransferSeason.tournament_id,
+          payment_proof_image: image
+        })
+      },
+      () => submitBankTransferReceipt(event)
+    );
+    if (!response) {
+      return;
+    }
+    const result = await response.json();
+    if (!response.ok || !result.success) {
+      throw new Error(
+        result.message ||
+        "Unable to submit your payment receipt."
+      );
+    }
+    closeBankTransferModal();
+    showMessage(
+      result.message ||
+      "Receipt submitted successfully. Your payment is awaiting admin review.",
+      "success"
+    );
+    currentView = "mine";
+    await loadSeasonRegistrationData();
+  } catch (error) {
+    console.error(
+      "Bank transfer receipt submission error:",
+      error
+    );
+    showBankTransferMessage(
+      error.message ||
+      "Unable to submit your receipt. Please try again."
+    );
+  } finally {
+    bankTransferSubmitting = false;
+    if (submitButton) {
+      submitButton.disabled = false;
+      submitButton.textContent =
+        "Submit Payment Receipt";
+    }
+  }
+}
+async function startFlutterwavePayment(tournamentId) {
+  if (loading) return;
+  
+  loading = true;
+  clearMessage();
+  renderSeasonRegistration();
+  
+  try {
+    const token = getToken();
+    
+    if (!token) {
+      throw new Error(
+        "Please log in to register for a season."
+      );
+    }
+    
+    const res = await apiRequest(
+      `${API}/season-registrations/pay`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: token
+        },
+        body: JSON.stringify({
+          tournament_id: tournamentId
+        })
+      },
+      () => startFlutterwavePayment(tournamentId)
+    );
+    
+    if (!res) return;
+    
+    const response = await res.json();
+    
+    if (
+      !res.ok ||
+      !response.success ||
+      !response.checkout_url
+    ) {
+      throw new Error(
+        response.message ||
+        "Unable to initialize payment."
+      );
+    }
+    
+    window.location.href = response.checkout_url;
+  } catch (error) {
+    console.error(
+      "Season registration payment error:",
+      error
+    );
+    
+    showMessage(
+      error.message ||
+      "Unable to start payment. Please try again.",
+      "error"
+    );
+  } finally {
+    loading = false;
+    renderSeasonRegistration();
+  }
+}
 async function loadSeasonRegistrationData() {
   if (loading) return;
   loading = true;
@@ -6072,47 +6962,68 @@ async function loadSeasonRegistrationData() {
     renderSeasonRegistration();
   }
 }
+
 function renderSeasonRegistration() {
-  const root = document.getElementById("seasonRegistrationApp");
-  
+  const root = document.getElementById(
+    "seasonRegistrationApp"
+  );
   if (!root) return;
-  
-  const availableCount = document.getElementById("srAvailableCount");
-  const registrationCount = document.getElementById("srRegistrationCount");
-  const sectionTitle = document.getElementById("srSectionTitle");
-  const sectionDescription = document.getElementById("srSectionDescription");
-  const message = document.getElementById("srMessage");
-  const list = document.getElementById("srList");
-  
+  const availableCount = document.getElementById(
+    "srAvailableCount"
+  );
+  const registrationCount = document.getElementById(
+    "srRegistrationCount"
+  );
+  const sectionTitle = document.getElementById(
+    "srSectionTitle"
+  );
+  const sectionDescription = document.getElementById(
+    "srSectionDescription"
+  );
+  const message = document.getElementById(
+    "srMessage"
+  );
+  const list = document.getElementById(
+    "srList"
+  );
+  const adminList = document.getElementById(
+    "srAdminReviewsList"
+  );
   if (availableCount) {
     availableCount.textContent = seasons.length;
   }
-  
   if (registrationCount) {
     registrationCount.textContent = registrations.length;
   }
-  
   root.querySelectorAll("[data-view]").forEach(button => {
     const active = button.dataset.view === currentView;
-    
     button.classList.toggle("active", active);
     button.setAttribute("aria-pressed", String(active));
   });
-  
+  const isAvailable = currentView === "available";
+  const isAdminReviews = currentView === "admin-reviews";
+  if (list) {
+    list.hidden = isAdminReviews;
+  }
+  if (adminList) {
+    adminList.hidden = !isAdminReviews;
+  }
   if (sectionTitle) {
     sectionTitle.textContent =
-      currentView === "available" ?
+      isAvailable ?
       "Open for registration" :
+      isAdminReviews ?
+      "Pending Bank Transfers" :
       "My Registrations";
   }
-  
   if (sectionDescription) {
     sectionDescription.textContent =
-      currentView === "available" ?
+      isAvailable ?
       "Choose a competition to get started." :
+      isAdminReviews ?
+      "Review payment receipts and confirm bank transfers." :
       "Track your season registrations and payments.";
   }
-  
   if (message) {
     message.textContent = seasonRegistrationError;
     message.hidden = !seasonRegistrationError;
@@ -6120,9 +7031,11 @@ function renderSeasonRegistration() {
       "sr-message error" :
       "sr-message";
   }
-  
+  if (isAdminReviews) {
+    renderAdminBankTransfers();
+    return;
+  }
   if (!list) return;
-  
   if (loading) {
     list.innerHTML = `
       <div class="sr-empty">
@@ -6131,28 +7044,28 @@ function renderSeasonRegistration() {
     `;
     return;
   }
-  
   if (seasonRegistrationError) {
     list.innerHTML = `
       <div class="sr-empty">
         <h3>Unable to load registrations</h3>
         <p>${escapeHtml(seasonRegistrationError)}</p>
-        <button type="button" id="srRetry">Try Again</button>
+        <button type="button" id="srRetry">
+          Try Again
+        </button>
       </div>
     `;
-    
     document.getElementById("srRetry").onclick =
       loadSeasonRegistrationData;
-    
     return;
   }
-  
-  if (currentView === "available") {
+  if (isAvailable) {
     renderAvailableSeasons(list);
   } else {
     renderMySeasonRegistrations(list);
   }
 }
+
+
 function renderAvailableSeasons(list) {
   if (!seasons.length) {
     list.innerHTML = `
@@ -6229,8 +7142,13 @@ function renderMySeasonRegistrations(list) {
     return;
   }
   list.innerHTML = registrations.map(registration => {
-    const status = String(registration.payment_status || "pending")
-      .toLowerCase();
+    const status = String(
+      registration.payment_status || "pending"
+    ).toLowerCase();
+    const rejectionReason =
+      registration.rejection_reason ||
+      registration.payment_rejection_reason ||
+      "";
     const statusLabels = {
       paid: "Paid",
       pending: "Payment Pending",
@@ -6240,9 +7158,15 @@ function renderMySeasonRegistrations(list) {
     return `
       <article class="sr-season-card">
         <div class="sr-season-info">
-          <p class="sr-competition-name">${escapeHtml(registration.competition_name || "")}</p>
-              <p>Season: ${escapeHtml(registration.season ?? "N/A")}</p>
-          <p>Reference: ${escapeHtml(registration.payment_reference || "Not available")}</p>
+          <p class="sr-competition-name">
+            ${escapeHtml(registration.competition_name || "")}
+          </p>
+          <p>
+            Season: ${escapeHtml(registration.season ?? "N/A")}
+          </p>
+          <p>
+            Reference: ${escapeHtml(registration.payment_reference || "Not available")}
+          </p>
         </div>
         <div class="sr-fees">
           <div>
@@ -6262,12 +7186,24 @@ function renderMySeasonRegistrations(list) {
           ${escapeHtml(statusLabels[status] || status)}
         </span>
         ${
+          status === "rejected" && rejectionReason
+            ? `
+              <div class="sr-rejection-reason">
+                <strong>Rejection reason</strong>
+                <p>${escapeHtml(rejectionReason)}</p>
+              </div>
+            `
+            : ""
+        }
+        ${
           status !== "paid"
-            ? `<button
+            ? `
+              <button
                 type="button"
                 class="sr-register-btn"
                 data-register-season="${escapeHtml(registration.tournament_id)}"
-              >Try Registration Again</button>`
+              >Try Registration Again</button>
+            `
             : ""
         }
       </article>
@@ -6275,7 +7211,6 @@ function renderMySeasonRegistrations(list) {
   }).join("");
   bindSeasonRegistrationEvents();
 }
-
 function openSeasonRegistration() {
   const page = document.getElementById("seasonRegistrationApp");
   
@@ -6314,10 +7249,115 @@ function clearMessage() {
   message.className = "sr-message";
 }
 
-
-
-
-
+async function reviewBankTransfer(registrationId, decision) {
+  if (!registrationId) {
+    showAlert("Payment registration ID is missing.", "error");
+    return;
+  }
+  if (!["approve", "reject"].includes(decision)) {
+    showAlert("Invalid review action.", "error");
+    return;
+  }
+  let rejectionReason = "";
+  if (decision === "approve") {
+    const confirmed = await showConfirmModal(
+      "Have you verified this payment and want to approve it?",
+      "Approve Payment",
+      "Cancel"
+    );
+    if (!confirmed) return;
+  }
+  if (decision === "reject") {
+    const reasonChoice = await showConfirmModal(
+      "Select the reason for rejecting this payment.",
+      "Wrong Amount",
+      "Payment Not Received"
+    );
+    rejectionReason = reasonChoice ?
+      "Wrong amount paid." :
+      "Payment not received.";
+    const confirmed = await showConfirmModal(
+      `Confirm rejection?\n\nReason: ${rejectionReason}`,
+      "Reject Payment",
+      "Cancel"
+    );
+    if (!confirmed) return;
+  }
+  const list = document.getElementById("srAdminReviewsList");
+  const buttons = list ?
+    Array.from(
+      list.querySelectorAll("[data-registration-id]")
+    ).filter(
+      button =>
+      String(button.dataset.registrationId) ===
+      String(registrationId)
+    ) :
+    [];
+  buttons.forEach(button => {
+    button.disabled = true;
+  });
+  try {
+    const token = getToken();
+    if (!token) {
+      throw new Error("Please log in to continue.");
+    }
+    const response = await apiRequest(
+      `${API}/season-registrations/bank-transfer/review`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: token
+        },
+        body: JSON.stringify({
+          registration_id: registrationId,
+          decision,
+          ...(decision === "reject" ?
+            { rejection_reason: rejectionReason } :
+            {})
+        })
+      },
+      () => reviewBankTransfer(registrationId, decision)
+    );
+    if (!response) {
+      buttons.forEach(button => {
+        button.disabled = false;
+      });
+      return;
+    }
+    const responseText = await response.text();
+    let result;
+    try {
+      result = JSON.parse(responseText);
+    } catch {
+      throw new Error(
+        `Invalid server response (${response.status}).`
+      );
+    }
+    if (!response.ok || !result.success) {
+      throw new Error(
+        result.message || "Unable to review this payment."
+      );
+    }
+    showAlert(
+      result.message ||
+      (decision === "approve" ?
+        "Payment approved successfully." :
+        "Payment rejected successfully."),
+    );
+    await loadPendingBankTransfers();
+    await loadSeasonRegistrationData();
+  } catch (error) {
+    console.error("Bank transfer review error:", error);
+    showAlert(
+      error.message || "Unable to review this payment.",
+      "error"
+    );
+    buttons.forEach(button => {
+      button.disabled = false;
+    });
+  }
+}
 function formatPaymentMoney(amount) {
   return "₦" + (Number(amount) || 0).toLocaleString("en-NG");
 }

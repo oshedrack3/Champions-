@@ -5142,20 +5142,37 @@ document
     searchTournamentRules
   );
 async function handleCreateCompetition() {
-  
   const name =
     document
     .getElementById("competitionNameInput")
     .value
     .trim();
+  
   const rulesInput =
     document.getElementById(
       "competitionRulesInput"
     );
+  
   const rules =
     rulesInput ?
     rulesInput.value.trim() :
     "";
+  
+  const registrationFeeInput =
+    document.getElementById(
+      "competitionRegistrationFeeInput"
+    );
+  
+  const adminFeeInput =
+    document.getElementById(
+      "competitionAdminFeeInput"
+    );
+  
+  const registrationFee =
+    Number(registrationFeeInput.value);
+  
+  const adminFee =
+    Number(adminFeeInput.value);
   
   const logoInput =
     document.getElementById(
@@ -5167,10 +5184,19 @@ async function handleCreateCompetition() {
     return;
   }
   
+  if (
+    registrationFee < 0 ||
+    adminFee < 0 ||
+    !Number.isFinite(registrationFee) ||
+    !Number.isFinite(adminFee)
+  ) {
+    showAlert("Enter valid competition fees.");
+    return;
+  }
+  
   showLoader();
   
   try {
-    
     let logo = null;
     
     if (
@@ -5178,18 +5204,18 @@ async function handleCreateCompetition() {
       logoInput.files &&
       logoInput.files.length > 0
     ) {
-      logo =
-        await fileToBase64(
-          logoInput.files[0],
-          1200
-        );
+      logo = await fileToBase64(
+        logoInput.files[0],
+        1200
+      );
     }
     
     if (editingCompetitionId) {
-      
       const changes = {
         name,
-        rules
+        rules,
+        registration_fee: registrationFee,
+        admin_fee: adminFee
       };
       
       if (logo) {
@@ -5218,37 +5244,38 @@ async function handleCreateCompetition() {
       
       renderCompetitionList();
       
-      document
-        .getElementById(
-          "competitionNameInput"
-        )
-        .value = "";
+      document.getElementById(
+        "competitionNameInput"
+      ).value = "";
       
       if (rulesInput) {
         rulesInput.value = "";
       }
       
-      logoInput.value = "";
+      registrationFeeInput.value = "0";
+      adminFeeInput.value = "0";
       
-      document
-        .getElementById(
-          "competitionLogoPreview"
-        )
-        .src =
-        "images/default-tournament.png";
+      if (logoInput) {
+        logoInput.value = "";
+      }
+      
+      document.getElementById(
+        "competitionLogoPreview"
+      ).src = "images/default-tournament.png";
       
       closeCreateCompetitionModal();
       
       showAlert(
         "Competition updated successfully!"
       );
-      
     } else {
-      
       const result =
         await createCompetition({
           name,
-          logo
+          logo,
+          rules,
+          registration_fee: registrationFee,
+          admin_fee: adminFee
         });
       
       myCompetitions.unshift(
@@ -5257,23 +5284,24 @@ async function handleCreateCompetition() {
       
       renderCompetitionList();
       
-      document
-        .getElementById(
-          "competitionNameInput"
-        )
-        .value = "";
+      document.getElementById(
+        "competitionNameInput"
+      ).value = "";
+      
       if (rulesInput) {
         rulesInput.value = "";
       }
       
-      logoInput.value = "";
+      registrationFeeInput.value = "0";
+      adminFeeInput.value = "0";
       
-      document
-        .getElementById(
-          "competitionLogoPreview"
-        )
-        .src =
-        "images/default-tournament.png";
+      if (logoInput) {
+        logoInput.value = "";
+      }
+      
+      document.getElementById(
+        "competitionLogoPreview"
+      ).src = "images/default-tournament.png";
       
       closeCreateCompetitionModal();
       
@@ -5281,22 +5309,18 @@ async function handleCreateCompetition() {
         "Competition created successfully!"
       );
     }
-    
   } catch (err) {
-    
-    showAlert(
-      err.message
-    );
-    
+    showAlert(err.message);
   } finally {
-    
     hideLoader();
   }
 }
+
 function editCompetition(id) {
-  const competition = myCompetitions.find(
-    c => String(c.id) === String(id)
-  );
+  const competition =
+    myCompetitions.find(
+      c => String(c.id) === String(id)
+    );
   
   if (!competition) {
     showAlert("Competition not found.");
@@ -5305,28 +5329,45 @@ function editCompetition(id) {
   
   editingCompetitionId = competition.id;
   
-  const title = document.getElementById(
-    "competitionModalTitle"
-  );
+  const title =
+    document.getElementById(
+      "competitionModalTitle"
+    );
   
-  const submitBtn = document.getElementById(
-    "competitionModalSubmitBtn"
-  );
+  const submitBtn =
+    document.getElementById(
+      "competitionModalSubmitBtn"
+    );
   
-  const nameInput = document.getElementById(
-    "competitionNameInput"
-  );
+  const nameInput =
+    document.getElementById(
+      "competitionNameInput"
+    );
   
-  const logoInput = document.getElementById(
-    "competitionLogoInput"
-  );
+  const logoInput =
+    document.getElementById(
+      "competitionLogoInput"
+    );
   
-  const logoPreview = document.getElementById(
-    "competitionLogoPreview"
-  );
-  const rulesInput = document.getElementById(
-    "competitionRulesInput"
-  );
+  const logoPreview =
+    document.getElementById(
+      "competitionLogoPreview"
+    );
+  
+  const rulesInput =
+    document.getElementById(
+      "competitionRulesInput"
+    );
+  
+  const registrationFeeInput =
+    document.getElementById(
+      "competitionRegistrationFeeInput"
+    );
+  
+  const adminFeeInput =
+    document.getElementById(
+      "competitionAdminFeeInput"
+    );
   
   if (title) {
     title.textContent = "Edit Competition";
@@ -5340,9 +5381,20 @@ function editCompetition(id) {
     nameInput.value =
       competition.name || "";
   }
+  
   if (rulesInput) {
     rulesInput.value =
       competition.rules || "";
+  }
+  
+  if (registrationFeeInput) {
+    registrationFeeInput.value =
+      competition.registration_fee ?? 0;
+  }
+  
+  if (adminFeeInput) {
+    adminFeeInput.value =
+      competition.admin_fee ?? 0;
   }
   
   if (logoInput) {
@@ -5376,8 +5428,6 @@ function editCompetition(id) {
     "createCompetitionModal"
   ).style.display = "block";
 }
-
-
 
 function formatTournamentRules(rules) {
   const lines =
