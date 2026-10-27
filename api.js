@@ -2379,6 +2379,7 @@ async function openProfileModal() {
       loadPasskeyStatus();
     renderUserProfile(profile);
     renderProfilePageSquad();
+    loadProfileBadges();
     
   } catch (error) {
     console.error(
@@ -2388,7 +2389,95 @@ async function openProfileModal() {
   }
 }
 
-
+async function loadProfileBadges() {
+  const list = document.getElementById("profileBadgesList");
+  const count = document.getElementById("profileBadgesCount");
+  if (!list || !count) return;
+  list.replaceChildren();
+  const loading = document.createElement("div");
+  loading.className = "profile-page-badges-loading";
+  loading.textContent = "Loading your badges...";
+  list.appendChild(loading);
+  try {
+    const token = getToken();
+    if (!token) {
+      throw new Error("Please sign in to view your badges.");
+    }
+    const response = await apiRequest(
+      `${API}/badges`,
+      {
+        method: "GET",
+        headers: {
+          Authorization: token
+        }
+      }
+    );
+    const result = await response.json();
+    if (!response.ok || result.success === false) {
+      throw new Error(
+        result.message || "Unable to load your badges."
+      );
+    }
+    const badges = Array.isArray(result.badges) ?
+      result.badges :
+      [];
+    count.textContent = `${badges.length} Earned`;
+    list.replaceChildren();
+    if (badges.length === 0) {
+      const empty = document.createElement("div");
+      empty.className = "profile-page-badges-empty";
+      empty.textContent =
+        "No badges earned yet. Play official matches and compete in tournaments to unlock achievements.";
+      list.appendChild(empty);
+      return;
+    }
+    badges.forEach((badge) => {
+      const tier = [
+          "bronze",
+          "silver",
+          "gold",
+          "special"
+        ].includes(String(badge.tier || "").toLowerCase()) ?
+        String(badge.tier).toLowerCase() :
+        "bronze";
+      const card = document.createElement("article");
+      card.className =
+        `profile-page-badge-card badge-${tier}`;
+      const icon = document.createElement("div");
+      icon.className = "profile-page-badge-icon";
+      icon.textContent = badge.icon || "🏆";
+      icon.setAttribute("aria-hidden", "true");
+      const name = document.createElement("h4");
+      name.className = "profile-page-badge-name";
+      name.textContent = badge.name || "Achievement";
+      const description = document.createElement("p");
+      description.className =
+        "profile-page-badge-description";
+      description.textContent =
+        badge.description || "Galatico achievement unlocked.";
+      const tierLabel = document.createElement("span");
+      tierLabel.className =
+        `profile-page-badge-tier tier-${tier}`;
+      tierLabel.textContent = tier;
+      card.append(
+        icon,
+        name,
+        description,
+        tierLabel
+      );
+      list.appendChild(card);
+    });
+  } catch (error) {
+    console.error("Failed to load profile badges:", error);
+    list.replaceChildren();
+    const errorMessage = document.createElement("div");
+    errorMessage.className = "profile-page-badges-error";
+    errorMessage.textContent =
+      error.message || "Unable to load your badges. Please try again.";
+    list.appendChild(errorMessage);
+    count.textContent = "Unavailable";
+  }
+}
 async function openUpdateProfile() {
   const modal = document.getElementById("updateProfileModal");
 
