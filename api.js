@@ -2309,25 +2309,25 @@ async function updateMatch(matchId, updates) {
 
 async function getUserProfile() {
   const cachedProfile = await getCachedData("profile");
-
+  
   let profile =
-    cachedProfile && typeof cachedProfile === "object"
-      ? cachedProfile
-      : {
-          username: "",
-          phone: "",
-          payout_account_name: "",
-          payout_account_number: "",
-          payout_bank_name: "",
-          teams: []
-        };
-
+    cachedProfile && typeof cachedProfile === "object" ?
+    cachedProfile :
+    {
+      username: "",
+      phone: "",
+      payout_account_name: "",
+      payout_account_number: "",
+      payout_bank_name: "",
+      teams: []
+    };
+  
   const token = getToken();
-
+  
   if (!token) {
     return profile;
   }
-
+  
   const res = await apiRequest(
     `${API}/profile`,
     {
@@ -2338,26 +2338,26 @@ async function getUserProfile() {
     },
     getUserProfile
   );
-
+  
   if (!res) {
     return profile;
   }
-
+  
   const result = await res.json();
-
+  
   if (!res.ok || !result.success) {
     throw new Error(
       result.message || "Failed to load profile."
     );
   }
-
+  
   profile = {
     ...profile,
     ...(result.profile || {})
   };
-
+  
   await saveCachedData("profile", "", profile);
-
+  
   return profile;
 }
 async function openProfileModal() {
@@ -2376,7 +2376,7 @@ async function openProfileModal() {
   try {
     const profile =
       await getUserProfile();
-      loadPasskeyStatus();
+    loadPasskeyStatus();
     renderUserProfile(profile);
     renderProfilePageSquad();
     loadProfileBadges();
@@ -2419,8 +2419,7 @@ async function loadProfileBadges() {
       );
     }
     const badges = Array.isArray(result.badges) ?
-      result.badges :
-      [];
+      result.badges : [];
     count.textContent = `${badges.length} Earned`;
     list.replaceChildren();
     if (badges.length === 0) {
@@ -2480,67 +2479,67 @@ async function loadProfileBadges() {
 }
 async function openUpdateProfile() {
   const modal = document.getElementById("updateProfileModal");
-
+  
   if (!modal) {
     return;
   }
-
+  
   const usernameInput = document.getElementById("updateProfileUsername");
   const phoneInput = document.getElementById("updateProfilePhone");
   const bankNameInput = document.getElementById("updateProfileBankName");
   const accountNameInput = document.getElementById("updateProfileAccountName");
   const accountNumberInput = document.getElementById("updateProfileAccountNumber");
   const message = document.getElementById("updateProfileMessage");
-
+  
   const cachedProfile = await getCachedData("profile");
-
+  
   let profile =
-    cachedProfile && typeof cachedProfile === "object"
-      ? cachedProfile
-      : {};
-
+    cachedProfile && typeof cachedProfile === "object" ?
+    cachedProfile :
+    {};
+  
   if (usernameInput) {
     usernameInput.value = profile.username || "";
   }
-
+  
   if (phoneInput) {
     phoneInput.value = profile.phone || "";
   }
-
+  
   if (bankNameInput) {
     bankNameInput.value = profile.payout_bank_name || "";
   }
-
+  
   if (accountNameInput) {
     accountNameInput.value = profile.payout_account_name || "";
   }
-
+  
   if (accountNumberInput) {
     accountNumberInput.value = profile.payout_account_number || "";
   }
-
+  
   if (message) {
     message.style.display = "none";
     message.textContent = "";
     message.className = "update-profile-status";
   }
-
+  
   modal.style.display = "flex";
   modal.setAttribute("aria-hidden", "false");
-
+  
   loadProfileSquad();
-
+  
   setTimeout(() => {
     usernameInput?.focus();
   }, 50);
-
+  
   if (!getToken()) {
     return;
   }
-
+  
   try {
     const latestProfile = await getUserProfile();
-
+    
     profile = latestProfile || profile;
     
     if (usernameInput) {
@@ -2587,7 +2586,7 @@ async function saveUpdatedProfile() {
   const accountNumberInput = document.getElementById("updateProfileAccountNumber");
   const saveButton = document.getElementById("saveProfileBtn");
   const message = document.getElementById("updateProfileMessage");
-
+  
   if (
     !usernameInput ||
     !phoneInput ||
@@ -2598,48 +2597,48 @@ async function saveUpdatedProfile() {
   ) {
     return;
   }
-
+  
   const username = usernameInput.value.trim();
   const phone = phoneInput.value.trim();
   const payoutBankName = bankNameInput.value.trim();
   const payoutAccountName = accountNameInput.value.trim();
   const payoutAccountNumber = accountNumberInput.value.trim();
-
+  
   const cachedProfile = await getCachedData("profile");
   const currentProfile =
     cachedProfile && typeof cachedProfile === "object" ? cachedProfile : {};
-
+  
   const currentUsername = String(currentProfile.username || "").trim();
   const currentPhone = String(currentProfile.phone || "").trim();
   const currentBankName = String(currentProfile.payout_bank_name || "").trim();
   const currentAccountName = String(currentProfile.payout_account_name || "").trim();
   const currentAccountNumber = String(currentProfile.payout_account_number || "").trim();
-
+  
   function showProfileMessage(text, type = "error") {
     if (!message) {
       return;
     }
-
+    
     message.textContent = text;
     message.className =
-      type === "success"
-        ? "update-profile-status update-profile-status-success"
-        : "update-profile-status update-profile-status-error";
+      type === "success" ?
+      "update-profile-status update-profile-status-success" :
+      "update-profile-status update-profile-status-error";
     message.style.display = "block";
   }
-
+  
   if (!username) {
     showProfileMessage("Username is required.");
     usernameInput.focus();
     return;
   }
-
+  
   if (payoutAccountNumber && !/^\d{10}$/.test(payoutAccountNumber)) {
     showProfileMessage("Bank account number must contain exactly 10 digits.");
     accountNumberInput.focus();
     return;
   }
-
+  
   if (
     payoutBankName.length > 100 ||
     payoutAccountName.length > 100 ||
@@ -2648,50 +2647,50 @@ async function saveUpdatedProfile() {
     showProfileMessage("Bank details cannot exceed 100 characters.");
     return;
   }
-
+  
   const updates = {};
-
+  
   if (username !== currentUsername) {
     updates.username = username;
   }
-
+  
   if (phone !== currentPhone) {
     updates.phone = phone;
   }
-
+  
   if (payoutBankName !== currentBankName) {
     updates.payout_bank_name = payoutBankName;
   }
-
+  
   if (payoutAccountName !== currentAccountName) {
     updates.payout_account_name = payoutAccountName;
   }
-
+  
   if (payoutAccountNumber !== currentAccountNumber) {
     updates.payout_account_number = payoutAccountNumber;
   }
-
+  
   if (!Object.keys(updates).length) {
     closeUpdateProfile();
     return;
   }
-
+  
   const token = getToken();
-
+  
   if (!token) {
     showProfileMessage("Please log in again.");
     return;
   }
-
+  
   saveButton.disabled = true;
   saveButton.textContent = "Saving...";
-
+  
   if (message) {
     message.style.display = "none";
     message.textContent = "";
     message.className = "update-profile-status";
   }
-
+  
   try {
     const res = await apiRequest(
       `${API}/profile`,
@@ -2705,7 +2704,7 @@ async function saveUpdatedProfile() {
       },
       saveUpdatedProfile
     );
-
+    
     if (!res) {
       return;
     }
@@ -2728,7 +2727,7 @@ async function saveUpdatedProfile() {
     setTimeout(() => {
       closeUpdateProfile();
     }, 700);
-
+    
   } catch (error) {
     console.error("Failed to update profile:", error);
     showProfileMessage(error.message || "Failed to update profile.");
@@ -3382,7 +3381,7 @@ async function extractMatchStats(file) {
           }
         }
         
-         numericWords.sort((a, b) => a.x - b.x);
+        numericWords.sort((a, b) => a.x - b.x);
         
         if (numericWords.length >= 2) {
           const home = numericWords[0].value;
@@ -4391,6 +4390,7 @@ async function loadDisciplinaryActions() {
     `;
   }
 }
+
 function formatDisciplinaryDate(timestamp) {
   if (
     timestamp === null ||
@@ -4962,9 +4962,9 @@ async function searchComparisonPlayers(query) {
       result.message || "Failed to search players."
     );
   }
-  return Array.isArray(result.players)
-    ? result.players
-    : [];
+  return Array.isArray(result.players) ?
+    result.players :
+    [];
 }
 
 function renderComparisonPlayerSuggestions(
@@ -5013,10 +5013,11 @@ function renderComparisonPlayerSuggestions(
     });
   });
 }
+
 function selectComparisonPlayer(player, playerNumber) {
-  const otherPlayer = playerNumber === 1
-    ? comparisonSelectedPlayer2
-    : comparisonSelectedPlayer1;
+  const otherPlayer = playerNumber === 1 ?
+    comparisonSelectedPlayer2 :
+    comparisonSelectedPlayer1;
   if (
     otherPlayer &&
     String(otherPlayer.id) === String(player.id)
@@ -5074,6 +5075,7 @@ function selectComparisonPlayer(player, playerNumber) {
   updateComparisonSearchButton();
   clearComparisonSearchMessage();
 }
+
 function clearComparisonSearchSelection(playerNumber) {
   if (playerNumber === 1) {
     comparisonSelectedPlayer1 = null;
@@ -5102,6 +5104,7 @@ function clearComparisonSearchSelection(playerNumber) {
   }
   updateComparisonSearchButton();
 }
+
 function updateComparisonSearchButton() {
   const button = document.getElementById(
     "comparePlayersButton"
@@ -5111,9 +5114,10 @@ function updateComparisonSearchButton() {
     comparisonSelectedPlayer1 &&
     comparisonSelectedPlayer2 &&
     String(comparisonSelectedPlayer1.id) !==
-      String(comparisonSelectedPlayer2.id)
+    String(comparisonSelectedPlayer2.id)
   );
 }
+
 function showComparisonSearchMessage(message) {
   const element = document.getElementById(
     "playerComparisonMessage"
@@ -5122,6 +5126,7 @@ function showComparisonSearchMessage(message) {
   element.textContent = message;
   element.style.display = "block";
 }
+
 function clearComparisonSearchMessage() {
   const element = document.getElementById(
     "playerComparisonMessage"
@@ -5130,6 +5135,7 @@ function clearComparisonSearchMessage() {
   element.textContent = "";
   element.style.display = "none";
 }
+
 function setupComparisonPlayerSearch(playerNumber) {
   const input = document.getElementById(
     `comparisonPlayer${playerNumber}Search`
@@ -5175,37 +5181,37 @@ function setupComparisonPlayerSearch(playerNumber) {
     suggestions.style.display = "block";
     comparisonSearchTimers[playerNumber] = setTimeout(
       async () => {
-        try {
-          const players = await searchComparisonPlayers(query);
-          if (
-            requestNumber !==
+          try {
+            const players = await searchComparisonPlayers(query);
+            if (
+              requestNumber !==
               comparisonSearchRequests[playerNumber] ||
-            input.value.trim() !== query
-          ) {
-            return;
-          }
-          renderComparisonPlayerSuggestions(
-            players,
-            playerNumber
-          );
-        } catch (error) {
-          if (
-            requestNumber !==
+              input.value.trim() !== query
+            ) {
+              return;
+            }
+            renderComparisonPlayerSuggestions(
+              players,
+              playerNumber
+            );
+          } catch (error) {
+            if (
+              requestNumber !==
               comparisonSearchRequests[playerNumber]
-          ) {
-            return;
-          }
-          suggestions.innerHTML = `
+            ) {
+              return;
+            }
+            suggestions.innerHTML = `
             <div class="player-search-empty">
               ${comparisonSearchEscapeHtml(
                 error.message || "Unable to search players."
               )}
             </div>
           `;
-          suggestions.style.display = "block";
-        }
-      },
-      300
+            suggestions.style.display = "block";
+          }
+        },
+        300
     );
   });
   input.addEventListener("focus", () => {
@@ -5231,6 +5237,7 @@ function setupComparisonPlayerSearch(playerNumber) {
     }
   });
 }
+
 function initializeComparisonPlayerSearch() {
   setupComparisonPlayerSearch(1);
   setupComparisonPlayerSearch(2);
@@ -5317,18 +5324,21 @@ async function compareSelectedPlayers() {
     }
   }
 }
+
 function comparisonResultsNumber(value) {
   const number = Number(value ?? 0);
-  return Number.isFinite(number)
-    ? number.toLocaleString()
-    : "0";
+  return Number.isFinite(number) ?
+    number.toLocaleString() :
+    "0";
 }
+
 function comparisonResultsPercentage(value) {
   const number = Number(value ?? 0);
-  return Number.isFinite(number)
-    ? `${number.toFixed(1)}%`
-    : "0.0%";
+  return Number.isFinite(number) ?
+    `${number.toFixed(1)}%` :
+    "0.0%";
 }
+
 function renderComparisonCareerStats(stats = {}) {
   const items = [
     ["Matches Played", stats.played],
@@ -5357,6 +5367,7 @@ function renderComparisonCareerStats(stats = {}) {
     </div>
   `;
 }
+
 function renderComparisonPlayerResultCard(player, label) {
   const stats = player.career_stats || {};
   return `
@@ -5407,6 +5418,7 @@ function renderComparisonPlayerResultCard(player, label) {
     </div>
   `;
 }
+
 function comparisonResultsDate(value) {
   if (!value) return "Date unavailable";
   const date = new Date(value);
@@ -5419,6 +5431,7 @@ function comparisonResultsDate(value) {
     year: "numeric"
   });
 }
+
 function renderComparisonRecentMatches(
   matches,
   player1,
@@ -5460,51 +5473,57 @@ function renderComparisonRecentMatches(
         ) {
           resultLabel =
             awayId === String(player1.id)
-              ? `${player1.username} won`
-              : `${player2.username} won`;
+              ? `
+  $ { player1.username } won`
+              : `
+  $ { player2.username } won`;
           resultClass =
             awayId === String(player1.id)
               ? "win"
               : "loss";
         }
-        return `
-          <div class="comparison-match-card">
-            <div class="comparison-match-tournament">
+        return ` <
+  div class = "comparison-match-card" >
+  <div class="comparison-match-tournament">
               ${comparisonResultsEscape(
                 match.tournament_name || "Tournament"
               )}
-            </div>
-            <div class="comparison-match-score">
-              <span class="comparison-match-player">
+            </div> <
+  div class = "comparison-match-score" >
+  <span class="comparison-match-player">
                 ${comparisonResultsEscape(
                   match.home_player_name || "Player 1"
                 )}
-              </span>
-              <strong>
-                ${comparisonResultsNumber(match.home_score)}
-                -
-                ${comparisonResultsNumber(match.away_score)}
-              </strong>
-              <span class="comparison-match-player">
-                ${comparisonResultsEscape(
-                  match.away_player_name || "Player 2"
-                )}
-              </span>
-            </div>
-            <div class="comparison-match-result ${resultClass}">
-              ${comparisonResultsEscape(resultLabel)}
-            </div>
-            <div class="comparison-match-date">
-              ${comparisonResultsEscape(
-                comparisonResultsDate(match.played_at)
-              )}
-            </div>
-          </div>
-        `;
+              </span> <
+  strong >
+    $ { comparisonResultsNumber(match.home_score) } -
+    $ { comparisonResultsNumber(match.away_score) }
+  </strong> <
+  span class = "comparison-match-player" >
+  $ {
+    comparisonResultsEscape(
+      match.away_player_name || "Player 2"
+    )
+  }
+  </span> <
+  /div> <
+  div class = "comparison-match-result ${resultClass}" >
+  $ { comparisonResultsEscape(resultLabel) }
+  </div> <
+  div class = "comparison-match-date" >
+  $ {
+    comparisonResultsEscape(
+      comparisonResultsDate(match.played_at)
+    )
+  }
+  </div> <
+  /div>
+  `;
       }).join("")}
     </div>
   `;
 }
+
 function renderPlayerComparisonResults(data) {
   const results = document.getElementById(
     "playerComparisonResults"
@@ -5584,6 +5603,7 @@ function renderPlayerComparisonResults(data) {
     block: "start"
   });
 }
+
 function initializeComparePlayersButton() {
   const button = document.getElementById(
     "comparePlayersButton"
@@ -5627,12 +5647,14 @@ function showSeasonKeyInputModal() {
   modal.style.display = "flex";
   setTimeout(() => input.focus(), 100);
 }
+
 function closeSeasonKeyInputModal() {
   const modal = document.getElementById("seasonKeyModal");
   if (modal) {
     modal.style.display = "none";
   }
 }
+
 function submitSeasonKey() {
   const input = document.getElementById("seasonKeyInput");
   const button = document.getElementById("submitSeasonKeyBtn");
@@ -5741,16 +5763,16 @@ async function sendEndSeasonRequest(seasonKey) {
 function updateChampionsLeagueSetupOptions(teamCount) {
   const directSelect =
     document.getElementById("directQualifiers");
-
+  
   const opponentsSelect =
     document.getElementById("opponentsPerTeam");
-
+  
   const playoffEndSelect =
     document.getElementById("playoffEndPosition");
-
+  
   const startInput =
     document.getElementById("playoffStartPosition");
-
+  
   if (
     !directSelect ||
     !opponentsSelect ||
@@ -5759,37 +5781,37 @@ function updateChampionsLeagueSetupOptions(teamCount) {
   ) {
     return;
   }
-
+  
   const count = Math.max(
     0,
     Math.min(30, Math.floor(Number(teamCount) || 0))
   );
-
+  
   const previousDirect = directSelect.value;
   const previousOpponents = opponentsSelect.value;
   const previousEnd = playoffEndSelect.value;
-
+  
   directSelect.innerHTML =
     "Select direct qualifiers";
-
+  
   for (let i = 1; i <= 20; i++) {
     const option = new Option(
       `${i} team${i === 1 ? "" : "s"}`,
       String(i)
     );
-
+    
     option.disabled = i >= count;
     directSelect.add(option);
   }
-
+  
   directSelect.value =
     previousDirect &&
-    Number(previousDirect) < count
-      ? previousDirect
-      : "";
-
+    Number(previousDirect) < count ?
+    previousDirect :
+    "";
+  
   opponentsSelect.innerHTML = "";
-
+  
   if (count >= 2) {
     for (let i = 1; i < count; i++) {
       opponentsSelect.add(
@@ -5804,74 +5826,72 @@ function updateChampionsLeagueSetupOptions(teamCount) {
       new Option("No teams available", "")
     );
   }
-
+  
   opponentsSelect.value =
     previousOpponents &&
-    Number(previousOpponents) < count
-      ? previousOpponents
-      : count >= 2
-      ? String(Math.min(3, count - 1))
-      : "";
-
+    Number(previousOpponents) < count ?
+    previousOpponents :
+    count >= 2 ?
+    String(Math.min(3, count - 1)) :
+    "";
+  
   playoffEndSelect.innerHTML =
     "Select playoff ending position";
-
+  
   for (let i = 2; i <= count; i++) {
     playoffEndSelect.add(
       new Option(`Position ${i}`, String(i))
     );
   }
-
+  
   playoffEndSelect.value = previousEnd;
-
+  
   updateChampionsLeaguePlayoffPositions();
 }
 
 function updateChampionsLeaguePlayoffPositions() {
   const directSelect =
     document.getElementById("directQualifiers");
-
+  
   const startInput =
     document.getElementById("playoffStartPosition");
-
+  
   const endSelect =
     document.getElementById("playoffEndPosition");
-
+  
   if (!directSelect || !startInput || !endSelect) {
     return;
   }
-
+  
   const directQualifiers =
     Number(directSelect.value);
-
+  
   const teamCount =
     endSelect.options.length - 1;
-
+  
   startInput.value =
-    directQualifiers > 0
-      ? directQualifiers + 1
-      : "";
-
+    directQualifiers > 0 ?
+    directQualifiers + 1 :
+    "";
+  
   for (const option of endSelect.options) {
     if (!option.value) continue;
-
+    
     const position = Number(option.value);
     const playoffTeamCount =
       position - directQualifiers;
     const knockoutSize =
       directQualifiers +
       playoffTeamCount / 2;
-    const validKnockoutSize =
-      [2, 4, 8, 16, 32].includes(knockoutSize);
+    const validKnockoutSize = [2, 4, 8, 16, 32].includes(knockoutSize);
     
-    option.disabled =
-      !directQualifiers ||
+    option.disabled = !directQualifiers ||
       position > teamCount ||
       playoffTeamCount < 2 ||
       playoffTeamCount % 2 !== 0 ||
       !validKnockoutSize;
   }
-
+  
   if (
     endSelect.selectedOptions[0]?.disabled
   ) {
@@ -5892,9 +5912,9 @@ async function registerForSeason(tournamentId) {
   );
   
   if (!season) {
-    showMessage(
+    showAlert(
       "This season is no longer available.",
-      "error"
+      
     );
     return;
   }
@@ -5908,9 +5928,9 @@ async function registerForSeason(tournamentId) {
   );
   
   if (!modal || !description) {
-    showMessage(
+    showAlert(
       "Payment options are unavailable. Please refresh the page.",
-      "error"
+      
     );
     return;
   }
@@ -5960,15 +5980,15 @@ async function verifyPayment(reference, showResultAlert = false) {
     }
     
     loading = false;
-await loadSeasonRegistrationData();
-loading = true;
-
-if (showResultAlert) {
+    await loadSeasonRegistrationData();
+    loading = true;
+    
+    if (showResultAlert) {
       showAlert(
         "Payment verified successfully. Your season registration is confirmed."
       );
     } else {
-      showMessage(
+      showActionModal(
         "Payment verified successfully. Your season registration is confirmed.",
         "success"
       );
@@ -5981,13 +6001,14 @@ if (showResultAlert) {
     if (showResultAlert) {
       showAlert(message);
     } else {
-      showMessage(message, "error");
+      showAlert(message);
     }
   } finally {
     loading = false;
     renderSeasonRegistration();
   }
 }
+
 function handlePaymentReturn() {
   const url = new URL(window.location.href);
   const status = url.searchParams.get("status");
@@ -6022,6 +6043,7 @@ function handlePaymentReturn() {
   verifyPayment(reference, true);
   return true;
 }
+
 function formatMoney(amount) {
   return `₦${Number(amount || 0).toLocaleString("en-NG", {
     minimumFractionDigits: 2,
@@ -6309,7 +6331,10 @@ function bindSeasonRegistrationEvents() {
 }
 
 
-
+function showMessage(message) {
+  showAlert(message)
+  return;
+}
 let selectedSeasonForPayment = null;
 let currentView = "available";
 let seasons = [];
@@ -6349,9 +6374,9 @@ async function loadPendingBankTransfers() {
         "Unable to load pending bank transfers."
       );
     }
-    pendingBankTransfers = Array.isArray(result.transfers)
-      ? result.transfers
-      : [];
+    pendingBankTransfers = Array.isArray(result.transfers) ?
+      result.transfers :
+      [];
   } catch (error) {
     console.error("Pending bank transfers error:", error);
     pendingBankTransfersError =
@@ -6543,6 +6568,7 @@ function closePaymentMethodModal() {
   
   selectedSeasonForPayment = null;
 }
+
 function continueWithFlutterwave() {
   if (!selectedSeasonForPayment) {
     showMessage(
@@ -6561,6 +6587,7 @@ function continueWithFlutterwave() {
   
   startFlutterwavePayment(tournamentId);
 }
+
 function openSelectedSeasonBankTransfer() {
   if (!selectedSeasonForPayment) {
     showMessage(
@@ -6573,6 +6600,7 @@ function openSelectedSeasonBankTransfer() {
   closePaymentMethodModal();
   openBankTransferModal(season);
 }
+
 function closeBankTransferModal() {
   const modal = document.getElementById(
     "srBankTransferModal"
@@ -6722,6 +6750,7 @@ async function openBankTransferModal(season) {
     );
   }
 }
+
 function showBankTransferMessage(
   message,
   type = "error"
@@ -6738,6 +6767,7 @@ function showBankTransferMessage(
   element.hidden = false;
   element.className = `sr-message ${type}`;
 }
+
 function previewBankTransferReceipt() {
   const input = document.getElementById(
     "srPaymentProof"
@@ -6795,6 +6825,7 @@ function previewBankTransferReceipt() {
   
   reader.readAsDataURL(file);
 }
+
 function readImageAsBase64(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -6883,8 +6914,7 @@ async function submitBankTransferReceipt(event) {
           Authorization: token
         },
         body: JSON.stringify({
-          tournament_id:
-            bankTransferSeason.tournament_id,
+          tournament_id: bankTransferSeason.tournament_id,
           payment_proof_image: image
         })
       },
@@ -7037,11 +7067,9 @@ async function loadSeasonRegistrationData() {
       );
     }
     seasons = Array.isArray(seasonsResult.seasons) ?
-      seasonsResult.seasons :
-      [];
+      seasonsResult.seasons : [];
     registrations = Array.isArray(registrationsResult.registrations) ?
-      registrationsResult.registrations :
-      [];
+      registrationsResult.registrations : [];
   } catch (error) {
     console.error("Season registration error:", error);
     seasonRegistrationError =
@@ -7170,12 +7198,11 @@ function renderAvailableSeasons(list) {
       String(registration.tournament_id) === String(season.tournament_id) &&
       registration.payment_status === "paid"
     );
-    const deadline = season.registration_deadline
-      ? new Date(Number(season.registration_deadline)).toLocaleDateString(
-          "en-NG",
-          { day: "numeric", month: "short", year: "numeric" }
-        )
-      : "No deadline";
+    const deadline = season.registration_deadline ?
+      new Date(Number(season.registration_deadline)).toLocaleDateString(
+        "en-NG", { day: "numeric", month: "short", year: "numeric" }
+      ) :
+      "No deadline";
     return `
       <article class="sr-season-card">
         <div class="sr-season-info">
@@ -7300,6 +7327,7 @@ function renderMySeasonRegistrations(list) {
   }).join("");
   bindSeasonRegistrationEvents();
 }
+
 function openSeasonRegistration() {
   const page = document.getElementById("seasonRegistrationApp");
   
@@ -7316,6 +7344,7 @@ function openSeasonRegistration() {
   
   loadSeasonRegistrationData();
 }
+
 function closeSeasonRegistration() {
   const page = document.getElementById("seasonRegistrationApp");
   
@@ -7380,8 +7409,7 @@ async function reviewBankTransfer(registrationId, decision) {
       button =>
       String(button.dataset.registrationId) ===
       String(registrationId)
-    ) :
-    [];
+    ) : [];
   buttons.forEach(button => {
     button.disabled = true;
   });
@@ -7401,9 +7429,7 @@ async function reviewBankTransfer(registrationId, decision) {
         body: JSON.stringify({
           registration_id: registrationId,
           decision,
-          ...(decision === "reject" ?
-            { rejection_reason: rejectionReason } :
-            {})
+          ...(decision === "reject" ? { rejection_reason: rejectionReason } : {})
         })
       },
       () => reviewBankTransfer(registrationId, decision)
@@ -7447,9 +7473,11 @@ async function reviewBankTransfer(registrationId, decision) {
     });
   }
 }
+
 function formatPaymentMoney(amount) {
   return "₦" + (Number(amount) || 0).toLocaleString("en-NG");
 }
+
 function formatPaymentDate(timestamp) {
   if (!timestamp) return "Date unavailable";
   const date = new Date(Number(timestamp));
@@ -7461,6 +7489,7 @@ function formatPaymentDate(timestamp) {
     timeStyle: "short"
   });
 }
+
 function getPaymentStatusClass(status) {
   const allowed = [
     "paid",
@@ -7469,10 +7498,11 @@ function getPaymentStatusClass(status) {
     "rejected",
     "refunded"
   ];
-  return allowed.includes(String(status).toLowerCase())
-    ? String(status).toLowerCase()
-    : "unknown";
+  return allowed.includes(String(status).toLowerCase()) ?
+    String(status).toLowerCase() :
+    "unknown";
 }
+
 function renderPaymentStat(label, value) {
   return `
     <div class="payment-history-stat">
@@ -7481,6 +7511,7 @@ function renderPaymentStat(label, value) {
     </div>
   `;
 }
+
 function renderPaymentHistoryItem(registration) {
   const status = String(
     registration.payment_status || "unknown"
@@ -7507,6 +7538,7 @@ function renderPaymentHistoryItem(registration) {
     </div>
   `;
 }
+
 function renderTournamentPaymentHistory(tournament) {
   const registrations = tournament.registrations || [];
   const summary = tournament.summary || {};
@@ -7540,6 +7572,7 @@ function renderTournamentPaymentHistory(tournament) {
     </div>
   `;
 }
+
 function renderSingleTournamentPaymentHistory(data) {
   const tournament = data.tournament || {};
   const registrations = data.registrations || [];
@@ -7578,6 +7611,7 @@ function renderSingleTournamentPaymentHistory(data) {
     </div>
   `;
 }
+
 function renderAdminPaymentHistory(tournaments) {
   const totals = tournaments.reduce((acc, tournament) => {
     const summary = tournament.summary || {};
@@ -7599,9 +7633,9 @@ function renderAdminPaymentHistory(tournaments) {
     ${renderPaymentStat("Pending amount", formatPaymentMoney(totals.pending))}
   `;
   document.getElementById("paymentHistoryContent").innerHTML =
-    tournaments.length
-      ? tournaments.map(renderTournamentPaymentHistory).join("")
-      : `<div class="payment-history-empty">No payment history found for your tournaments.</div>`;
+    tournaments.length ?
+    tournaments.map(renderTournamentPaymentHistory).join("") :
+    `<div class="payment-history-empty">No payment history found for your tournaments.</div>`;
 }
 
 async function loadPaymentHistory(tournamentId = null) {
@@ -7736,16 +7770,17 @@ async function openPaymentHistoryPage() {
       showAlert("Please open a tournament first.");
       return;
     }
-    document.getElementById("nav").style.display="none";
-
+    document.getElementById("nav").style.display = "none";
+    
     await loadPaymentHistory(currentTournament.id);
     return;
   }
   
   showAlert("You do not have permission to view payment history.");
 }
+
 function closePaymentHistoryPage() {
-  document.getElementById("nav").style.display="flex";
+  document.getElementById("nav").style.display = "flex";
   const section = document.getElementById("paymentHistorySection");
   if (section) {
     section.hidden = true;
@@ -7854,9 +7889,9 @@ async function openPaymentHistoryPage() {
   section.hidden = false;
   updateFinancialActionButtons();
   const adminTabs = document.querySelectorAll(
-  '[data-financial-tab="prizes"], [data-financial-tab="expenses"], [data-financial-tab="summary"], [data-financial-tab="contributions"]'
-);
-adminTabs.forEach(button => {
+    '[data-financial-tab="prizes"], [data-financial-tab="expenses"], [data-financial-tab="summary"], [data-financial-tab="contributions"]'
+  );
+  adminTabs.forEach(button => {
     button.hidden = user.role !== "admin";
   });
   if (user.role === "admin") {
@@ -7870,6 +7905,7 @@ adminTabs.forEach(button => {
   }
   showAlert("You do not have permission to access this page.");
 }
+
 function closePaymentHistoryPage() {
   const section = document.getElementById("paymentHistorySection");
   if (section) {
@@ -7880,6 +7916,7 @@ function closePaymentHistoryPage() {
     nav.style.display = "flex";
   }
 }
+
 function renderFinancialSummary(data) {
   const container = document.getElementById("financialOverviewContent");
   if (!container) return;
@@ -8100,6 +8137,7 @@ async function loadFinancialSummary() {
     hideLoader();
   }
 }
+
 function renderFinancialPrizes(data) {
   const summary = document.getElementById("financialPrizeSummary");
   const content = document.getElementById("financialPrizeContent");
@@ -8226,15 +8264,17 @@ function renderFinancialPrizes(data) {
             </button>
           `;
         } else if (status === "approved") {
-          actions = `
-            <button type="button" class="financial-pay-btn" onclick="payFinancialPrize('${escapeHtml(prize.id)}')">
-              Mark as Paid
-            </button>
-          `;
+          actions = ` <
+    button type = "button"
+  class = "financial-pay-btn"
+  onclick = "payFinancialPrize('${escapeHtml(prize.id)}')" >
+    Mark as Paid <
+    /button>
+  `;
         }
-        return `
-          <article class="payment-history-item">
-            <div class="payment-history-item-main">
+        return ` <
+  article class = "payment-history-item" >
+  <div class="payment-history-item-main">
               <h4 class="payment-history-item-title">${prizeName}</h4>
               <div class="payment-history-item-details">
                 <span>Player: ${username}</span>
@@ -8244,13 +8284,14 @@ function renderFinancialPrizes(data) {
               </div>
               ${bankDetails}
               ${actions ? `<div class="financial-action-buttons">${actions}</div>` : ""}
-            </div>
-            <div class="payment-history-item-side">
-              <div class="payment-history-item-amount">${amount}</div>
-              <span class="payment-history-status ${statusClass}">${escapeHtml(status)}</span>
-            </div>
-          </article>
-        `;
+            </div> <
+  div class = "payment-history-item-side" >
+  <div class="payment-history-item-amount">${amount}</div> <
+  span class = "payment-history-status ${statusClass}" > $ { escapeHtml(status) }
+  </span> <
+  /div> <
+  /article>
+  `;
       }).join("")}
     </div>
   `;
@@ -8374,21 +8415,21 @@ async function loadFinancialPrizes() {
 
 function formatFinancialDate(timestamp) {
   if (!timestamp) return "Date unavailable";
-
+  
   let dateValue = Number(timestamp);
-
+  
   if (!Number.isFinite(dateValue)) {
     dateValue = Date.parse(timestamp);
   } else if (dateValue < 1e12) {
     dateValue *= 1000;
   }
-
+  
   const date = new Date(dateValue);
-
+  
   if (Number.isNaN(date.getTime())) {
     return "Date unavailable";
   }
-
+  
   return date.toLocaleString("en-NG", {
     day: "numeric",
     month: "short",
@@ -8526,12 +8567,14 @@ async function payFinancialPrize(id) {
   const errorBox = modal.querySelector("#prizePaymentError");
   const reviewPanel = modal.querySelector("#prizePaymentReview");
   const reviewContent = modal.querySelector("#prizePaymentReviewContent");
+  
   function getPaymentData() {
     return {
       payout_reference: form.elements.payout_reference.value.trim(),
       payment_method: form.elements.payment_method.value
     };
   }
+  
   function showReview() {
     if (!form.reportValidity()) return false;
     const data = getPaymentData();
@@ -8693,11 +8736,11 @@ async function loadFinancialExpenses() {
 function renderFinancialExpenses(data) {
   const summary = document.getElementById("financialExpenseSummary");
   const content = document.getElementById("financialExpenseContent");
-
+  
   if (!summary || !content) return;
-
+  
   const expenses = Array.isArray(data) ? data : [];
-
+  
   const totals = {
     total: 0,
     pending: 0,
@@ -8707,11 +8750,11 @@ function renderFinancialExpenses(data) {
     approvedCount: 0,
     paidCount: 0
   };
-
+  
   expenses.forEach(expense => {
     const amount = Number(expense.amount) || 0;
     const status = String(expense.status || "").toLowerCase();
-
+    
     totals.total += amount;
     if (status === "pending") {
       totals.pending += amount;
@@ -8724,7 +8767,7 @@ function renderFinancialExpenses(data) {
       totals.paidCount++;
     }
   });
-
+  
   summary.innerHTML = `
     <div class="payment-history-stat"> 
       <div class="payment-history-stat-label">Total Expenses</div> 
@@ -8747,12 +8790,12 @@ function renderFinancialExpenses(data) {
       <div class="payment-history-stat-description">${totals.paidCount} completed</div> 
     </div>
   `;
-
+  
   if (!expenses.length) {
     content.innerHTML = `<div class="payment-history-empty">No expenses found.</div>`;
     return;
   }
-
+  
   content.innerHTML = `
     <div class="payment-history-list">
       ${expenses.map(expense => {
@@ -8770,9 +8813,11 @@ function renderFinancialExpenses(data) {
         if (status === "pending") {
           actions = `<button type="button" class="financial-approve-btn" onclick="approveFinancialExpense('${escapeHtml(expense.id)}')">Approve</button>`;
         } else if (status === "approved") {
-          actions = `<button type="button" class="financial-pay-btn" onclick="payFinancialExpense('${escapeHtml(expense.id)}')">Mark as Paid</button>`;
-        }
-        return `
+          actions = ` < button type = "button"
+  class = "financial-pay-btn"
+  onclick = "payFinancialExpense('${escapeHtml(expense.id)}')" > Mark as Paid < /button>`;
+}
+return `
           <article class="payment-history-item">
             <div class="payment-history-item-main">
               <h4 class="payment-history-item-title">${name}</h4>
@@ -8789,9 +8834,10 @@ function renderFinancialExpenses(data) {
             </div>
           </article>
         `;
-      }).join("")}
-    </div>
-  `;
+}).join("")
+}
+</div>
+`;
 }
 
 
@@ -8822,6 +8868,8 @@ function updateFinancialActionButtons() {
   }
 }
 
+
+
 async function openCreatePrizeForm() {
   const user = getCurrentUser();
   const tournamentId = currentTournament?.id;
@@ -8850,17 +8898,17 @@ async function openCreatePrizeForm() {
   const modal = document.createElement("div");
   modal.id = "prizePreviewModal";
   modal.style.cssText = `
-    position:fixed;
-    inset:0;
-    z-index:100000;
-    background:rgba(0,0,0,0.65);
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    padding:16px;
-    box-sizing:border-box;
-    overflow-x:hidden;
-    overflow-y:auto;
+    position: fixed;
+    inset: 0;
+    z-index: 100000;
+    background: rgba(0, 0, 0, 0.65);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    box-sizing: border-box;
+    overflow-x: hidden;
+    overflow-y: auto;
   `;
   modal.innerHTML = `
     <div class="prize-preview-container">
@@ -8924,14 +8972,26 @@ async function openCreatePrizeForm() {
           style="display:none;color:#b91c1c;margin-bottom:12px;overflow-wrap:anywhere;"
         ></div>
         <div class="prize-preview-actions">
-          <button type="button" id="prizePreviewCancel" class="prize-preview-cancel">
+          <button
+            type="button"
+            id="prizePreviewCancel"
+            class="prize-preview-cancel"
+          >
             Cancel
           </button>
-          <button type="button" id="prizePreviewReviewButton" class="prize-preview-review">
+          <button
+            type="button"
+            id="prizePreviewReviewButton"
+            class="prize-preview-review"
+          >
             Review Details
           </button>
-          <button type="submit" id="prizePreviewSubmit" class="prize-preview-submit">
-            Confirm & Submit
+          <button
+            type="submit"
+            id="prizePreviewSubmit"
+            class="prize-preview-submit"
+          >
+            Confirm &amp; Submit
           </button>
         </div>
       </form>
@@ -8971,9 +9031,7 @@ async function openCreatePrizeForm() {
     return null;
   }
   function showReview() {
-    if (!form.reportValidity()) {
-      return false;
-    }
+    if (!form.reportValidity()) return false;
     const data = getFormData();
     const validationError = validateForm(data);
     if (validationError) {
@@ -9018,9 +9076,7 @@ async function openCreatePrizeForm() {
   });
   form.addEventListener("submit", async event => {
     event.preventDefault();
-    if (submitBtn.disabled || !showReview()) {
-      return;
-    }
+    if (submitBtn.disabled || !showReview()) return;
     if (currentTournament?.id !== tournamentId) {
       errorBox.textContent =
         "The current tournament has changed. Close this form and try again.";
@@ -9036,9 +9092,7 @@ async function openCreatePrizeForm() {
       "Create Prize",
       "Cancel"
     );
-    if (!confirmed) {
-      return;
-    }
+    if (!confirmed) return;
     if (currentTournament?.id !== tournamentId) {
       errorBox.textContent =
         "The current tournament has changed. Close this form and try again.";
@@ -9104,324 +9158,7 @@ async function openCreatePrizeForm() {
   });
 }
 
-async function openCreateExpenseForm(isTournamentExpense = false) {
-  const user = getCurrentUser();
-  const tournamentId = currentTournament?.id;
-  if (user?.role !== "admin") {
-    showAlert("Only admins can create expenses.");
-    return;
-  }
-  if (isTournamentExpense && !tournamentId) {
-    showAlert("Open a tournament before creating a tournament expense.");
-    updateFinancialActionButtons();
-    return;
-  }
-  const existingModal = document.getElementById("expensePreviewModal");
-  if (existingModal) existingModal.remove();
-  const expenseType = isTournamentExpense
-    ? "Tournament Expense"
-    : "General Expense";
-  const today = new Date();
-  const todayDate = `${today.getFullYear()}-${String(
-    today.getMonth() + 1
-  ).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
-  const modal = document.createElement("div");
-  modal.id = "expensePreviewModal";
-  modal.style.cssText = `
-    position:fixed;
-    inset:0;
-    z-index:100000;
-    background:rgba(0,0,0,0.65);
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    padding:16px;
-    box-sizing:border-box;
-    overflow-x:hidden;
-    overflow-y:auto;
-  `;
-  modal.innerHTML = `
-    <div class="expense-preview-container">
-      <h2 style="margin:0 0 6px;">Add ${expenseType}</h2>
-      <p style="margin:0 0 20px;color:#666;font-size:14px;overflow-wrap:anywhere;">
-        Enter the expense details below. Review everything before submitting.
-      </p>
-      <form id="expensePreviewForm">
-        <label for="expensePreviewDescription">Description *</label>
-        <input
-          id="expensePreviewDescription"
-          name="description"
-          type="text"
-          maxlength="200"
-          required
-          placeholder="e.g. Internet subscription"
-        >
-        <label for="expensePreviewCategory">Category *</label>
-        <input
-          id="expensePreviewCategory"
-          name="category"
-          type="text"
-          maxlength="100"
-          list="expenseCategoryOptions"
-          required
-          placeholder="e.g. Internet, prizes, venue"
-        >
-        <datalist id="expenseCategoryOptions">
-          <option value="Prizes">
-          <option value="Venue">
-          <option value="Internet">
-          <option value="Marketing">
-          <option value="Equipment">
-          <option value="Operations">
-          <option value="Transportation">
-          <option value="Other">
-        </datalist>
-        <label for="expensePreviewAmount">Amount (₦) *</label>
-        <input
-          id="expensePreviewAmount"
-          name="amount"
-          type="number"
-          min="1"
-          step="1"
-          inputmode="numeric"
-          required
-          placeholder="Enter amount in naira"
-        >
-        <label for="expensePreviewRecipient">Recipient / Payee</label>
-        <input
-          id="expensePreviewRecipient"
-          name="recipient"
-          type="text"
-          maxlength="200"
-          placeholder="Optional"
-        >
-        <label for="expensePreviewDate">Expense Date *</label>
-        <input
-          id="expensePreviewDate"
-          name="expense_date"
-          type="date"
-          required
-          value="${todayDate}"
-        >
-        <label for="expensePreviewNotes">Additional Notes</label>
-        <textarea
-          id="expensePreviewNotes"
-          name="notes"
-          rows="3"
-          maxlength="2000"
-          placeholder="Optional details"
-        ></textarea>
-        <div class="expense-preview-type">
-          <strong>Expense Type:</strong> ${expenseType}
-          ${
-            isTournamentExpense
-              ? `<br><strong>Tournament:</strong> ${escapeHtml(
-                  currentTournament?.name ||
-                  currentTournament?.title ||
-                  "Current tournament"
-                )}`
-              : "<br><strong>Tournament:</strong> None — general expense"
-          }
-        </div>
-        <div
-          id="expensePreviewReview"
-          style="display:none;background:#eff6ff;border:1px solid #bfdbfe;padding:14px;border-radius:8px;margin-bottom:18px;min-width:0;overflow-wrap:anywhere;"
-        >
-          <h3 style="margin:0 0 12px;">Review Your Expense</h3>
-          <div
-            id="expensePreviewReviewContent"
-            style="font-size:14px;line-height:1.8;overflow-wrap:anywhere;word-break:break-word;"
-          ></div>
-          <p style="margin:12px 0 0;color:#1d4ed8;font-size:13px;">
-            Check these details before submitting. You can still edit the fields above.
-          </p>
-        </div>
-        <div
-          id="expensePreviewError"
-          role="alert"
-          style="display:none;color:#b91c1c;margin-bottom:12px;overflow-wrap:anywhere;"
-        ></div>
-        <div class="expense-preview-actions">
-          <button
-            type="button"
-            id="expensePreviewCancel"
-            class="expense-preview-cancel"
-          >
-            Cancel
-          </button>
-          <button
-            type="button"
-            id="expensePreviewReviewButton"
-            class="expense-preview-review"
-          >
-            Review Details
-          </button>
-          <button
-            type="submit"
-            id="expensePreviewSubmit"
-            class="expense-preview-submit"
-          >
-            Confirm & Submit
-          </button>
-        </div>
-      </form>
-    </div>
-  `;
-  document.body.appendChild(modal);
-  const form = modal.querySelector("#expensePreviewForm");
-  const cancelBtn = modal.querySelector("#expensePreviewCancel");
-  const reviewBtn = modal.querySelector("#expensePreviewReviewButton");
-  const submitBtn = modal.querySelector("#expensePreviewSubmit");
-  const errorBox = modal.querySelector("#expensePreviewError");
-  const reviewPanel = modal.querySelector("#expensePreviewReview");
-  const reviewContent = modal.querySelector("#expensePreviewReviewContent");
-  function isValidDate(value) {
-    const match = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-    if (!match) return false;
-    const [, year, month, day] = match;
-    const date = new Date(
-      Date.UTC(Number(year), Number(month) - 1, Number(day))
-    );
-    return (
-      date.getUTCFullYear() === Number(year) &&
-      date.getUTCMonth() === Number(month) - 1 &&
-      date.getUTCDate() === Number(day)
-    );
-  }
-  function getFormData() {
-    return {
-      description: form.elements.description.value.trim(),
-      category: form.elements.category.value.trim(),
-      amount: Number(form.elements.amount.value),
-      recipient: form.elements.recipient.value.trim(),
-      expense_date: form.elements.expense_date.value,
-      notes: form.elements.notes.value.trim()
-    };
-  }
-  function validateForm(data) {
-    if (!data.description || !data.category) {
-      return "Description and category are required.";
-    }
-    if (!Number.isSafeInteger(data.amount) || data.amount <= 0) {
-      return "Enter a positive whole amount in naira.";
-    }
-    if (!isValidDate(data.expense_date)) {
-      return "Enter a valid expense date.";
-    }
-    return null;
-  }
-  function showReview() {
-    if (!form.reportValidity()) return false;
-    const data = getFormData();
-    const validationError = validateForm(data);
-    if (validationError) {
-      errorBox.textContent = validationError;
-      errorBox.style.display = "block";
-      return false;
-    }
-    reviewContent.innerHTML = `
-      <div><strong>Description:</strong> ${escapeHtml(data.description)}</div>
-      <div><strong>Category:</strong> ${escapeHtml(data.category)}</div>
-      <div><strong>Amount:</strong> ₦${data.amount.toLocaleString("en-NG")}</div>
-      <div><strong>Recipient:</strong> ${escapeHtml(data.recipient || "Not specified")}</div>
-      <div><strong>Date:</strong> ${escapeHtml(data.expense_date)}</div>
-      <div><strong>Notes:</strong> ${escapeHtml(data.notes || "None")}</div>
-      <div><strong>Type:</strong> ${expenseType}</div>
-      ${
-        isTournamentExpense
-          ? `<div><strong>Tournament:</strong> ${escapeHtml(
-              currentTournament?.name ||
-              currentTournament?.title ||
-              "Current tournament"
-            )}</div>`
-          : "<div><strong>Tournament:</strong> None</div>"
-      }
-    `;
-    reviewPanel.style.display = "block";
-    errorBox.style.display = "none";
-    reviewBtn.textContent = "Update Review";
-    return true;
-  }
-  cancelBtn.addEventListener("click", () => {
-    modal.remove();
-  });
-  modal.addEventListener("click", event => {
-    if (event.target === modal) modal.remove();
-  });
-  reviewBtn.addEventListener("click", showReview);
-  form.addEventListener("input", () => {
-    reviewPanel.style.display = "none";
-    reviewBtn.textContent = "Review Details";
-    errorBox.style.display = "none";
-  });
-  form.addEventListener("submit", async event => {
-    event.preventDefault();
-    if (submitBtn.disabled) return;
-    if (!showReview()) return;
-    if (isTournamentExpense && currentTournament?.id !== tournamentId) {
-      errorBox.textContent =
-        "The current tournament has changed. Close this form and try again.";
-      errorBox.style.display = "block";
-      return;
-    }
-    const data = getFormData();
-    const confirmed = confirm(
-      `Submit this ${expenseType.toLowerCase()} for ₦${data.amount.toLocaleString("en-NG")}?`
-    );
-    if (!confirmed) return;
-    const payload = {
-      description: data.description,
-      category: data.category,
-      amount: data.amount,
-      recipient: data.recipient || null,
-      expense_date: data.expense_date,
-      notes: data.notes || null
-    };
-    if (isTournamentExpense) {
-      payload.tournament_id = tournamentId;
-    }
-    submitBtn.disabled = true;
-    reviewBtn.disabled = true;
-    cancelBtn.disabled = true;
-    submitBtn.textContent = "Submitting...";
-    errorBox.style.display = "none";
-    showLoader();
-    try {
-      const response = await apiRequest(`${API}/financial/expenses`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${getToken()}`,
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify(payload)
-      });
-      if (!response) {
-        submitBtn.disabled = false;
-        reviewBtn.disabled = false;
-        cancelBtn.disabled = false;
-        submitBtn.textContent = "Confirm & Submit";
-        return;
-      }
-      const result = await response.json();
-      if (!response.ok || !result.success) {
-        throw new Error(result.message || "Unable to create expense.");
-      }
-      modal.remove();
-      showAlert("Expense created successfully.");
-      await loadFinancialExpenses();
-    } catch (error) {
-      errorBox.textContent =
-        error.message || "Unable to create expense.";
-      errorBox.style.display = "block";
-      submitBtn.disabled = false;
-      reviewBtn.disabled = false;
-      cancelBtn.disabled = false;
-      submitBtn.textContent = "Confirm & Submit";
-    } finally {
-      hideLoader();
-    }
-  });
-}
+
 
 async function approveFinancialExpense(id) {
   if (!id) return;
@@ -9434,34 +9171,38 @@ async function approveFinancialExpense(id) {
   showLoader();
   try {
     const response = await apiRequest(
-      `${API}/financial/expenses/${encodeURIComponent(id)}/approve`,
-      {
-        method: "PATCH",
-        headers: {
-          Authorization: `Bearer ${getToken()}`
-        }
-      }
-    );
-    if (!response) {
-      throw new Error("No response received. Please try again.");
-    }
-    const result = await response.json();
-    if (!response.ok || !result.success) {
-      throw new Error(
-        result.message || "Failed to approve expense."
-      );
-    }
-    showAlert(
-      result.message || "Expense approved successfully."
-    );
-    await loadFinancialExpenses();
-  } catch (error) {
-    showAlert(
-      error.message || "Unable to approve expense."
-    );
-  } finally {
-    hideLoader();
+      `
+$ { API }
+/financial/expenses / $ { encodeURIComponent(id) }
+/approve`,
+{
+  method: "PATCH",
+  headers: {
+    Authorization: `Bearer ${getToken()}`
   }
+}
+);
+if (!response) {
+  throw new Error("No response received. Please try again.");
+}
+const result = await response.json();
+if (!response.ok || !result.success) {
+  throw new Error(
+    result.message || "Failed to approve expense."
+  );
+}
+showAlert(
+  result.message || "Expense approved successfully."
+);
+await loadFinancialExpenses();
+}
+catch (error) {
+  showAlert(
+    error.message || "Unable to approve expense."
+  );
+} finally {
+  hideLoader();
+}
 }
 
 async function payFinancialExpense(id) {
@@ -9645,12 +9386,14 @@ async function payFinancialExpense(id) {
   let reviewedReference = null;
   let reviewedMethod = null;
   let submitting = false;
+  
   function getPaymentData() {
     return {
       payment_reference: form.elements.payment_reference.value.trim(),
       payment_method: form.elements.payment_method.value
     };
   }
+  
   function resetReview() {
     reviewedReference = null;
     reviewedMethod = null;
@@ -9805,8 +9548,7 @@ async function loadFinancialContributions() {
       );
     }
     const contributions = Array.isArray(result.contributions) ?
-      result.contributions :
-      [];
+      result.contributions : [];
     const sponsorships = contributions.filter(
       item => item.contribution_type === "sponsorship"
     );
@@ -9906,33 +9648,33 @@ async function loadFinancialContributions() {
 
 function openCreateFinancialContributionForm() {
   const user = getCurrentUser();
-
+  
   if (!user || user.role !== "admin") {
     showAlert("Only administrators can record contributions.");
     return;
   }
-
+  
   const modal = document.getElementById("financialContributionModal");
   const form = document.getElementById("financialContributionForm");
   const dateInput = document.getElementById("contributionReceivedAt");
-
+  
   if (!modal || !form) {
     showAlert("Contribution form was not found.");
     return;
   }
-
+  
   form.reset();
-
+  
   if (dateInput) {
     dateInput.value = new Date().toLocaleDateString("en-CA");
   }
-
+  
   modal.hidden = false;
 }
 
 function closeFinancialContributionForm() {
   const modal = document.getElementById("financialContributionModal");
-
+  
   if (modal) {
     modal.hidden = true;
   }
@@ -9943,56 +9685,52 @@ function closeFinancialContributionForm() {
 
 document.getElementById("financialContributionForm")?.addEventListener(
   "submit",
-  async function (event) {
+  async function(event) {
     event.preventDefault();
-
+    
     const user = getCurrentUser();
-
+    
     if (!user || user.role !== "admin") {
       showAlert("Only administrators can record contributions.");
       return;
     }
-
+    
     const submitButton = document.getElementById(
       "submitFinancialContributionBtn"
     );
-
+    
     const amount = Number(
       document.getElementById("contributionAmount").value
     );
-
+    
     if (!Number.isSafeInteger(amount) || amount <= 0) {
       showAlert("Enter a valid positive amount in naira.");
       return;
     }
-
+    
     const payload = {
       contribution_type: document.getElementById("contributionType").value,
       contributor_name: document.getElementById("contributorName").value.trim(),
       amount,
-      payment_method:
-        document.getElementById("contributionPaymentMethod").value || null,
-      payment_reference:
-        document.getElementById("contributionPaymentReference").value.trim() || null,
-      received_at:
-        document.getElementById("contributionReceivedAt").value || null,
-      notes:
-        document.getElementById("contributionNotes").value.trim() || null,
+      payment_method: document.getElementById("contributionPaymentMethod").value || null,
+      payment_reference: document.getElementById("contributionPaymentReference").value.trim() || null,
+      received_at: document.getElementById("contributionReceivedAt").value || null,
+      notes: document.getElementById("contributionNotes").value.trim() || null,
       tournament_id: currentTournament?.id || null
     };
-
+    
     if (!payload.contributor_name) {
       showAlert("Enter the sponsor or contributor name.");
       return;
     }
-
+    
     if (!["sponsorship", "admin_contribution"].includes(payload.contribution_type)) {
       showAlert("Select a valid contribution type.");
       return;
     }
-
+    
     submitButton.disabled = true;
-
+    
     try {
       const response = await apiRequest(
         `${API}/financial/contributions`,
@@ -10005,14 +9743,14 @@ document.getElementById("financialContributionForm")?.addEventListener(
           body: JSON.stringify(payload)
         }
       );
-
+      
       if (!response || response.success === false) {
         throw new Error(response?.message || "Failed to save contribution.");
       }
-
+      
       closeFinancialContributionForm();
       showAlert("Contribution recorded successfully.");
-
+      
       await loadFinancialContributions();
       await loadFinancialSummary();
     } catch (error) {
@@ -10200,6 +9938,329 @@ function closeFriendlyTeamsModal() {
 }
 
 
+async function openCreateExpenseForm(isTournamentExpense = false) {
+  const user = getCurrentUser();
+  const tournamentId = currentTournament?.id;
+  if (user?.role !== "admin") {
+    showAlert("Only admins can create expenses.");
+    return;
+  }
+  if (isTournamentExpense && !tournamentId) {
+    showAlert("Open a tournament before creating a tournament expense.");
+    updateFinancialActionButtons();
+    return;
+  }
+  const existingModal = document.getElementById("expensePreviewModal");
+  if (existingModal) existingModal.remove();
+  const expenseType = isTournamentExpense
+    ? "Tournament Expense"
+    : "General Expense";
+  const today = new Date();
+  const todayDate = [
+    today.getFullYear(),
+    String(today.getMonth() + 1).padStart(2, "0"),
+    String(today.getDate()).padStart(2, "0")
+  ].join("-");
+  const modal = document.createElement("div");
+  modal.id = "expensePreviewModal";
+  modal.style.cssText = `
+    position: fixed;
+    inset: 0;
+    z-index: 100000;
+    background: rgba(0, 0, 0, 0.65);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    box-sizing: border-box;
+    overflow-x: hidden;
+    overflow-y: auto;
+  `;
+  modal.innerHTML = `
+    <div class="expense-preview-container">
+      <h2 style="margin:0 0 6px;">Add ${expenseType}</h2>
+      <p style="margin:0 0 20px;color:#666;font-size:14px;overflow-wrap:anywhere;">
+        Enter the expense details below. Review everything before submitting.
+      </p>
+      <form id="expensePreviewForm">
+        <label for="expensePreviewDescription">Description *</label>
+        <input
+          id="expensePreviewDescription"
+          name="description"
+          type="text"
+          maxlength="200"
+          required
+          placeholder="e.g. Internet subscription"
+        >
+        <label for="expensePreviewCategory">Category *</label>
+        <input
+          id="expensePreviewCategory"
+          name="category"
+          type="text"
+          maxlength="100"
+          list="expenseCategoryOptions"
+          required
+          placeholder="e.g. Internet, prizes, venue"
+        >
+        <datalist id="expenseCategoryOptions">
+          <option value="Prizes"></option>
+          <option value="Venue"></option>
+          <option value="Internet"></option>
+          <option value="Marketing"></option>
+          <option value="Equipment"></option>
+          <option value="Operations"></option>
+          <option value="Transportation"></option>
+          <option value="Other"></option>
+        </datalist>
+        <label for="expensePreviewAmount">Amount (₦) *</label>
+        <input
+          id="expensePreviewAmount"
+          name="amount"
+          type="number"
+          min="1"
+          step="1"
+          inputmode="numeric"
+          required
+          placeholder="Enter amount in naira"
+        >
+        <label for="expensePreviewRecipient">Recipient / Payee</label>
+        <input
+          id="expensePreviewRecipient"
+          name="recipient"
+          type="text"
+          maxlength="200"
+          placeholder="Optional"
+        >
+        <label for="expensePreviewDate">Expense Date *</label>
+        <input
+          id="expensePreviewDate"
+          name="expense_date"
+          type="date"
+          required
+          value="${todayDate}"
+        >
+        <label for="expensePreviewNotes">Additional Notes</label>
+        <textarea
+          id="expensePreviewNotes"
+          name="notes"
+          rows="3"
+          maxlength="2000"
+          placeholder="Optional details"
+        ></textarea>
+        <div class="expense-preview-type">
+          <strong>Expense Type:</strong>
+          ${expenseType}
+          ${
+            isTournamentExpense
+              ? `<br><strong>Tournament:</strong> ${escapeHtml(
+                  currentTournament?.name ||
+                  currentTournament?.title ||
+                  "Current tournament"
+                )}`
+              : "<br><strong>Tournament:</strong> None — general expense"
+          }
+        </div>
+        <div
+          id="expensePreviewReview"
+          style="display:none;background:#eff6ff;border:1px solid #bfdbfe;padding:14px;border-radius:8px;margin-bottom:18px;min-width:0;overflow-wrap:anywhere;"
+        >
+          <h3 style="margin:0 0 12px;">Review Your Expense</h3>
+          <div
+            id="expensePreviewReviewContent"
+            style="font-size:14px;line-height:1.8;overflow-wrap:anywhere;word-break:break-word;"
+          ></div>
+          <p style="margin:12px 0 0;color:#1d4ed8;font-size:13px;">
+            Check these details before submitting. You can still edit the fields above.
+          </p>
+        </div>
+        <div
+          id="expensePreviewError"
+          role="alert"
+          style="display:none;color:#b91c1c;margin-bottom:12px;overflow-wrap:anywhere;"
+        ></div>
+        <div class="expense-preview-actions">
+          <button
+            type="button"
+            id="expensePreviewCancel"
+            class="expense-preview-cancel"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            id="expensePreviewReviewButton"
+            class="expense-preview-review"
+          >
+            Review Details
+          </button>
+          <button
+            type="submit"
+            id="expensePreviewSubmit"
+            class="expense-preview-submit"
+          >
+            Confirm &amp; Submit
+          </button>
+        </div>
+      </form>
+    </div>
+  `;
+  document.body.appendChild(modal);
+  const form = modal.querySelector("#expensePreviewForm");
+  const cancelBtn = modal.querySelector("#expensePreviewCancel");
+  const reviewBtn = modal.querySelector("#expensePreviewReviewButton");
+  const submitBtn = modal.querySelector("#expensePreviewSubmit");
+  const errorBox = modal.querySelector("#expensePreviewError");
+  const reviewPanel = modal.querySelector("#expensePreviewReview");
+  const reviewContent = modal.querySelector("#expensePreviewReviewContent");
+  function isValidDate(value) {
+    const match = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (!match) return false;
+    const [, year, month, day] = match;
+    const date = new Date(
+      Date.UTC(Number(year), Number(month) - 1, Number(day))
+    );
+    return (
+      date.getUTCFullYear() === Number(year) &&
+      date.getUTCMonth() === Number(month) - 1 &&
+      date.getUTCDate() === Number(day)
+    );
+  }
+  function getFormData() {
+    return {
+      description: form.elements.description.value.trim(),
+      category: form.elements.category.value.trim(),
+      amount: Number(form.elements.amount.value),
+      recipient: form.elements.recipient.value.trim(),
+      expense_date: form.elements.expense_date.value,
+      notes: form.elements.notes.value.trim()
+    };
+  }
+  function validateForm(data) {
+    if (!data.description || !data.category) {
+      return "Description and category are required.";
+    }
+    if (!Number.isSafeInteger(data.amount) || data.amount <= 0) {
+      return "Enter a positive whole amount in naira.";
+    }
+    if (!isValidDate(data.expense_date)) {
+      return "Enter a valid expense date.";
+    }
+    return null;
+  }
+  function showReview() {
+    if (!form.reportValidity()) return false;
+    const data = getFormData();
+    const validationError = validateForm(data);
+    if (validationError) {
+      errorBox.textContent = validationError;
+      errorBox.style.display = "block";
+      return false;
+    }
+    reviewContent.innerHTML = `
+      <div><strong>Description:</strong> ${escapeHtml(data.description)}</div>
+      <div><strong>Category:</strong> ${escapeHtml(data.category)}</div>
+      <div><strong>Amount:</strong> ₦${data.amount.toLocaleString("en-NG")}</div>
+      <div><strong>Recipient:</strong> ${escapeHtml(data.recipient || "Not specified")}</div>
+      <div><strong>Date:</strong> ${escapeHtml(data.expense_date)}</div>
+      <div><strong>Notes:</strong> ${escapeHtml(data.notes || "None")}</div>
+      <div><strong>Type:</strong> ${expenseType}</div>
+      ${
+        isTournamentExpense
+          ? `<div><strong>Tournament:</strong> ${escapeHtml(
+              currentTournament?.name ||
+              currentTournament?.title ||
+              "Current tournament"
+            )}</div>`
+          : "<div><strong>Tournament:</strong> None</div>"
+      }
+    `;
+    reviewPanel.style.display = "block";
+    errorBox.style.display = "none";
+    reviewBtn.textContent = "Update Review";
+    return true;
+  }
+  cancelBtn.addEventListener("click", () => {
+    modal.remove();
+  });
+  modal.addEventListener("click", event => {
+    if (event.target === modal) modal.remove();
+  });
+  reviewBtn.addEventListener("click", showReview);
+  form.addEventListener("input", () => {
+    reviewPanel.style.display = "none";
+    reviewBtn.textContent = "Review Details";
+    errorBox.style.display = "none";
+  });
+  form.addEventListener("submit", async event => {
+    event.preventDefault();
+    if (submitBtn.disabled) return;
+    if (!showReview()) return;
+    if (isTournamentExpense && currentTournament?.id !== tournamentId) {
+      errorBox.textContent =
+        "The current tournament has changed. Close this form and try again.";
+      errorBox.style.display = "block";
+      return;
+    }
+    const data = getFormData();
+    const confirmed = confirm(
+      `Submit this ${expenseType.toLowerCase()} for ₦${data.amount.toLocaleString("en-NG")}?`
+    );
+    if (!confirmed) return;
+    const payload = {
+      description: data.description,
+      category: data.category,
+      amount: data.amount,
+      recipient: data.recipient || null,
+      expense_date: data.expense_date,
+      notes: data.notes || null
+    };
+    if (isTournamentExpense) {
+      payload.tournament_id = tournamentId;
+    }
+    submitBtn.disabled = true;
+    reviewBtn.disabled = true;
+    cancelBtn.disabled = true;
+    submitBtn.textContent = "Submitting...";
+    errorBox.style.display = "none";
+    showLoader();
+    try {
+      const response = await apiRequest(`${API}/financial/expenses`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${getToken()}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(payload)
+      });
+      if (!response) {
+        submitBtn.disabled = false;
+        reviewBtn.disabled = false;
+        cancelBtn.disabled = false;
+        submitBtn.textContent = "Confirm & Submit";
+        return;
+      }
+      const result = await response.json();
+      if (!response.ok || !result.success) {
+        throw new Error(result.message || "Unable to create expense.");
+      }
+      modal.remove();
+      showAlert("Expense created successfully.");
+      await loadFinancialExpenses();
+    } catch (error) {
+      errorBox.textContent =
+        error.message || "Unable to create expense.";
+      errorBox.style.display = "block";
+      submitBtn.disabled = false;
+      reviewBtn.disabled = false;
+      cancelBtn.disabled = false;
+      submitBtn.textContent = "Confirm & Submit";
+    } finally {
+      hideLoader();
+    }
+  });
+}
+
+
 function comparisonSearchEscapeHtml(value) {
   return String(value ?? "").replace(
     /[&<>"']/g,
@@ -10235,11 +10296,11 @@ window.addEventListener("load", async () => {
     if (loggedIn) {
       hideAllPages();
       
-await registerSW();
-await checkNotificationSubscription();      
+      await registerSW();
+      await checkNotificationSubscription();
       bindSeasonRegistrationEvents();
-      const returnedFromPayment = 
-      await goToCompetitionPage();
+      const returnedFromPayment =
+        await goToCompetitionPage();
       loadMyCompetitions();
       await renderCompetitionList();
       handlePaymentReturn();
@@ -10254,6 +10315,3 @@ await checkNotificationSubscription();
     hideLoader();
   }
 });
-
-
-
