@@ -192,23 +192,48 @@ function shareFixtures() {
 }
 
 
-
-
-
-function goToFixturePage() {
+function toggleFriendlyFixtureButtons() {
+  const buttons = document.getElementById(
+    "friendlyFixtureButtons"
+  );
   
-  setActiveNav('fixturesBtn')
-  document.getElementById("listOfTournamentPage").style.display = "none";
-  hideAllPages();
-  document.getElementById("tournamentPage").style.display = "block";
-  document.getElementById("fixturePage").style.display = "block";
-  document.getElementById("fixturePageHead").style.display = "block";
-  document.getElementById("nav").style.display = "flex";
-  renderFixtures();
+  if (!buttons) return;
   
+  const tournament = getCurrentTournament();
+  
+  const isFriendly =
+    tournament?.format?.toLowerCase() === "friendly";
+  
+  buttons.style.display = isFriendly ? "flex" : "none";
 }
-
-
+function goToFixturePage() {
+  setActiveNav("fixturesBtn");
+  
+  document.getElementById(
+    "listOfTournamentPage"
+  ).style.display = "none";
+  
+  hideAllPages();
+  
+  document.getElementById(
+    "tournamentPage"
+  ).style.display = "block";
+  
+  document.getElementById(
+    "fixturePage"
+  ).style.display = "block";
+  
+  document.getElementById(
+    "fixturePageHead"
+  ).style.display = "block";
+  
+  document.getElementById("nav").style.display =
+    currentTournament?.format?.toLowerCase() === "friendly" ?
+    "none" :
+    "flex";
+toggleFriendlyFixtureButtons();
+  renderFixtures();
+}
 function goToStatPage() {
   document.getElementById("listOfTournamentPage").style.display = "none";
   hideAllPages();

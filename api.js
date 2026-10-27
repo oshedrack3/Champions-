@@ -9936,6 +9936,181 @@ document.getElementById("financialContributionForm")?.addEventListener(
 
 
 
+async function setupFriendlyFixtureGenerator() {
+  const container =
+    document.getElementById("friendlyFixtureGenerator");
+  
+  const opponentsSelect =
+    document.getElementById("friendlyOpponentsPerTeam");
+  
+  if (!container || !opponentsSelect) return;
+  
+  const tournament = currentTournament;
+  
+  const isFriendly =
+    tournament?.format?.toLowerCase() === "friendly";
+  
+  const isAdmin =
+    getCurrentUser()?.role === "admin";
+  
+  container.style.display =
+    isFriendly && isAdmin ? "block" : "none";
+  
+  if (!isFriendly || !isAdmin) return;
+  
+  opponentsSelect.innerHTML =
+    '<option value="">Select opponents</option>';
+  
+  const teams = await getTeams(tournament.id);
+  
+  const teamCount = teams.length;
+  
+  for (let i = 1; i < teamCount; i++) {
+    const option = document.createElement("option");
+    
+    option.value = i;
+    option.textContent = `${i} opponent${i === 1 ? "" : "s"}`;
+    
+    opponentsSelect.appendChild(option);
+  }
+}
+
+
+async function generateFriendlyFixtures() {
+  const tournament = currentTournament;
+  
+  if (!tournament?.id) {
+    showAlert("Please select a tournament first.");
+    return;
+  }
+  
+  if (
+    tournament.format?.toLowerCase() !== "friendly"
+  ) {
+    showAlert("This is not a friendly tournament.");
+    return;
+  }
+  
+  if (getCurrentUser()?.role !== "admin") {
+    showAlert("Only admins can generate friendly fixtures.");
+    return;
+  }
+  
+  const opponentsPerTeam =
+    Number(
+      document.getElementById(
+        "friendlyOpponentsPerTeam"
+      ).value
+    );
+  
+  const rounds =
+    Number(
+      document.getElementById(
+        "friendlyRounds"
+      ).value
+    );
+  
+  if (!Number.isInteger(opponentsPerTeam) || opponentsPerTeam < 1) {
+    showAlert("Please select the number of opponents per team.");
+    return;
+  }
+  
+  const confirmed = await new Promise(resolve => {
+    showConfirmModal(
+      `Generate friendly fixtures with ${opponentsPerTeam} opponent${opponentsPerTeam === 1 ? "" : "s"} per team?`,
+      "Generate",
+      "Cancel"
+    );
+    
+    confirmYes = () => {
+      closeConfirmModal();
+      resolve(true);
+    };
+    
+    confirmNo = () => {
+      closeConfirmModal();
+      resolve(false);
+    };
+  });
+  
+  if (!confirmed) return;
+  
+  showLoader();
+  
+  try {
+    const res = await apiRequest(
+      `${API}/tournaments/${encodeURIComponent(tournament.id)}/friendly-fixtures`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: getToken()
+        },
+        body: JSON.stringify({
+          opponents_per_team: opponentsPerTeam,
+          rounds
+        })
+      },
+      () => generateFriendlyFixtures()
+    );
+    
+    if (!res) return;
+    
+    const result = await res.json();
+    
+    if (!res.ok || !result.success) {
+      throw new Error(
+        result.message ||
+        "Failed to generate friendly fixtures."
+      );
+    }
+    
+    showActionModal(
+      `${result.total_matches} friendly matches generated successfully.`,
+      "success"
+    );
+    
+    await renderFixtures();
+    
+  } catch (err) {
+    showAlert(
+      err.message ||
+      "Failed to generate friendly fixtures."
+    );
+  } finally {
+    hideLoader();
+  }
+}
+
+async function openFriendlyTeamsModal() {
+  const tournament = getCurrentTournament();
+  
+  if (!tournament) {
+    showAlert("No tournament selected.");
+    return;
+  }
+  
+  const modal = document.getElementById("friendlyTeamsModal");
+  const title = document.getElementById(
+    "friendlyTeamsTournamentName"
+  );
+  
+  if (!modal || !title) return;
+  
+  title.textContent = tournament.name || "Friendly Tournament";
+  
+  modal.classList.add("active");
+  
+  await renderTeams("friendlyTeamsList");
+}
+
+function closeFriendlyTeamsModal() {
+  document
+    .getElementById("friendlyTeamsModal")
+    ?.classList.remove("active");
+}
+
+
 function comparisonSearchEscapeHtml(value) {
   return String(value ?? "").replace(
     /[&<>"']/g,

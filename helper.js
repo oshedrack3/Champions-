@@ -168,22 +168,32 @@ function confirmNo() {
 
 async function handleGenerateFixtures() {
   const tournament = getCurrentTournament();
-  
   if (!tournament) {
     showAlert("No tournament found");
     return;
   }
-  
+  if (tournament.format?.toLowerCase() === "friendly") {
+    await setupFriendlyFixtureGenerator();
+    const container = document.getElementById(
+      "friendlyFixtureGenerator"
+    );
+    if (container) {
+      container.style.display = "block";
+      container.scrollIntoView({
+        behavior: "smooth",
+        block: "center"
+      });
+    }
+    return;
+  }
   if (tournament.matches && tournament.matches.length > 0) {
     const confirmed = await showConfirmModal(
       "Fixtures already exist. Delete and regenerate?",
       "Generate",
       "Cancel"
     );
-    
     if (!confirmed) return;
-    
-    deleteFixtures(true);
+    await deleteFixtures(true);
     proceedToInput();
   } else {
     proceedToInput();
@@ -477,12 +487,12 @@ function handleMenuAction(action) {
   closeMenu();
   
   const actions = {
-    paymentHistory:openPaymentHistoryPage,
-    registerSeason:openSeasonRegistration,
-    seasonend:showSeasonKeyInputModal,
-    reverseRule:showDisciplinaryReversalSection,
-    enforceRule:openDisciplinaryModal,
-    viewRules:viewTournamentRules,
+    paymentHistory: openPaymentHistoryPage,
+    registerSeason: openSeasonRegistration,
+    seasonend: showSeasonKeyInputModal,
+    reverseRule: showDisciplinaryReversalSection,
+    enforceRule: openDisciplinaryModal,
+    viewRules: viewTournamentRules,
     joinTour: handleJoinTournament,
     newNotice: openNoticeBoardModal,
     deadlineEdit: openSubmissionDeadlineModal,
@@ -519,7 +529,7 @@ function handleMenuAction(action) {
 
 const menuConfig = {
   competition: [
-  
+    
     {
       label: "Create New Competition",
       action: "createComp",
@@ -548,11 +558,11 @@ const menuConfig = {
       action: "newNotice",
       roles: ["admin"]
     },
-       {
-     label: "Conclude Season",
-     action: "seasonend",
-     roles: ["admin"]
-   },
+    {
+      label: "Conclude Season",
+      action: "seasonend",
+      roles: ["admin"]
+    },
     
     {
       label: "Season Registration",
@@ -565,7 +575,7 @@ const menuConfig = {
       action: "paymentHistory",
       roles: ["admin"]
     },
-   
+    
     /*
     {
       label: "Setup POTS Tournaments",
@@ -652,30 +662,29 @@ const menuConfig = {
       action: "deleteTeam",
       roles: ["admin"]
     },
-      {
-    label: "View Rules and Regulations",
-    action: "viewRules",
-    roles: ["admin", "player"],
-    
-  },
     {
-    label: "Point Deduction Section",
-    action: "enforceRule",
-    roles: ["admin"]
-    
+      label: "View Rules and Regulations",
+      action: "viewRules",
+      roles: ["admin", "player"],
+      
+    },
+    {
+      label: "Point Deduction Section",
+      action: "enforceRule",
+      roles: ["admin"]
+      
+    },
+    {
+      label: "See Point Deductions",
+      action: "reverseRule",
+      roles: ["admin", "player"]
+      
+    },
+    {
+      label: "Transactions & Revenue",
+      action: "paymentHistory",
+      roles: ["admin", "player"]
     }
-    ,
-     {
-    label: "See Point Deductions",
-    action: "reverseRule",
-    roles: ["admin", "player"]
-   
-     },
-        {
-    label: "Transactions & Revenue",
-    action: "paymentHistory",
-    roles: [ "admin","player"]
-}
     
   ],
   group: [
@@ -711,7 +720,7 @@ const menuConfig = {
     */
   ],
   bracket: [
-        {
+    {
       label: "Set Deadline",
       action: "deadlineEdit",
       roles: ["admin"]
@@ -763,7 +772,13 @@ const menuConfig = {
       label: "Change Played Match Date",
       action: "dateEdit",
       roles: ["admin"]
+    },
+    {
+      label: "Import Teams",
+      action: "importTeams",
+      roles: ["admin"]
     }
+    
     
     
   ],
@@ -780,11 +795,11 @@ const menuConfig = {
       action: "joinTour",
       roles: ["admin", "player"]
     },
-         {
-    label: "View Rules and Regulations",
-    action: "viewRules",
-    roles: ["admin", "player"]
-  },
+    {
+      label: "View Rules and Regulations",
+      action: "viewRules",
+      roles: ["admin", "player"]
+    },
     
     {
       label: "Import Teams",
@@ -1040,7 +1055,7 @@ async function exportSelectedTournaments() {
       for (const team of teams) {
         const logoKey = tournament.teamLogos[team];
         
-     
+        
         if (logoKey && !logoKey.startsWith("data:image")) {
           try {
             const base64Data = await getLogoFromIndexedDB(logoKey);
@@ -1152,7 +1167,7 @@ async function goToCompetitionPage() {
   
   hideAllPages();
   
-
+  
   closeTournamentEvents();
   
   document.getElementById("competitionPage").style.display = "block";
@@ -1885,6 +1900,7 @@ function openSubmissionReview(match, submission) {
   buildReviewActions(match, submission);
   modal.style.display = "flex";
 }
+
 function buildReviewActions(match, submission) {
   const actions = document.getElementById("reviewModalActions");
   const rejectInputRow = document.getElementById("reviewModalRejectInputRow");
@@ -2429,7 +2445,3 @@ async function openEditTeam() {
 
 window.openEditTeam =
   openEditTeam;
-  
-  
-  
-  

@@ -6,23 +6,15 @@ async function renderFixtures() {
     getCurrentTournament();
   if (!tournament) return;
   const container =
-    document.getElementById(
-      "fixtureList"
-    );
+    document.getElementById("fixtureList");
   if (!container) return;
   const search =
-    document.getElementById(
-      "fixtureSearchInput"
-    )?.value
-    .toLowerCase()
-    .trim() || "";
+    document.getElementById("fixtureSearchInput")
+    ?.value.toLowerCase().trim() || "";
   try {
     showLoader();
     await loadTournamentFixtures(
       tournament.id
-    );
-    checkSubmissionAlerts(
-      tournament
     );
     toggleRoundCarousel(
       search
@@ -62,26 +54,22 @@ async function renderFixtures() {
       return;
     }
     let lastRound = null;
-    visibleMatches.forEach(
-      match => {
-        const round =
-          Number(match.round) || 1;
-        if (round !== lastRound) {
-          lastRound = round;
-          container.appendChild(
-            createRoundHeader(
-              round
-            )
-          );
-        }
+    visibleMatches.forEach(match => {
+      const round =
+        Number(match.round) || 1;
+      if (round !== lastRound) {
+        lastRound = round;
         container.appendChild(
-          createFixtureCard(
-            tournament,
-            match
-          )
+          createRoundHeader(round)
         );
       }
-    );
+      container.appendChild(
+        createFixtureCard(
+          tournament,
+          match
+        )
+      );
+    });
     renderRoundList();
   } catch (err) {
     console.error(
@@ -101,7 +89,6 @@ async function renderFixtures() {
     hideLoader();
   }
 }
-
 function getVisibleMatches(search = "") {
   const matches =
     Array.isArray(fixtures) ? [...fixtures] : [];

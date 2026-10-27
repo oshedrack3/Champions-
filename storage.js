@@ -339,106 +339,81 @@ function getTournamentFromMemory(id) {
   ) || null;
 }
 
-
 async function openTournament(id) {
   showLoader();
-  
   try {
     const tournament =
       await getTournament(id);
-    
     const rules =
       await getTournamentRules(id);
-    
     if (
       rules &&
       rules.rules &&
       !rules.accepted
     ) {
       hideLoader();
-      
       const agreed =
         await showTournamentRulesModal(
           rules.rules,
           true
         );
-      
       if (!agreed) {
         return;
       }
-      
       showLoader();
-      
       await acceptTournamentRules(id);
     }
-    
-    currentTournament =
-      tournament;
-    
+    currentTournament = tournament;
     loadSubmissionDeadlineCountdown(
       tournament
     );
-    
     startTournamentEvents(id);
-    
     const name =
       tournament.name;
-    
     const season =
       tournament.season;
-    
     const formatType =
       (
         tournament.format ||
         "league"
       ).toLowerCase();
-    
-    if (formatType === "league") {
+    if (formatType === "friendly") {
+      goToFixturePage();
+    } else if (formatType === "league") {
       document.getElementById(
         "leagueName"
       ).textContent = name;
-      
       document.getElementById(
         "tableTournamentName"
       ).textContent = name;
-      
       document.getElementById(
         "tournamentSeason"
       ).textContent = season;
-      
       goToTournamentPage();
-      
       await rebuildTableFromMatches();
-      
     } else {
       document.getElementById(
         "cupName"
       ).textContent = name;
-      
       document.getElementById(
           "cupName2"
         ).textContent =
         `${name} Bracket`;
-      
       goToCupPage();
     }
-    
   } catch (err) {
     console.error(
       "openTournament error:",
       err
     );
-    
     showAlert(
       err.message ||
       "Failed to open tournament."
     );
-    
   } finally {
     hideLoader();
   }
 }
-
 async function viewTournamentRules() {
   try {
     const result =

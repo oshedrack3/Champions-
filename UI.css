@@ -13613,3 +13613,329 @@ td.cup-eliminated {
   object-fit: contain;
 }
 
+
+.friendly-generator-card {
+  padding: 18px;
+  margin: 16px 0;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.05);
+}
+
+.friendly-generator-card h3 {
+  margin: 0 0 8px;
+  font-size: 18px;
+}
+
+.friendly-generator-card p {
+  color: #6b7280;
+  font-size: 14px;
+  margin-bottom: 18px;
+}
+
+.friendly-generator-card label {
+  display: block;
+  margin: 14px 0 7px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.friendly-generator-card select {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 9px;
+  background: #fff;
+  font-size: 15px;
+}
+
+#generateFriendlyFixturesBtn {
+  width: 100%;
+  padding: 13px;
+  margin-top: 20px;
+  border: none;
+  border-radius: 9px;
+  background: #2563eb;
+  color: #fff;
+  font-weight: 700;
+  font-size: 15px;
+  cursor: pointer;
+}
+
+#generateFriendlyFixturesBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+
+#friendlyFixtureButtons {
+  display: none;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 100px 20px 0 15px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+#friendlyFixtureButtons button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  transition: background 0.2s ease, transform 0.2s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+#friendlyFixtureButtons button:first-child {
+  flex: 0 0 auto;
+  padding: 10px 13px;
+  border-radius: 8px;
+  background: #1f2937;
+  color: #fff;
+}
+
+#friendlyFixtureButtons button:first-child:active {
+  background: #111827;
+  transform: scale(0.96);
+}
+
+#friendlyFixtureButtons button:last-child {
+  flex: 0 1 220px;
+  min-width: 130px;
+  padding: 13px 20px;
+  border-radius: 10px;
+  background: #2365eb;
+  color: #fff;
+  font-size: 15px;
+}
+
+#friendlyFixtureButtons button:last-child:active {
+  background: #2365eb;
+  transform: scale(0.97);
+}
+
+@media (max-width: 480px) {
+  #friendlyFixtureButtons {
+    gap: 10px;
+  }
+  
+  #friendlyFixtureButtons button:first-child {
+    padding: 9px 12px;
+    font-size: 13px;
+  }
+  
+  #friendlyFixtureButtons button:last-child {
+    flex: 0 1 200px;
+    min-width: 120px;
+    padding: 12px 16px;
+    font-size: 14px;
+  }
+}
+
+
+
+.friendly-teams-modal {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  box-sizing: border-box;
+}
+
+.friendly-teams-modal.active {
+  display: flex;
+}
+
+.friendly-teams-modal-content {
+  width: 100%;
+  max-width: 480px;
+  max-height: 85vh;
+  max-height: 85dvh;
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  animation: friendlyTeamsModalIn 0.25s ease;
+}
+
+.friendly-teams-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 20px;
+  background: #f8fafc;
+  border-bottom: 1px solid #e5e7eb;
+  flex-shrink: 0;
+}
+
+.friendly-teams-modal-header h2 {
+  margin: 0;
+  color: #111827;
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.friendly-teams-modal-header p {
+  margin: 5px 0 0;
+  color: #6b7280;
+  font-size: 13px;
+}
+
+.friendly-teams-close {
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 50%;
+  background: #e5e7eb;
+  color: #374151;
+  font-size: 27px;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.friendly-teams-close:hover {
+  background: #d1d5db;
+}
+
+.friendly-teams-close:active {
+  transform: scale(0.92);
+}
+
+.friendly-teams-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 20px !important;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  flex: 1 1 auto;
+  min-height: 0;
+  box-sizing: border-box;
+}
+.friendly-teams-list>* {
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.friendly-teams-loading,
+.friendly-teams-empty {
+  padding: 32px 16px;
+  text-align: center;
+  color: #6b7280;
+  font-size: 14px;
+}
+
+@keyframes friendlyTeamsModalIn {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.98);
+  }
+  
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@media (max-width: 480px) {
+  .friendly-teams-modal {
+    padding: 12px;
+  }
+  
+  .friendly-teams-modal-content {
+    max-height: 88vh;
+    max-height: 88dvh;
+    border-radius: 16px;
+  }
+  
+  .friendly-teams-modal-header {
+    padding: 16px;
+  }
+  
+  .friendly-teams-modal-header h2 {
+    font-size: 18px;
+  }
+  
+  .friendly-teams-list {
+    gap: 10px;
+    padding: 16px;
+  }
+}
+
+
+#friendlyTeamsModal #friendlyTeamsList.CupTeamsContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 20px !important;
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  flex: 1 1 auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+#friendlyTeamsModal #friendlyTeamsList .team-card {
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
+  flex-shrink: 0;
+  box-sizing: border-box;
+  overflow: hidden;
+  border-radius: 12px;
+}
+
+#friendlyTeamsModal #friendlyTeamsList .team-swipe-wrapper {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+#friendlyTeamsModal #friendlyTeamsList .team-content {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+#friendlyTeamsModal #friendlyTeamsList .team-content span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+#friendlyTeamsModal #friendlyTeamsList>p {
+  margin: 0;
+  padding: 24px 12px;
+  text-align: center;
+  color: #6b7280;
+}
+
+@media (max-width: 480px) {
+  #friendlyTeamsModal #friendlyTeamsList.CupTeamsContainer {
+    padding: 16px !important;
+    gap: 12px;
+  }
+}
