@@ -1071,7 +1071,6 @@ async function loadMyCompetitions() {
   }
 }
 
-
 function setSelectedCompetition(id) {
   selectedCompetitionId = id;
 }
