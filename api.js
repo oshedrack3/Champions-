@@ -2363,6 +2363,7 @@ async function getUserProfile() {
 async function openProfileModal() {
   goBackHome()
   bindNotificationToggle();
+  loadAdminSquadRequestsSection();
   const modal =
     document.getElementById(
       "profileModal"
@@ -2559,6 +2560,222 @@ async function openUpdateProfile() {
     }
   } catch (error) {
     console.error("Failed to refresh profile:", error);
+  }
+}
+
+function formatSquadRequestDate(value) {
+  if (!value) return "Date unavailable";
+  
+  const date = new Date(
+    typeof value === "number" || /^\d+$/.test(String(value)) ?
+    Number(value) :
+    value
+  );
+  
+  if (Number.isNaN(date.getTime())) {
+    return "Date unavailable";
+  }
+  
+  return date.toLocaleString();
+}
+
+function createSquadImage(url, label) {
+  const image = document.createElement("img");
+  
+  image.src = url || "";
+  image.alt = label;
+  image.loading = "lazy";
+  image.className = "admin-squad-request-image";
+  
+  if (!url) {
+    image.hidden = true;
+  }
+  
+  return image;
+}
+
+async function loadAdminSquadRequestsSection() {
+  const section = document.getElementById(
+    "adminSquadRequestsSection"
+  );
+  
+  if (!section) return;
+  
+  const user = getCurrentUser();
+  
+  if (user?.role !== "admin") {
+    section.hidden = true;
+    return;
+  }
+  
+  section.hidden = false;
+  
+  const list = document.getElementById(
+    "adminSquadRequestsList"
+  );
+  
+  const count = document.getElementById(
+    "adminSquadRequestsCount"
+  );
+  
+  if (!list || !count) return;
+  
+  list.textContent = "Loading requests...";
+  
+  try {
+    const requests = await getAdminSquadChangeRequests();
+    
+    if (!Array.isArray(requests)) {
+      throw new Error("Unable to retrieve squad change requests.");
+    }
+    
+    count.textContent = `${requests.length} Pending`;
+    
+    list.replaceChildren();
+    
+    if (!requests.length) {
+      list.textContent = "No pending squad change requests.";
+      return;
+    }
+    
+    requests.forEach(request => {
+      const card = document.createElement("div");
+      card.className = "admin-squad-request-card";
+      
+      const heading = document.createElement("h3");
+      heading.textContent = request.username || "Unknown player";
+      
+      const date = document.createElement("p");
+      date.textContent = `Submitted: ${formatSquadRequestDate(request.created_at)}`;
+      
+      const images = document.createElement("div");
+      images.className = "admin-squad-request-images";
+      
+      const currentWrapper = document.createElement("div");
+      currentWrapper.className = "admin-squad-image-wrapper";
+      
+      const currentLabel = document.createElement("p");
+      currentLabel.textContent = "Current squad";
+      
+      currentWrapper.append(
+        currentLabel,
+        createSquadImage(
+          request.current_image_url,
+          "Current registered squad"
+        )
+      );
+      
+      const requestedWrapper = document.createElement("div");
+      requestedWrapper.className = "admin-squad-image-wrapper";
+      
+      const requestedLabel = document.createElement("p");
+      requestedLabel.textContent = "Requested squad";
+      
+      requestedWrapper.append(
+        requestedLabel,
+        createSquadImage(
+          request.image_url,
+          "Requested new squad"
+        )
+      );
+      
+      images.append(currentWrapper, requestedWrapper);
+      
+      const actions = document.createElement("div");
+      actions.className = "admin-squad-request-actions";
+      
+      const approveButton = document.createElement("button");
+      approveButton.type = "button";
+      approveButton.textContent = "Approve";
+      approveButton.className = "approve-squad-request";
+      
+      const rejectButton = document.createElement("button");
+      rejectButton.type = "button";
+      rejectButton.textContent = "Reject";
+      rejectButton.className = "reject-squad-request";
+      
+      const handleReview = async (
+        decision,
+        rejectionReason = null
+      ) => {
+        approveButton.disabled = true;
+        rejectButton.disabled = true;
+        
+        try {
+          const result = await reviewSquadChangeRequest(
+            request.id,
+            decision,
+            rejectionReason
+          );
+          
+          if (!result) {
+            throw new Error("Unable to complete the review.");
+          }
+          
+          showAlert(
+            "Success",
+            result.message || "Request reviewed successfully."
+          );
+          
+          await loadAdminSquadRequestsSection();
+        } catch (error) {
+          console.error("Squad request review failed:", error);
+          
+          showAlert(
+            "Error",
+            error.message || "Unable to review this request."
+          );
+          
+          approveButton.disabled = false;
+          rejectButton.disabled = false;
+        }
+      };
+      
+      approveButton.addEventListener("click", async () => {
+        const confirmed = await showConfirmModal(
+          `Approve ${request.username}'s squad change?`,
+          "Approve",
+          "Cancel"
+        );
+        
+        if (!confirmed) return;
+        
+        handleReview("approve");
+      });
+      
+      rejectButton.addEventListener("click", async () => {
+        const confirmed = await showConfirmModal(
+          `Reject ${request.username}'s squad change?`,
+          "Reject",
+          "Cancel"
+        );
+        
+        if (!confirmed) return;
+        
+        handleReview("reject");
+      });
+      
+      actions.append(approveButton, rejectButton);
+      
+      card.append(
+        heading,
+        date,
+        images,
+        actions
+      );
+      
+      list.appendChild(card);
+    });
+  } catch (error) {
+    console.error("Failed to load squad requests:", error);
+    
+    count.textContent = "Unavailable";
+    list.textContent = "Unable to load squad change requests.";
+    
+    showAlert(
+      "Error",
+      error.message || "Unable to load squad change requests."
+    );
   }
 }
 

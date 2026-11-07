@@ -2354,6 +2354,7 @@ body.admin-mode .data-admin {
   border-bottom: 1px solid #d4af37;
   box-sizing: border-box;
 }
+
 .table-tournament-name {
   position: sticky;
   left: 5px;
@@ -2368,6 +2369,7 @@ body.admin-mode .data-admin {
   height: 60px;
   object-fit: contain;
 }
+
 .table-tournament-name #tableTournamentName {
   max-width: 100%;
   font-size: clamp(22px, 5vw, 32px);
@@ -2541,6 +2543,7 @@ body.admin-mode .data-admin {
     letter-spacing: 2px;
   }
 }
+
 .rank-cell {
   display: flex;
   align-items: center;
@@ -15060,3 +15063,180 @@ td.cup-eliminated {
 
 
 
+.admin-squad-requests-section {
+  width: 100%;
+  box-sizing: border-box;
+  margin: 20px 0;
+  padding: 18px;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  background: #ffffff;
+}
+
+.admin-squad-requests-section[hidden] {
+  display: none;
+}
+
+.admin-squad-requests-section .profile-page-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.admin-squad-requests-section .profile-page-section-title {
+  margin: 0;
+  color: #0f172a;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+#adminSquadRequestsCount {
+  flex-shrink: 0;
+  padding: 5px 10px;
+  border-radius: 20px;
+  background: #eff6ff;
+  color: #2563eb;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.admin-squad-requests-section>p {
+  margin: 0 0 16px;
+  color: #64748b;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+#adminSquadRequestsList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  color: #64748b;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+#adminSquadRequestsList>p {
+  margin: 0;
+  padding: 16px;
+  border: 1px dashed #cbd5e1;
+  border-radius: 10px;
+  background: #f8fafc;
+  text-align: center;
+}
+
+.admin-squad-request-card {
+  padding: 16px;
+  margin-bottom: 16px;
+  border: 1px solid var(--border-color, #ddd);
+  border-radius: 12px;
+}
+
+.admin-squad-request-images {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin: 16px 0;
+}
+
+.admin-squad-image-wrapper p {
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.admin-squad-request-image {
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: contain;
+  border-radius: 8px;
+  background: #eee;
+}
+
+.admin-squad-request-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.admin-squad-request-actions button {
+  flex: 1;
+  padding: 11px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.admin-squad-request-actions button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.approve-squad-request {
+  background: #16834a;
+  color: white;
+}
+
+.reject-squad-request {
+  background: #c73535;
+  color: white;
+}
+
+.admin-squad-request-card {
+  padding: 16px;
+  margin-bottom: 16px;
+  border: 1px solid var(--border-color, #ddd);
+  border-radius: 12px;
+}
+
+.admin-squad-request-images {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin: 16px 0;
+}
+
+.admin-squad-image-wrapper p {
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.admin-squad-request-image {
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: contain;
+  border-radius: 8px;
+  background: #eee;
+}
+
+.admin-squad-request-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.admin-squad-request-actions button {
+  flex: 1;
+  padding: 11px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.admin-squad-request-actions button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.approve-squad-request {
+  background: #16834a;
+  color: white;
+}
+
+.reject-squad-request {
+  background: #c73535;
+  color: white;
+}
