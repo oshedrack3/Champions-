@@ -6757,10 +6757,18 @@ function closePaymentMethodModal() {
 }
 
 function continueWithFlutterwave() {
+  
   if (!selectedSeasonForPayment) {
     showMessage(
       "Please select a season first.",
       "error"
+    );
+    return;
+  }
+  
+  if (true) {
+    showAlert(
+      "Flutterwave payment is currently unavailable. Please use Bank Transfer instead."
     );
     return;
   }
@@ -6774,7 +6782,6 @@ function continueWithFlutterwave() {
   
   startFlutterwavePayment(tournamentId);
 }
-
 function openSelectedSeasonBankTransfer() {
   if (!selectedSeasonForPayment) {
     showMessage(
@@ -6956,62 +6963,36 @@ function showBankTransferMessage(
 }
 
 function previewBankTransferReceipt() {
-  const input = document.getElementById(
-    "srPaymentProof"
-  );
-  
-  const preview = document.getElementById(
-    "srPaymentProofPreview"
-  );
-  
-  if (!input || !preview) {
-    return;
-  }
+  const input = document.getElementById("srPaymentProof");
+  const preview = document.getElementById("srPaymentProofPreview");
   
   const file = input.files?.[0];
   
-  preview.removeAttribute("src");
-  preview.hidden = true;
+  preview.innerHTML = "";
   
-  if (!file) {
-    return;
-  }
+  if (!file) return;
   
   if (!file.type.startsWith("image/")) {
+    showMessage("Please select a valid image.", "error");
     input.value = "";
-    
-    showBankTransferMessage(
-      "Please select an image of your payment receipt."
-    );
-    
-    return;
-  }
-  
-  if (file.size > 500 * 1024) {
-    input.value = "";
-    
-    showBankTransferMessage(
-      "Your receipt image must not exceed 500 KB."
-    );
-    
     return;
   }
   
   const reader = new FileReader();
   
-  reader.onload = () => {
-    preview.src = reader.result;
-    preview.hidden = false;
-  };
-  
-  reader.onerror = () => {
-    showBankTransferMessage(
-      "Unable to preview this image. Please select it again."
-    );
+  reader.onload = e => {
+    preview.innerHTML = `
+      <img
+        src="${e.target.result}"
+        alt="Receipt preview"
+        style="max-width:100%; max-height:250px; object-fit:contain;"
+      >
+    `;
   };
   
   reader.readAsDataURL(file);
 }
+
 
 function readImageAsBase64(file) {
   return new Promise((resolve, reject) => {
