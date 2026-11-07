@@ -1205,13 +1205,17 @@ function removeBackground(file, callback) {
 
 
 function closeEditModal() {
-  editingIndex = null;
+  editingTeamId = null;
+  
   document.getElementById("editModal").classList.remove("show");
   document.getElementById("editNameInput").value = "";
   document.getElementById("editLogoInput").value = "";
+  
   const preview = document.getElementById("logoPreview");
+  
   preview.src = "";
   preview.style.display = "none";
+  
   openProfileModal();
 }
 
@@ -2380,68 +2384,81 @@ function closeProfileModal() {
 }
 
 
+
+
+
+let teamsToEdit = [];
+
 async function openEditTeam() {
   closeProfileModal();
+
   try {
-    const profile =
-      await getUserProfile();
-    
-    const teams =
-      Array.isArray(profile?.teams) ?
-      profile.teams : [];
-    
+    const profile = await getUserProfile();
+
+    const teams = Array.isArray(profile?.teams)
+      ? profile.teams
+      : [];
+
     if (!teams.length) {
-      showAlert(
-        "You don't have any team to edit"
-      );
+      showAlert("You don't have any team to edit");
       return;
     }
-    
-    if (teams.length > 1) {
-      showAlert(
-        "Please select a team to edit"
-      );
+
+    teamsToEdit = teams;
+
+    if (teams.length === 1) {
+      openTeamForEditing(teams[0].id);
       return;
     }
-    
-    const team = teams[0];
-    
-    editingIndex = 0;
-    
-    document.getElementById(
-      "editTitle"
-    ).textContent = "Edit Team";
-    
-    document.getElementById(
-        "editNameInput"
-      ).value =
-      team.name || "";
-    
-    const fileInput =
-      document.getElementById(
-        "editLogoInput"
-      );
-    
-    if (fileInput) {
-      fileInput.value = "";
-    }
-    
-    document
-      .getElementById("editModal")
-      .classList.add("show");
-    
-  } catch (error) {
-    console.error(
-      "Failed to open edit team:",
-      error
+
+    const selected = await showTeamSelectionModal(
+      teams,
+      { mode: "edit" }
     );
-    
+
+    if (!selected.length) return;
+
+    openTeamForEditing(selected[0]);
+
+  } catch (error) {
+    console.error("Failed to open edit team:", error);
+
     showAlert(
-      error.message ||
-      "Failed to load team."
+      error.message || "Failed to load team."
     );
   }
 }
 
-window.openEditTeam =
-  openEditTeam;
+function openTeamForEditing(teamId) {
+  const team = teamsToEdit.find(
+    item => String(item.id) === String(teamId)
+  );
+
+  if (!team) return;
+
+  editingTeamId = team.id;
+
+  document.getElementById(
+    "editTitle"
+  ).textContent = "Edit Team";
+
+  document.getElementById(
+    "editNameInput"
+  ).value = team.name || "";
+
+  const fileInput = document.getElementById(
+    "editLogoInput"
+  );
+
+  if (fileInput) {
+    fileInput.value = "";
+  }
+
+  document.getElementById(
+    "editModal"
+  ).classList.add("show");
+}
+
+window.openEditTeam = openEditTeam;''
+
+

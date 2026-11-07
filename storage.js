@@ -1,5 +1,6 @@
 let pairingModalMode = null;
 let pairingModalData = null;
+let editingIndex = null;
 let APP_MODE = "view";
 let myCompetitions = [];
 let currentCompetition = null;
@@ -88,6 +89,7 @@ function startGalaticoSplash() {
 }
 
 startGalaticoSplash();
+
 function openCacheDB() {
   if (cacheDBPromise) {
     return cacheDBPromise;
@@ -1247,59 +1249,79 @@ async function handleAddTeam() {
     );
   }
 }
+
 async function saveEdit() {
-  if (editingIndex === null) {
+  if (!editingTeamId) {
     showAlert("Something went wrong. Please try again");
     return;
   }
-  const newName =
-    document.getElementById("editNameInput").value.trim();
-  const fileInput =
-    document.getElementById("editLogoInput");
+  
+  const newName = document.getElementById("editNameInput").value.trim();
+  const fileInput = document.getElementById("editLogoInput");
+  
   try {
     const profile = await getUserProfile();
-    const teams =
-      Array.isArray(profile?.teams) ?
-      profile.teams : [];
-    const team = teams[editingIndex];
-    if (!team) {
+    
+    const teams = Array.isArray(profile?.teams) ?
+      profile.teams :
+      [];
+    
+    const teamIndex = teams.findIndex(
+      team => String(team.id) === String(editingTeamId)
+    );
+    
+    if (teamIndex === -1) {
       showAlert("Team not found");
       return;
     }
+    
+    const team = teams[teamIndex];
+    
     if (!newName) {
       showAlert("Team name cannot be empty");
       return;
     }
+    
     const duplicate = teams.some(
       t =>
       String(t.id) !== String(team.id) &&
-      String(t.name || "").trim().toLowerCase() ===
-      newName.toLowerCase()
+      String(t.name || "").trim().toLowerCase() === newName.toLowerCase()
     );
+    
     if (duplicate) {
       showAlert("A team with this name already exists");
       return;
     }
+    
     let logo;
+    
     if (fileInput?.files?.length) {
       const file = fileInput.files[0];
+      
       if (!file.type.startsWith("image/")) {
         showAlert("Please select an image file");
         return;
       }
+      
       logo = await fileToBase64(file, 300);
     }
+    
     showLoader();
+    
     const token = getToken();
+    
     if (!token) {
       throw new Error("You are not logged in.");
     }
+    
     const updates = {
       name: newName
     };
+    
     if (logo !== undefined) {
       updates.logo = logo;
     }
+    
     const res = await apiRequest(
       `${API}/teams/${encodeURIComponent(team.id)}`,
       {
@@ -1312,31 +1334,43 @@ async function saveEdit() {
       },
       saveEdit
     );
+    
     if (!res) {
       throw new Error("No response from server.");
     }
+    
     const result = await res.json();
+    
     if (!res.ok || !result.success) {
       throw new Error(
         result.message || "Failed to update team."
       );
     }
+    
     const updatedTeam = result.team;
+    
     if (!updatedTeam) {
       throw new Error(
         "Team updated but no team data was returned."
       );
     }
-    teams[editingIndex] = updatedTeam;
+    
+    teams[teamIndex] = updatedTeam;
     profile.teams = teams;
+    
     await saveCachedData("profile", "", profile);
+    
     closeEditModal();
+    
     if (typeof renderUserProfile === "function") {
       renderUserProfile(profile);
     }
+    
     showActionModal("✅ Team updated", "success");
+    
   } catch (err) {
     console.error("[saveEdit]", err);
+    
     showAlert(
       err.message || "Failed to update team"
     );
@@ -3211,8 +3245,8 @@ function buildTableFromTournamentPlayers(tournament) {
     tournament.tournament_players
     .filter(
       player =>
-        player &&
-        player.team_id
+      player &&
+      player.team_id
     )
     .map(player => {
       const gf =
@@ -3235,8 +3269,7 @@ function buildTableFromTournamentPlayers(tournament) {
         ga,
         gd: gf - ga,
         pts: Number(player.points) || 0,
-        has_point_deduction:
-          Number(player.has_point_deduction) === 1
+        has_point_deduction: Number(player.has_point_deduction) === 1
       };
     });
   table.sort((a, b) => {
@@ -4931,10 +4964,10 @@ function showTournamentRulesModal(
       );
     
     content.innerHTML =
-  formatTournamentRules(
-    rules || "No rules provided."
-  );
-  content.scrollTop = 0;
+      formatTournamentRules(
+        rules || "No rules provided."
+      );
+    content.scrollTop = 0;
     
     if (requireAgreement) {
       agreeBtn.style.display = "";
@@ -5522,43 +5555,42 @@ function formatTournamentRules(rules) {
 async function openFixtureSquads(match) {
   const modal = document.getElementById("fixtureSquadModal");
   const container = document.getElementById("fixtureSquadTeams");
-
+  
   if (!modal || !container) {
     showAlert("Squad viewer is unavailable.");
     return;
   }
-
+  
   const tournament = getCurrentTournament();
-
+  
   if (!tournament) {
     showAlert("Tournament not found.");
     return;
   }
-
+  
   const requestId = ++fixtureSquadRequestId;
   const tournamentId = tournament.id;
-
+  
   container.innerHTML = "";
-
+  
   const teams = [
-    {
-      id: match.home_team_id,
-      name: match.home || "Home Team",
-      logo: match.homeLogo,
-      side: "Home"
-    },
-    {
-      id: match.away_team_id,
-      name: match.away || "Away Team",
-      logo: match.awayLogo,
-      side: "Away"
-    }
-  ];
-
+  {
+    id: match.home_team_id,
+    name: match.home || "Home Team",
+    logo: match.homeLogo,
+    side: "Home"
+  },
+  {
+    id: match.away_team_id,
+    name: match.away || "Away Team",
+    logo: match.awayLogo,
+    side: "Away"
+  }];
+  
   modal.style.display = "flex";
   modal.setAttribute("aria-hidden", "false");
   document.body.style.overflow = "hidden";
-
+  
   teams.forEach(team => {
     container.appendChild(
       createFixtureSquadTeam(
@@ -5716,22 +5748,23 @@ function createFixtureSquadTeam(
   
   return section;
 }
+
 function createSquadMessage(message, isError = false) {
   const element = document.createElement("div");
-
+  
   element.className =
     `fixture-squad-message${isError ? " fixture-squad-error" : ""}`;
-
+  
   element.textContent = message;
-
+  
   return element;
 }
 
 function closeFixtureSquads() {
   const modal = document.getElementById("fixtureSquadModal");
-
+  
   if (!modal) return;
-
+  
   fixtureSquadRequestId++;
   modal.style.display = "none";
   modal.setAttribute("aria-hidden", "true");

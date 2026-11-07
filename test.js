@@ -3358,259 +3358,159 @@ function setupNoticeScrollTracking() {
 
 
 
+
 let teamSelectionResolver = null;
 let teamSelectionTeams = [];
 let selectedTeamIds = new Set();
+let teamSelectionMode = "tournament";
 
-
-function showTeamSelectionModal(
-  teams
-) {
-  return new Promise(
-    resolve => {
-      teamSelectionResolver =
-        resolve;
-      
-      teamSelectionTeams =
-        Array.isArray(teams) ?
-        teams : [];
-      
-      selectedTeamIds =
-        new Set();
-      
-      const modal =
-        document.getElementById(
-          "teamSelectionModal"
-        );
-      
-      const list =
-        document.getElementById(
-          "teamSelectionList"
-        );
-      
-      const message =
-        document.getElementById(
-          "teamSelectionMessage"
-        );
-      
-      if (!modal || !list) {
-        resolve([]);
-        return;
-      }
-      
-      const isAdmin =
-        typeof currentUser !==
-        "undefined" &&
-        currentUser?.role ===
-        "admin";
-      
-      const maxTeams =
-        isAdmin ? 20 : 1;
-      
-      message.textContent =
-        isAdmin ?
-        "Select the teams you want to use in this tournament. You can select up to 20 teams." :
-        "Select the team you want to use in this tournament.";
-      
-      list.innerHTML = "";
-      
-      teamSelectionTeams.forEach(
-        team => {
-          const teamId =
-            String(team.id);
-          
-          const item =
-            document.createElement(
-              "div"
-            );
-          
-          item.className =
-            "team-selection-item";
-          
-          item.dataset.teamId =
-            teamId;
-          
-          const logo =
-            team.logo ||
-            team.team_logo ||
-            "";
-          
-          item.innerHTML = `
-            <div class="team-selection-left">
-
-              <div class="team-selection-logo">
-                ${
-                  logo
-                    ? `<img src="${escapeHtml(logo)}" alt="">`
-                    : `<span>⚽</span>`
-                }
-              </div>
-
-              <div class="team-selection-name">
-                ${escapeHtml(
-                  team.name || "Unnamed Team"
-                )}
-              </div>
-
-            </div>
-
-            <div class="team-selection-check">
-              <input
-                type="checkbox"
-                value="${escapeHtml(teamId)}"
-              >
-            </div>
-          `;
-          
-          const checkbox =
-            item.querySelector(
-              "input"
-            );
-          
-          checkbox.addEventListener(
-            "change",
-            () => {
-              if (
-                checkbox.checked
-              ) {
-                if (
-                  selectedTeamIds.size >=
-                  maxTeams
-                ) {
-                  checkbox.checked =
-                    false;
-                  
-                  showAlert(
-                    isAdmin ?
-                    "You can select a maximum of 20 teams." :
-                    "You can select only one team."
-                  );
-                  
-                  return;
-                }
-                
-                selectedTeamIds.add(
-                  teamId
-                );
-                
-                item.classList.add(
-                  "selected"
-                );
-                
-              } else {
-                selectedTeamIds.delete(
-                  teamId
-                );
-                
-                item.classList.remove(
-                  "selected"
-                );
-              }
-            }
-          );
-          
-          item.addEventListener(
-            "click",
-            event => {
-              if (
-                event.target ===
-                checkbox
-              ) {
-                return;
-              }
-              
-              checkbox.checked = !checkbox.checked;
-              
-              checkbox.dispatchEvent(
-                new Event(
-                  "change"
-                )
-              );
-            }
-          );
-          
-          list.appendChild(
-            item
-          );
-        }
-      );
-      
-      modal.style.display =
-        "flex";
-      
-      requestAnimationFrame(
-        () => {
-          modal.classList.add(
-            "active"
-          );
-        }
-      );
+function showTeamSelectionModal(teams, options = {}) {
+  return new Promise(resolve => {
+    if (teamSelectionResolver) {
+      const previousResolve = teamSelectionResolver;
+      teamSelectionResolver = null;
+      previousResolve([]);
     }
-  );
-}
 
+    teamSelectionResolver = resolve;
+    teamSelectionMode = options.mode || "tournament";
+
+    teamSelectionTeams = Array.isArray(teams) ? teams : [];
+    selectedTeamIds = new Set();
+
+    const modal = document.getElementById("teamSelectionModal");
+    const list = document.getElementById("teamSelectionList");
+    const message = document.getElementById("teamSelectionMessage");
+    const confirmBtn = document.getElementById("confirmTeamSelectionBtn");
+
+    if (!modal || !list || !message || !confirmBtn) {
+      const pendingResolve = teamSelectionResolver;
+      teamSelectionResolver = null;
+      pendingResolve([]);
+      return;
+    }
+
+    const isEditMode = teamSelectionMode === "edit";
+
+    const isAdmin =
+      typeof currentUser !== "undefined" &&
+      currentUser?.role === "admin";
+
+    const maxTeams = isEditMode ? 1 : isAdmin ? 20 : 1;
+
+    message.textContent = isEditMode
+      ? "Select the team you want to edit."
+      : isAdmin
+        ? "Select the teams you want to use in this tournament. You can select up to 20 teams."
+        : "Select the team you want to use in this tournament.";
+
+    confirmBtn.textContent = isEditMode
+      ? "Edit Selected Team"
+      : "Join Tournament";
+
+    list.innerHTML = "";
+
+    teamSelectionTeams.forEach(team => {
+      const teamId = String(team.id);
+      const item = document.createElement("div");
+
+      item.className = "team-selection-item";
+      item.dataset.teamId = teamId;
+
+      const logo = team.logo || team.team_logo || "";
+
+      item.innerHTML = `
+        <div class="team-selection-left">
+          <div class="team-selection-logo">
+            ${
+              logo
+                ? `<img src="${escapeHtml(logo)}" alt="">`
+                : `<span>⚽</span>`
+            }
+          </div>
+          <div class="team-selection-name">
+            ${escapeHtml(team.name || "Unnamed Team")}
+          </div>
+        </div>
+        <div class="team-selection-check">
+          <input type="checkbox" value="${escapeHtml(teamId)}">
+        </div>
+      `;
+
+      const checkbox = item.querySelector("input");
+
+      checkbox.addEventListener("change", () => {
+        if (checkbox.checked) {
+          if (selectedTeamIds.size >= maxTeams) {
+            checkbox.checked = false;
+
+            showAlert(
+              isEditMode
+                ? "You can select only one team."
+                : isAdmin
+                  ? "You can select a maximum of 20 teams."
+                  : "You can select only one team."
+            );
+
+            return;
+          }
+
+          selectedTeamIds.add(teamId);
+          item.classList.add("selected");
+        } else {
+          selectedTeamIds.delete(teamId);
+          item.classList.remove("selected");
+        }
+      });
+
+      item.addEventListener("click", event => {
+        if (event.target === checkbox) return;
+
+        checkbox.checked = !checkbox.checked;
+        checkbox.dispatchEvent(new Event("change"));
+      });
+
+      list.appendChild(item);
+    });
+
+    modal.style.display = "flex";
+
+    requestAnimationFrame(() => {
+      modal.classList.add("active");
+    });
+  });
+}
 
 function confirmTeamSelection() {
-  if (
-    !selectedTeamIds.size
-  ) {
-    showAlert(
-      "Select at least one team."
-    );
-    
+  if (!selectedTeamIds.size) {
+    showAlert("Select at least one team.");
     return;
   }
-  
-  const selected =
-    Array.from(
-      selectedTeamIds
-    );
-  
+
   closeTeamSelectionModal(
-    selected
+    Array.from(selectedTeamIds)
   );
 }
 
+function closeTeamSelectionModal(selected = []) {
+  const modal = document.getElementById("teamSelectionModal");
 
-function closeTeamSelectionModal(
-  selected = []
-) {
-  const modal =
-    document.getElementById(
-      "teamSelectionModal"
-    );
-  
   if (modal) {
-    modal.classList.remove(
-      "active"
-    );
-    
-    setTimeout(
-      () => {
-        modal.style.display =
-          "none";
-      },
-      150
-    );
+    modal.classList.remove("active");
+
+    setTimeout(() => {
+      modal.style.display = "none";
+    }, 150);
   }
-  
-  if (
-    teamSelectionResolver
-  ) {
-    const resolve =
-      teamSelectionResolver;
-    
-    teamSelectionResolver =
-      null;
-    
-    teamSelectionTeams = [];
-    
-    selectedTeamIds =
-      new Set();
-    
-    resolve(
-      selected
-    );
+
+  const resolve = teamSelectionResolver;
+
+  teamSelectionResolver = null;
+  teamSelectionTeams = [];
+  selectedTeamIds = new Set();
+
+  if (resolve) {
+    resolve(selected);
   }
 }
 
