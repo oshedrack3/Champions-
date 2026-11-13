@@ -1,37 +1,37 @@
 async function generateTournament() {
   const tournament = getCurrentTournament();
-
+  
   if (!tournament) {
     return;
   }
-
+  
   const tournamentPlayers =
-    Array.isArray(tournament.tournament_players)
-      ? tournament.tournament_players
-      : [];
-
+    Array.isArray(tournament.tournament_players) ?
+    tournament.tournament_players :
+    [];
+  
   const teams =
     tournamentPlayers
-      .filter(
-        player =>
-          player.status === "accepted" &&
-          player.team_id
-      )
-      .map(
-        player => ({
-          id: player.team_id,
-          name: player.team_name,
-          logo: player.team_logo
-        })
-      );
-
+    .filter(
+      player =>
+      player.status === "accepted" &&
+      player.team_id
+    )
+    .map(
+      player => ({
+        id: player.team_id,
+        name: player.team_name,
+        logo: player.team_logo
+      })
+    );
+  
   if (teams.length < 2) {
     showAlert("❌ Add at least 2 teams");
     return;
   }
-
+  
   const settings = getTournamentSettings();
-
+  
   if (!settings.isChampionsLeague) {
     if (
       !Number.isInteger(settings.knockoutSize) ||
@@ -41,50 +41,50 @@ async function generateTournament() {
       return;
     }
   }
-
+  
   const validation =
     validateTournamentSetup(
       tournament,
       settings
     );
-
+  
   if (!validation.valid) {
     showAlert(validation.message);
     return;
   }
-
+  
   const body = {
     settings
   };
-
+  
   if (
     !settings.isChampionsLeague &&
     settings.enableGroups &&
     settings.groupingMode === "manual"
   ) {
     body.groups =
-      Array.isArray(tournament.groups)
-        ? tournament.groups
-        : [];
+      Array.isArray(tournament.groups) ?
+      tournament.groups :
+      [];
   }
-
+  
   if (
     !settings.isChampionsLeague &&
     settings.knockoutPairingMode === "manual"
   ) {
     body.manualKnockoutPairs =
-      Array.isArray(tournament.manualKnockoutPairs)
-        ? tournament.manualKnockoutPairs
-        : [];
+      Array.isArray(tournament.manualKnockoutPairs) ?
+      tournament.manualKnockoutPairs :
+      [];
   }
-
+  
   const generationRoute =
-    settings.isChampionsLeague
-      ? "generate-champions-league"
-      : "generate-cup";
-
+    settings.isChampionsLeague ?
+    "generate-champions-league" :
+    "generate-cup";
+  
   showLoader();
-
+  
   try {
     
     const res = await apiRequest(
@@ -99,16 +99,16 @@ async function generateTournament() {
       },
       generateTournament
     );
-
+    
     if (!res) {
       return;
     }
     const responseText = await res.text();
     let result = {};
     try {
-      result = responseText
-        ? JSON.parse(responseText)
-        : {};
+      result = responseText ?
+        JSON.parse(responseText) :
+        {};
     } catch {
       throw new Error(
         `Server returned an invalid response (${res.status}).`
@@ -160,79 +160,67 @@ async function generateTournament() {
 function getTournamentSettings() {
   const startFrom =
     document.getElementById("tournamentStartFrom")?.value;
-
+  
   const enableGroups =
     document.getElementById("enableGroups")?.checked || false;
-
+  
   const groupFormat =
     document.getElementById("groupFormat")?.value || "multiple";
-
+  
   const directQualifiers =
     parseInt(
       document.getElementById("directQualifiers")?.value,
       10
     ) || 0;
-
+  
   const playoffEndPosition =
     parseInt(
       document.getElementById("playoffEndPosition")?.value,
       10
     ) || 0;
-
+  
   const isChampionsLeague =
     startFrom === "group" &&
     enableGroups &&
     groupFormat === "single";
-
+  
   const playoffTeamCount =
     playoffEndPosition - directQualifiers;
-
+  
   const calculatedKnockoutSize =
     directQualifiers + playoffTeamCount / 2;
-
+  
   return {
     enableGroups,
     groupFormat,
-    groupingMode:
-      document.getElementById("groupingMode")?.value || "auto",
-    groupRoundMode:
-      document.getElementById("groupRoundMode")?.value || "single",
-    teamsPerGroup:
-      parseInt(
-        document.getElementById("teamsPerGroup")?.value,
-        10
-      ) || 4,
-    teamsQualify:
-      parseInt(
-        document.getElementById("teamsQualify")?.value,
-        10
-      ) || 2,
-    groupScheduleMode:
-      document.getElementById("groupScheduleMode")?.value || "full",
-    opponentsPerTeam:
-      parseInt(
-        document.getElementById("opponentsPerTeam")?.value,
-        10
-      ) || 0,
+    groupingMode: document.getElementById("groupingMode")?.value || "auto",
+    groupRoundMode: document.getElementById("groupRoundMode")?.value || "single",
+    teamsPerGroup: parseInt(
+      document.getElementById("teamsPerGroup")?.value,
+      10
+    ) || 4,
+    teamsQualify: parseInt(
+      document.getElementById("teamsQualify")?.value,
+      10
+    ) || 2,
+    groupScheduleMode: document.getElementById("groupScheduleMode")?.value || "full",
+    opponentsPerTeam: parseInt(
+      document.getElementById("opponentsPerTeam")?.value,
+      10
+    ) || 0,
     directQualifiers,
-    playoffStartPosition:
-      directQualifiers > 0
-        ? directQualifiers + 1
-        : 0,
+    playoffStartPosition: directQualifiers > 0 ?
+      directQualifiers + 1 :
+      0,
     playoffEndPosition,
-    playoffRoundMode:
-      document.getElementById("playoffRoundMode")?.value || "single",
+    playoffRoundMode: document.getElementById("playoffRoundMode")?.value || "single",
     isChampionsLeague,
-    knockoutSize:
-      isChampionsLeague
-        ? calculatedKnockoutSize
-        : parseInt(startFrom, 10),
-    knockoutPairingMode:
-      document.getElementById("knockoutPairingMode")?.value || "auto",
-    knockoutRoundMode:
-      document.getElementById("knockoutRoundMode")?.value || "single",
-    thirdPlaceMatch:
-      document.getElementById("thirdPlaceMatch")?.checked || false
+    knockoutSize: isChampionsLeague ?
+      calculatedKnockoutSize :
+      parseInt(startFrom, 10),
+    knockoutPairingMode: document.getElementById("knockoutPairingMode")?.value || "auto",
+    knockoutRoundMode: document.getElementById("knockoutRoundMode")?.value || "single",
+    thirdPlaceMatch: document.getElementById("thirdPlaceMatch")?.checked || false
   };
 }
 
@@ -244,25 +232,25 @@ function validateTournamentSetup(
     (tournament.tournament_players || [])
     .filter(
       player =>
-        player.status === "accepted" &&
-        player.team_id
+      player.status === "accepted" &&
+      player.team_id
     );
-
+  
   const teamCount = teams.length;
-
+  
   if (teamCount < 2) {
     return {
       valid: false,
       message: "❌ Add at least 2 teams"
     };
   }
-
+  
   if (
     settings.isChampionsLeague
   ) {
     const directQualifiers =
       Number(settings.directQualifiers);
-
+    
     const playoffEndPosition =
       Number(settings.playoffEndPosition);
     const playoffTeamCount =
@@ -307,8 +295,7 @@ function validateTournamentSetup(
     ) {
       return {
         valid: false,
-        message:
-          "The direct qualifiers and playoff winners must produce a valid knockout bracket of 2, 4, 8, 16, or 32 teams."
+        message: "The direct qualifiers and playoff winners must produce a valid knockout bracket of 2, 4, 8, 16, or 32 teams."
       };
     }
     if (
@@ -331,13 +318,13 @@ function validateTournamentSetup(
       valid: true
     };
   }
-
+  
   if (settings.enableGroups) {
     const totalGroups =
       Math.ceil(
         teamCount / settings.teamsPerGroup
       );
-
+    
     const totalQualifiers =
       totalGroups * settings.teamsQualify;
     if (
@@ -345,8 +332,7 @@ function validateTournamentSetup(
     ) {
       return {
         valid: false,
-        message:
-          `⚠️ Bracket Imbalance!\n\n` +
+        message: `⚠️ Bracket Imbalance!\n\n` +
           `Your group setup yields ${totalQualifiers} qualifying teams, ` +
           `but your bracket size requires exactly ${settings.knockoutSize}.`
       };
@@ -361,18 +347,17 @@ function validateTournamentSetup(
         message: "Select a valid tournament stage."
       };
     }
-
+    
     if (teamCount !== settings.knockoutSize) {
       return {
         valid: false,
-        message:
-          `⚠️ Team Count Mismatch!\n\n` +
+        message: `⚠️ Team Count Mismatch!\n\n` +
           `You selected a ${settings.knockoutSize}-team bracket ` +
           `but currently have ${teamCount} teams.`
       };
     }
   }
-
+  
   return {
     valid: true
   };
@@ -2062,8 +2047,7 @@ function renderGroupPairingModal(
     Array.isArray(
       data.groups
     ) ?
-    data.groups :
-    [];
+    data.groups : [];
   
   let html = "";
   
@@ -2084,8 +2068,7 @@ function renderGroupPairingModal(
       Array.isArray(
         existing.teamIds
       ) ?
-      existing.teamIds :
-      [];
+      existing.teamIds : [];
     
     html += `
       <div
@@ -2186,8 +2169,7 @@ function renderKnockoutPairingModal(
     Array.isArray(
       data.pairs
     ) ?
-    data.pairs :
-    [];
+    data.pairs : [];
   
   let html = "";
   
@@ -2677,130 +2659,130 @@ function handleKnockoutPairingModeChange() {
 function toggleGroupSettings() {
   const startFrom =
     document.getElementById("tournamentStartFrom")?.value;
-
+  
   const enableGroups =
     document.getElementById("enableGroups")?.checked;
-
+  
   const groupOptions =
     document.getElementById("groupOptions");
-
+  
   const groupStageCard =
     document.getElementById("groupStageCard");
-
+  
   const showGroupSettings =
     startFrom === "group" && enableGroups;
-
+  
   if (groupStageCard) {
     groupStageCard.style.display =
       startFrom === "group" ? "block" : "none";
   }
-
+  
   if (groupOptions) {
     groupOptions.style.display =
       showGroupSettings ? "block" : "none";
   }
-
+  
   if (showGroupSettings) {
     handleGroupFormatChange();
   } else {
     const manualGroupOptions =
       document.getElementById("manualGroupOptions");
-
+    
     if (manualGroupOptions) {
       manualGroupOptions.style.display = "none";
     }
   }
-
+  
   handleKnockoutPairingModeChange();
 }
 
 function handleGroupFormatChange() {
   const groupFormat =
     document.getElementById("groupFormat")?.value || "multiple";
-
+  
   const multipleGroupOptions =
     document.getElementById("multipleGroupOptions");
-
+  
   const championsLeagueOptions =
     document.getElementById("championsLeagueOptions");
-
+  
   const manualGroupOptions =
     document.getElementById("manualGroupOptions");
-
+  
   if (multipleGroupOptions) {
     multipleGroupOptions.style.display =
       groupFormat === "multiple" ? "block" : "none";
   }
-
+  
   if (championsLeagueOptions) {
     championsLeagueOptions.style.display =
       groupFormat === "single" ? "block" : "none";
   }
-
+  
   if (groupFormat === "single") {
     if (manualGroupOptions) {
       manualGroupOptions.style.display = "none";
     }
-
+    
     return;
   }
-
+  
   handleGroupingModeChange();
 }
 
 function handleGroupingModeChange() {
   const enableGroups =
     document.getElementById("enableGroups")?.checked;
-
+  
   const startFrom =
     document.getElementById("tournamentStartFrom")?.value;
-
+  
   const groupFormat =
     document.getElementById("groupFormat")?.value || "multiple";
-
+  
   const groupingMode =
     document.getElementById("groupingMode")?.value;
-
+  
   const manualGroupOptions =
     document.getElementById("manualGroupOptions");
-
+  
   if (!manualGroupOptions) {
     return;
   }
-
+  
   manualGroupOptions.style.display =
     enableGroups &&
     startFrom === "group" &&
     groupFormat === "multiple" &&
-    groupingMode === "manual"
-      ? "block"
-      : "none";
+    groupingMode === "manual" ?
+    "block" :
+    "none";
 }
 
 function handleKnockoutPairingModeChange() {
   const knockoutPairingMode =
     document.getElementById("knockoutPairingMode")?.value;
-
+  
   const manualKnockoutOptions =
     document.getElementById("manualKnockoutOptions");
-
+  
   if (!manualKnockoutOptions) {
     return;
   }
-
+  
   manualKnockoutOptions.style.display =
-    knockoutPairingMode === "manual"
-      ? "block"
-      : "none";
+    knockoutPairingMode === "manual" ?
+    "block" :
+    "none";
 }
 
 function toggleLimitedScheduleOptions() {
   const scheduleMode =
     document.getElementById("groupScheduleMode")?.value;
-
+  
   const limitedScheduleOptions =
     document.getElementById("limitedScheduleOptions");
-
+  
   if (limitedScheduleOptions) {
     limitedScheduleOptions.style.display =
       scheduleMode === "limited" ? "block" : "none";
@@ -3937,10 +3919,7 @@ function updateCupRoundLabel(round) {
 }
 
 function getBracketContainer() {
-  return (
-    document.getElementById("bracket-container") ||
-    document.querySelector(".bracket-layout")
-  );
+  return document.getElementById("fixtureList");
 }
 
 function getBracketMatches(
@@ -4153,223 +4132,7 @@ function createBracketColumn(
   return column;
 }
 
-function createBracketMatchCard(
-  roundMatch,
-  roundName,
-  tournament
-) {
-  const matches =
-    getBracketMatches(
-      tournament
-    );
-  const {
-    leg1,
-    leg2
-  } =
-  getKnockoutLegPair(
-    matches,
-    roundMatch.roundIndex,
-    roundMatch.slot
-  );
-  if (
-    roundName === "Final"
-  ) {
-    const finalMatch =
-      leg1 ||
-      leg2 ||
-      roundMatch.match ||
-      null;
-    return createBracketSingleMatchCard(
-      roundMatch,
-      roundName,
-      tournament,
-      finalMatch
-    );
-  }
-  const knockoutRoundMode =
-    tournament?.settings
-    ?.knockoutRoundMode ||
-    "single";
-  if (
-    knockoutRoundMode ===
-    "double"
-  ) {
-    return createBracketTwoLegMatchCard(
-      roundMatch,
-      roundName,
-      tournament,
-      leg1,
-      leg2
-    );
-  }
-  const singleMatch =
-    leg1 ||
-    leg2 ||
-    roundMatch.match ||
-    null;
-  return createBracketSingleMatchCard(
-    roundMatch,
-    roundName,
-    tournament,
-    singleMatch
-  );
-}
 
-function createBracketMatchHTML(
-  leg1,
-  leg2,
-  roundName,
-  tournament,
-  homeName,
-  awayName,
-  homeLeg1,
-  awayLeg1,
-  homeLeg2,
-  awayLeg2,
-  homeAggregate,
-  awayAggregate
-) {
-  const normalizeTeamName =
-    value => {
-      if (
-        !value ||
-        value === "BYE" ||
-        value === "Unknown Team" ||
-        value === "Awaiting Winner"
-      ) {
-        return "TBD";
-      }
-      if (
-        typeof value === "string"
-      ) {
-        const name =
-          value.trim();
-        if (
-          !name ||
-          name === "Unknown Team" ||
-          name === "Awaiting Winner" ||
-          name === "BYE"
-        ) {
-          return "TBD";
-        }
-        return name;
-      }
-      if (
-        typeof value === "object"
-      ) {
-        const name =
-          value.name?.trim();
-        if (
-          !name ||
-          name === "Unknown Team" ||
-          name === "Awaiting Winner" ||
-          name === "BYE"
-        ) {
-          return "TBD";
-        }
-        return name;
-      }
-      return "TBD";
-    };
-  const safeHomeName =
-    normalizeTeamName(
-      homeName
-    );
-  const safeAwayName =
-    normalizeTeamName(
-      awayName
-    );
-  return `
-    <div class="bracket-match-inner">
-      <div class="knockout-label">
-        ${tournament.name || "Tournament"} - ${roundName}
-      </div>
-      <div class="knockout-score-header">
-        <div class="score-team-header"></div>
-        <div class="score-header-cell">L1</div>
-        <div class="score-header-cell">L2</div>
-        <div class="score-header-cell">AG</div>
-      </div>
-      <div class="knockout-team-row home-row">
-        <div class="team-side">
-          <div class="fixture-team-logo-placeholder">
-            ?
-          </div>
-          <span class="team-name">
-            ${safeHomeName}
-          </span>
-        </div>
-        <button
-          type="button"
-          class="knockout-score-cell leg-1-score"
-        >
-          ${
-            homeLeg1 !== null
-              ? homeLeg1
-              : ""
-          }
-        </button>
-        <button
-          type="button"
-          class="knockout-score-cell leg-2-score"
-        >
-          ${
-            homeLeg2 !== null
-              ? homeLeg2
-              : ""
-          }
-        </button>
-        <span class="knockout-score-cell aggregate-score">
-          ${
-            homeLeg1 !== null ||
-            homeLeg2 !== null
-              ? homeAggregate
-              : ""
-          }
-        </span>
-      </div>
-      <div class="knockout-team-row away-row">
-        <div class="team-side">
-          <div class="fixture-team-logo-placeholder">
-            ?
-          </div>
-          <span class="team-name">
-            ${safeAwayName}
-          </span>
-        </div>
-        <button
-          type="button"
-          class="knockout-score-cell leg-1-score"
-        >
-          ${
-            awayLeg1 !== null
-              ? awayLeg1
-              : ""
-          }
-        </button>
-        <button
-          type="button"
-          class="knockout-score-cell leg-2-score"
-        >
-          ${
-            awayLeg2 !== null
-              ? awayLeg2
-              : ""
-          }
-        </button>
-        <span class="knockout-score-cell aggregate-score">
-          ${
-            awayLeg1 !== null ||
-            awayLeg2 !== null
-              ? awayAggregate
-              : ""
-          }
-        </span>
-      </div>
-      <div class="bracket-contact-area"></div>
-    </div>
-  `;
-}
 
 
 function attachBracketTeamLogos(
@@ -4511,7 +4274,7 @@ function getSideRoundCards(
 ) {
   return Array.from(
     content.querySelectorAll(
-      `.match-card[data-round-index="${roundIndex}"]`
+      `.bracket-mini-card[data-round-index="${roundIndex}"]`
     )
   );
 }
@@ -4741,7 +4504,7 @@ function renderFinalConnections(
   
   const finalCard =
     center.querySelector(
-      ".final-round-column .match-card"
+      ".final-round-column .bracket-mini-card"
     );
   
   if (!finalCard) {
@@ -4968,44 +4731,35 @@ function getBracketChampion(tournament) {
     "TBD"
   );
 }
+
+
 async function renderBracketChampion(
   container,
   tournament
 ) {
-  const champion =
-    getBracketChampion(
-      tournament
-    );
-  
-  const championIcon =
-    await getBracketChampionIcon(
-      tournament
-    );
-  
-  const box =
-    document.createElement("div");
-  
-  box.className =
-    "champion-box-container";
-  
-  box.innerHTML = `
-    <div class="champion-icon">
-      ${championIcon}
-    </div>
+  if (!container || !tournament) return;
 
-    <h4 class="champion-title">
-      CHAMPION
-    </h4>
+  const box = document.createElement("div");
+  box.className = "champion-box-container";
 
-    <div class="champion-display-box">
-      ${champion}
-    </div>
-  `;
-  
-  container.appendChild(
-    box
-  );
+  const icon = document.createElement("div");
+  icon.className = "champion-icon";
+  icon.textContent = "🏆";
+
+  const title = document.createElement("h4");
+  title.className = "champion-title";
+  title.textContent = "CHAMPION";
+
+  const display = document.createElement("div");
+  display.className = "champion-display-box";
+  display.textContent =
+    tournament.champion_name || "TBD";
+
+  box.append(icon, title, display);
+
+  container.appendChild(box);
 }
+
 
 function renderBracketEmptyState(
   container
@@ -5244,11 +4998,6 @@ async function renderFullBracket() {
         rounds
       );
     });
-    await renderBracketChampion(
-      container,
-      tournament,
-      rounds
-    );
   } catch (err) {
     console.error(
       "[renderFullBracket]",
@@ -5626,64 +5375,6 @@ function createBracketSingleMatchCard(
 }
 
 
-function createBracketSingleMatchHTML(
-  match,
-  roundName,
-  tournament,
-  homeName,
-  awayName,
-  homeGoals,
-  awayGoals
-) {
-  return `
-    <div class="single-leg-match-inner">
-      <div class="single-leg-label">
-        ${tournament.name || "Tournament"} - ${roundName}
-      </div>
-      <div class="single-leg-team-row single-leg-home-row">
-        <div class="single-leg-team-side">
-          <div class="single-leg-team-logo-placeholder">
-            ?
-          </div>
-          <span class="single-leg-team-name">
-            ${homeName || "TBD"}
-          </span>
-        </div>
-        <button
-          type="button"
-          class="single-leg-score"
-        >
-          ${
-            homeGoals !== null
-              ? homeGoals
-              : "TBD"
-          }
-        </button>
-      </div>
-      <div class="single-leg-team-row single-leg-away-row">
-        <div class="single-leg-team-side">
-          <div class="single-leg-team-logo-placeholder">
-            ?
-          </div>
-          <span class="single-leg-team-name">
-            ${awayName || "TBD"}
-          </span>
-        </div>
-        <button
-          type="button"
-          class="single-leg-score"
-        >
-          ${
-            awayGoals !== null
-              ? awayGoals
-              : "TBD"
-          }
-        </button>
-      </div>
-      <div class="single-leg-contact-area"></div>
-    </div>
-  `;
-}
 
 function getBracketTeamName(team) {
   if (
@@ -5718,13 +5409,13 @@ function getBracketTeamName(team) {
   return name;
 }
 
+
 function loadBracketTeamLogo(
   card,
   logo,
   teamName,
   selector,
-  placeholderSelector =
-  ".fixture-team-logo-placeholder"
+  placeholderSelector = ".bracket-mini-logo"
 ) {
   if (
     !logo ||
@@ -5733,32 +5424,22 @@ function loadBracketTeamLogo(
   ) {
     return;
   }
-  const teamSide =
-    card.querySelector(
-      selector
-    );
-  const placeholder =
-    teamSide?.querySelector(
-      placeholderSelector
-    );
-  if (
-    !teamSide ||
-    !placeholder
-  ) {
-    return;
-  }
-  const img =
-    document.createElement("img");
-  img.className =
-    "fixture-team-logo";
-  img.src =
-    logo;
-  img.alt =
-    teamName;
-  teamSide.replaceChild(
-    img,
-    placeholder
+  
+  const teamSide = card.querySelector(selector);
+  
+  const placeholder = teamSide?.querySelector(
+    placeholderSelector
   );
+  
+  if (!teamSide || !placeholder) return;
+  
+  const img = document.createElement("img");
+  
+  img.className = "fixture-team-logo";
+  img.src = logo;
+  img.alt = teamName;
+  
+  teamSide.replaceChild(img, placeholder);
 }
 
 
@@ -5776,7 +5457,7 @@ async function toggleBracketMode(mode) {
     fixturesView.style.display = "none";
     
     await renderFullBracket();
-
+    
     
     const tabs = document.querySelectorAll(".bracketTopActions .bracket-tab");
     if (tabs[1]) tabs[1].classList.add("active");
@@ -6072,299 +5753,6 @@ function createCupTableGroupCard(
 
 
 
-function createBracketTwoLegMatchCard(
-  roundMatch,
-  roundName,
-  tournament,
-  leg1,
-  leg2
-) {
-  const card =
-    document.createElement("div");
-  card.className =
-    "match-card";
-  card.dataset.roundIndex =
-    roundMatch.roundIndex;
-  card.dataset.slot =
-    roundMatch.slot;
-  const homeName =
-    getBracketTeamName(
-      leg1?.home ||
-      leg2?.away
-    );
-  const awayName =
-    getBracketTeamName(
-      leg1?.away ||
-      leg2?.home
-    );
-  const homeLeg1 =
-    Number.isFinite(
-      leg1?.homeGoals
-    ) ?
-    leg1.homeGoals :
-    null;
-  const awayLeg1 =
-    Number.isFinite(
-      leg1?.awayGoals
-    ) ?
-    leg1.awayGoals :
-    null;
-  const homeLeg2 =
-    Number.isFinite(
-      leg2?.awayGoals
-    ) ?
-    leg2.awayGoals :
-    null;
-  const awayLeg2 =
-    Number.isFinite(
-      leg2?.homeGoals
-    ) ?
-    leg2.homeGoals :
-    null;
-  const homeAggregate =
-    (homeLeg1 ?? 0) +
-    (homeLeg2 ?? 0);
-  const awayAggregate =
-    (awayLeg1 ?? 0) +
-    (awayLeg2 ?? 0);
-  const hasResult =
-    homeLeg1 !== null ||
-    awayLeg1 !== null ||
-    homeLeg2 !== null ||
-    awayLeg2 !== null;
-  if (!hasResult) {
-    card.classList.add(
-      "pending-match"
-    );
-  }
-  card.innerHTML =
-    createBracketMatchHTML(
-      leg1,
-      leg2,
-      roundName,
-      tournament,
-      homeName,
-      awayName,
-      homeLeg1,
-      awayLeg1,
-      homeLeg2,
-      awayLeg2,
-      homeAggregate,
-      awayAggregate
-    );
-  card.onclick = () => {
-    if (leg1) {
-      onFixtureClick(leg1);
-      return;
-    }
-    if (leg2) {
-      onFixtureClick(leg2);
-    }
-  };
-  const homeLogo =
-    leg1?.homeLogo ||
-    leg2?.awayLogo;
-  const awayLogo =
-    leg1?.awayLogo ||
-    leg2?.homeLogo;
-  if (homeLogo) {
-    loadBracketTeamLogo(
-      card,
-      homeLogo,
-      homeName,
-      ".home-row .team-side"
-    );
-  }
-  if (awayLogo) {
-    loadBracketTeamLogo(
-      card,
-      awayLogo,
-      awayName,
-      ".away-row .team-side"
-    );
-  }
-  const contactArea =
-    card.querySelector(
-      ".bracket-contact-area"
-    );
-  if (contactArea) {
-    contactArea.appendChild(
-      createBracketContactButton(
-        leg1 || leg2
-      )
-    );
-  }
-  const leg1Buttons =
-    card.querySelectorAll(
-      ".leg-1-score"
-    );
-  leg1Buttons.forEach(
-    button => {
-      button.onclick =
-        event => {
-          event.stopPropagation();
-          if (!leg1) {
-            return;
-          }
-          onFixtureClick(
-            leg1
-          );
-        };
-    }
-  );
-  const leg2Buttons =
-    card.querySelectorAll(
-      ".leg-2-score"
-    );
-  leg2Buttons.forEach(
-    button => {
-      button.onclick =
-        event => {
-          event.stopPropagation();
-          if (!leg2) {
-            return;
-          }
-          onFixtureClick(
-            leg2
-          );
-        };
-    }
-  );
-  return card;
-}
-function createBracketSingleMatchCard(
-  roundMatch,
-  roundName,
-  tournament,
-  match
-) {
-  const card =
-    document.createElement("div");
-  card.className =
-    "match-card single-leg-match-card";
-  card.dataset.roundIndex =
-    roundMatch.roundIndex;
-  card.dataset.slot =
-    roundMatch.slot;
-  const rawHomeName =
-    getBracketTeamName(
-      match?.home
-    );
-  const rawAwayName =
-    getBracketTeamName(
-      match?.away
-    );
-  const homeName =
-    rawHomeName &&
-    rawHomeName !== "BYE" ?
-    rawHomeName :
-    "TBD";
-  const awayName =
-    rawAwayName &&
-    rawAwayName !== "BYE" ?
-    rawAwayName :
-    "TBD";
-  const homeGoals =
-    match?.homeGoals !== null &&
-    match?.homeGoals !== undefined &&
-    match?.homeGoals !== "" ?
-    Number(match.homeGoals) :
-    null;
-  const awayGoals =
-    match?.awayGoals !== null &&
-    match?.awayGoals !== undefined &&
-    match?.awayGoals !== "" ?
-    Number(match.awayGoals) :
-    null;
-  const validHomeGoals =
-    Number.isFinite(homeGoals) ?
-    homeGoals :
-    null;
-  const validAwayGoals =
-    Number.isFinite(awayGoals) ?
-    awayGoals :
-    null;
-  const hasResult =
-    validHomeGoals !== null &&
-    validAwayGoals !== null;
-  if (!hasResult) {
-    card.classList.add(
-      "pending-match"
-    );
-  }
-  card.innerHTML =
-    createBracketSingleMatchHTML(
-      match,
-      roundName,
-      tournament,
-      homeName,
-      awayName,
-      validHomeGoals,
-      validAwayGoals
-    );
-  card.onclick = () => {
-    if (!match) {
-      return;
-    }
-    onFixtureClick(
-      match
-    );
-  };
-  if (
-    match?.homeLogo &&
-    homeName !== "TBD"
-  ) {
-    loadBracketTeamLogo(
-      card,
-      match.homeLogo,
-      homeName,
-      ".single-leg-home-row .single-leg-team-side",
-      ".single-leg-team-logo-placeholder"
-    );
-  }
-  if (
-    match?.awayLogo &&
-    awayName !== "TBD"
-  ) {
-    loadBracketTeamLogo(
-      card,
-      match.awayLogo,
-      awayName,
-      ".single-leg-away-row .single-leg-team-side",
-      ".single-leg-team-logo-placeholder"
-    );
-  }
-  const contactArea =
-    card.querySelector(
-      ".single-leg-contact-area"
-    );
-  if (contactArea) {
-    contactArea.appendChild(
-      createBracketContactButton(
-        match
-      )
-    );
-  }
-  const scoreButtons =
-    card.querySelectorAll(
-      ".single-leg-score"
-    );
-  scoreButtons.forEach(
-    button => {
-      button.onclick =
-        event => {
-          event.stopPropagation();
-          if (!match) {
-            return;
-          }
-          onFixtureClick(
-            match
-          );
-        };
-    }
-  );
-  return card;
-}
 
 function getCupRoundOptions() {
   const tournament =
@@ -6372,12 +5760,11 @@ function getCupRoundOptions() {
   if (!tournament) return [];
   const fixtures =
     tournament.fixtures ||
-    tournament.matches ||
-    [];
+    tournament.matches || [];
   const settings =
-    typeof tournament.settings === "string"
-      ? JSON.parse(tournament.settings || "{}")
-      : tournament.settings || {};
+    typeof tournament.settings === "string" ?
+    JSON.parse(tournament.settings || "{}") :
+    tournament.settings || {};
   const isSingleGroup =
     settings.tournamentMode === "champions_league" ||
     (
@@ -6409,8 +5796,8 @@ function getCupRoundOptions() {
   const playoffMatches =
     fixtures.filter(
       match =>
-        match.match_type === "knockout" &&
-        String(match.round || "").toLowerCase() === "playoff"
+      match.match_type === "knockout" &&
+      String(match.round || "").toLowerCase() === "playoff"
     );
   const playoffLegs = [
     ...new Set(
@@ -6425,10 +5812,9 @@ function getCupRoundOptions() {
         id: `playoff:${leg}`,
         type: "playoff",
         leg,
-        label:
-          playoffLegs.length > 1
-            ? `Playoffs - Leg ${leg}`
-            : "Playoffs"
+        label: playoffLegs.length > 1 ?
+          `Playoffs - Leg ${leg}` :
+          "Playoffs"
       })
     );
   const groupMatches =
@@ -6438,15 +5824,15 @@ function getCupRoundOptions() {
   const leagueRounds = [
     ...new Set(
       groupMatches
-        .map(match => {
-          const result =
-            String(match.round || "")
-              .match(/Round\s+(\d+)/i);
-          return result
-            ? Number(result[1])
-            : null;
-        })
-        .filter(Number.isFinite)
+      .map(match => {
+        const result =
+          String(match.round || "")
+          .match(/Round\s+(\d+)/i);
+        return result ?
+          Number(result[1]) :
+          null;
+      })
+      .filter(Number.isFinite)
     )
   ].sort((a, b) => a - b);
   options.push(
@@ -6461,6 +5847,7 @@ function getCupRoundOptions() {
   );
   return options;
 }
+
 function getCupRound() {
   const tournament =
     getCurrentTournament();
@@ -6476,9 +5863,11 @@ function getCupRound() {
     getCupRoundOptions();
   return options[0]?.id || "group:1";
 }
+
 function getMaxCupRound() {
   return getCupRoundOptions().length;
 }
+
 function setCupRound(roundId) {
   const tournament =
     getCurrentTournament();
@@ -6488,6 +5877,7 @@ function setCupRound(roundId) {
     String(roundId)
   );
 }
+
 function nextCupRound() {
   const options =
     getCupRoundOptions();
@@ -6508,6 +5898,7 @@ function nextCupRound() {
   );
   renderCupFixtures();
 }
+
 function prevCupRound() {
   const options =
     getCupRoundOptions();
@@ -6523,6 +5914,7 @@ function prevCupRound() {
   );
   renderCupFixtures();
 }
+
 function updateCupRoundLabel(round) {
   const roundLabel =
     document.getElementById("cupRoundLabel");
@@ -6544,30 +5936,29 @@ function updateCupRoundLabel(round) {
 function getCupRoundOptions() {
   const tournament = getCurrentTournament();
   if (!tournament) return [];
-
+  
   const fixtures =
     tournament.fixtures ||
-    tournament.matches ||
-    [];
-
+    tournament.matches || [];
+  
   const settings =
-    typeof tournament.settings === "string"
-      ? JSON.parse(tournament.settings || "{}")
-      : tournament.settings || {};
-
+    typeof tournament.settings === "string" ?
+    JSON.parse(tournament.settings || "{}") :
+    tournament.settings || {};
+  
   const isSingleGroup =
     settings.tournamentMode === "champions_league" ||
     (
       settings.isChampionsLeague === true &&
       settings.groupFormat === "single"
     );
-
+  
   const playoffMatches = fixtures.filter(
     match =>
-      match.match_type === "knockout" &&
-      String(match.round || "").trim().toLowerCase() === "playoff"
+    match.match_type === "knockout" &&
+    String(match.round || "").trim().toLowerCase() === "playoff"
   );
-
+  
   const playoffLegs = [
     ...new Set(
       playoffMatches.map(
@@ -6575,76 +5966,76 @@ function getCupRoundOptions() {
       )
     )
   ].sort((a, b) => a - b);
-
+  
   const playoffOptions = playoffLegs.map(
     leg => ({
       id: `playoff:${leg}`,
       type: "playoff",
       leg,
-      label:
-        playoffLegs.length > 1
-          ? `Playoffs - Leg ${leg}`
-          : "Playoffs"
+      label: playoffLegs.length > 1 ?
+        `Playoffs - Leg ${leg}` :
+        "Playoffs"
     })
   );
-
+  
   const groupMatches = fixtures.filter(
     match => match.match_type === "group"
   );
-
+  
   const getRoundNumber = match => {
     const round = String(match.round || "");
-
+    
     const matchday =
       round.match(/Matchday\s+(\d+)/i);
-
+    
     if (matchday) {
       return Number(matchday[1]);
     }
-
+    
     const roundMatch =
       round.match(/Round\s+(\d+)/i);
-
+    
     if (roundMatch) {
       return Number(roundMatch[1]);
     }
-
+    
     const numericRound = Number(round);
-
+    
     return Number.isFinite(numericRound) &&
-      numericRound > 0
-      ? numericRound
-      : null;
+      numericRound > 0 ?
+      numericRound :
+      null;
   };
-
+  
   const leagueRounds = [
     ...new Set(
       groupMatches
-        .map(getRoundNumber)
-        .filter(Number.isFinite)
+      .map(getRoundNumber)
+      .filter(Number.isFinite)
     )
   ].sort((a, b) => a - b);
-
+  
   const groupOptions = leagueRounds.map(
     round => ({
       id: `group:${round}`,
       type: "group",
       round,
-      label: isSingleGroup
-        ? `League Phase - Round ${round}`
-        : `Matchday ${round}`
+      label: isSingleGroup ?
+        `League Phase - Round ${round}` :
+        `Matchday ${round}`
     })
   );
-
+  
   if (isSingleGroup) {
     return [
       ...playoffOptions,
       ...groupOptions
     ];
   }
-
+  
   return groupOptions;
 }
+
 function getCupRound() {
   const tournament = getCurrentTournament();
   if (!tournament) return null;
@@ -6717,8 +6108,7 @@ async function renderCupFixtures() {
       match =>
       match.match_type === "knockout" &&
       String(match.round || "").trim().toLowerCase() === "playoff"
-    ) :
-    [];
+    ) : [];
   const playoffLegs = [
       ...new Set(
         playoffMatches.map(match => Number(match.leg || 1))
@@ -6731,8 +6121,7 @@ async function renderCupFixtures() {
     type: "playoff",
     leg,
     label: playoffLegs.length > 1 ?
-      `Playoffs - Leg ${leg}` :
-      "Playoffs"
+      `Playoffs - Leg ${leg}` : "Playoffs"
   }));
   const leagueRounds = [
     ...new Set(
@@ -6749,8 +6138,7 @@ async function renderCupFixtures() {
       type: "group",
       round,
       label: isSingleGroup ?
-        `League Phase - Round ${round}` :
-        `Round ${round}`
+        `League Phase - Round ${round}` : `Round ${round}`
     }))
   ];
   if (!availableRounds.length) {
@@ -6943,6 +6331,7 @@ function renderCupTableGroup(
   }
   container.appendChild(groupCard);
 }
+
 function renderCupTableRow(
   tbody,
   tournament,
@@ -7084,8 +6473,7 @@ function readTournamentSettings(tournament) {
     }
   }
   return settings && typeof settings === "object" ?
-    settings :
-    {};
+    settings : {};
 }
 
 
@@ -7209,3 +6597,347 @@ async function renderCupTables() {
   });
 }
 
+function createBracketMatchCard(
+  roundMatch,
+  roundName,
+  tournament
+) {
+  const matches = getBracketMatches(tournament);
+  
+  const { leg1, leg2 } = getKnockoutLegPair(
+    matches,
+    roundMatch.roundIndex,
+    roundMatch.slot
+  );
+  
+  const mode =
+    tournament?.settings?.knockoutRoundMode || "single";
+  
+  const isDouble =
+    roundName !== "Final" && mode === "double";
+  
+  const match =
+    leg1 ||
+    leg2 ||
+    roundMatch.match ||
+    null;
+  
+  const homeName = getBracketTeamName(
+    isDouble ?
+    leg1?.home || leg2?.away :
+    match?.home
+  );
+  
+  const awayName = getBracketTeamName(
+    isDouble ?
+    leg1?.away || leg2?.home :
+    match?.away
+  );
+  
+  const card = document.createElement("button");
+  
+  card.type = "button";
+  card.className = "bracket-mini-card";
+  
+  card.dataset.roundIndex = roundMatch.roundIndex;
+  card.dataset.slot = roundMatch.slot;
+  
+  const homeLogo = isDouble ?
+    leg1?.homeLogo || leg2?.awayLogo :
+    match?.homeLogo;
+  
+  const awayLogo = isDouble ?
+    leg1?.awayLogo || leg2?.homeLogo :
+    match?.awayLogo;
+  
+  const homeTeam = document.createElement("div");
+  homeTeam.className = "bracket-mini-team";
+  
+  const awayTeam = document.createElement("div");
+  awayTeam.className = "bracket-mini-team";
+  
+  const homePlaceholder = document.createElement("span");
+  homePlaceholder.className = "bracket-mini-logo";
+  homePlaceholder.textContent = "?";
+  
+  const awayPlaceholder = document.createElement("span");
+  awayPlaceholder.className = "bracket-mini-logo";
+  awayPlaceholder.textContent = "?";
+  
+  homeTeam.appendChild(homePlaceholder);
+  awayTeam.appendChild(awayPlaceholder);
+  
+  card.append(homeTeam, awayTeam);
+  const loserTeamId = getKnockoutLoserTeamId(
+  leg1,
+  leg2,
+  match,
+  isDouble
+);
+
+const homeTeamId = isDouble ?
+  leg1?.home_team_id || leg2?.away_team_id :
+  match?.home_team_id;
+
+const awayTeamId = isDouble ?
+  leg1?.away_team_id || leg2?.home_team_id :
+  match?.away_team_id;
+
+if (loserTeamId) {
+  if (homeTeamId === loserTeamId) {
+    homeTeam.classList.add("is-loser");
+  }
+  
+  if (awayTeamId === loserTeamId) {
+    awayTeam.classList.add("is-loser");
+  }
+}
+  
+  if (homeLogo) {
+    loadBracketTeamLogo(
+      card,
+      homeLogo,
+      homeName,
+      ".bracket-mini-team:first-child"
+    );
+  }
+  
+  if (awayLogo) {
+    loadBracketTeamLogo(
+      card,
+      awayLogo,
+      awayName,
+      ".bracket-mini-team:last-child"
+    );
+  }
+  
+  card.setAttribute(
+    "aria-label",
+    `${homeName} versus ${awayName}`
+  );
+  
+  card.onclick = () => {
+    openBracketMatchModal({
+      tournament,
+      roundName,
+      leg1: isDouble ? leg1 : null,
+      leg2: isDouble ? leg2 : null,
+      match: isDouble ? null : match
+    });
+  };
+  
+  return card;
+}
+
+
+function openBracketMatchModal({
+  tournament,
+  roundName,
+  match,
+  leg1,
+  leg2
+}) {
+  const existing = document.getElementById(
+    "bracketMatchModal"
+  );
+
+  if (existing) existing.remove();
+
+  const modal = document.createElement("div");
+
+  modal.id = "bracketMatchModal";
+  modal.className = "bracket-match-modal";
+
+  const content = document.createElement("div");
+  content.className = "bracket-match-modal-content";
+
+  const header = document.createElement("div");
+  header.className = "bracket-match-modal-header";
+
+  const title = document.createElement("strong");
+  title.textContent = roundName.toUpperCase();
+
+  const closeButton = document.createElement("button");
+  closeButton.type = "button";
+  closeButton.className = "bracket-match-modal-close";
+  closeButton.innerHTML = "&times;";
+  closeButton.setAttribute("aria-label", "Close");
+
+  header.append(title, closeButton);
+
+  const body = document.createElement("div");
+  body.className = "bracket-match-modal-body";
+
+  if (match) {
+    const fixtureCard = createFixtureCard(
+      tournament,
+      match
+    );
+
+    body.appendChild(fixtureCard);
+
+    fixtureCard.querySelector(".fixture-main")?.click();
+  } else {
+    const homeName = getBracketTeamName(
+      leg1?.home || leg2?.away
+    );
+
+    const awayName = getBracketTeamName(
+      leg1?.away || leg2?.home
+    );
+
+    const homeAggregate =
+      (Number(leg1?.homeGoals) || 0) +
+      (Number(leg2?.awayGoals) || 0);
+
+    const awayAggregate =
+      (Number(leg1?.awayGoals) || 0) +
+      (Number(leg2?.homeGoals) || 0);
+
+    const hasResult =
+      leg1?.homeGoals !== null &&
+      leg1?.homeGoals !== undefined &&
+      leg1?.awayGoals !== null &&
+      leg1?.awayGoals !== undefined ||
+      leg2?.homeGoals !== null &&
+      leg2?.homeGoals !== undefined &&
+      leg2?.awayGoals !== null &&
+      leg2?.awayGoals !== undefined;
+
+    const aggregate = document.createElement("div");
+    aggregate.className = "bracket-modal-aggregate";
+
+    aggregate.innerHTML = `
+      <span>${homeName}</span>
+      <strong>
+        ${hasResult
+          ? `${homeAggregate} - ${awayAggregate}`
+          : "X"}
+      </strong>
+      <span>${awayName}</span>
+      <small>AGGREGATE SCORE</small>
+    `;
+
+    body.appendChild(aggregate);
+
+    [
+      { match: leg1, label: "LEG 1" },
+      { match: leg2, label: "LEG 2" }
+    ].forEach(({ match: legMatch, label }) => {
+      const section = document.createElement("div");
+
+      const heading = document.createElement("div");
+      heading.className = "bracket-modal-leg-heading";
+      heading.textContent = label;
+
+      section.appendChild(heading);
+
+      if (legMatch) {
+        const fixtureCard = createFixtureCard(
+          tournament,
+          legMatch
+        );
+
+        section.appendChild(fixtureCard);
+
+        fixtureCard.querySelector(".fixture-main")?.click();
+      } else {
+        const unavailable = document.createElement("div");
+        unavailable.className = "bracket-modal-leg-empty";
+        unavailable.textContent = "Match not scheduled";
+        section.appendChild(unavailable);
+      }
+
+      body.appendChild(section);
+    });
+  }
+
+  content.append(header, body);
+  modal.appendChild(content);
+
+  document.body.appendChild(modal);
+
+  function closeModal() {
+    modal.remove();
+    document.removeEventListener("keydown", handleKeydown);
+  }
+
+  function handleKeydown(event) {
+    if (event.key === "Escape") {
+      closeModal();
+    }
+  }
+
+  closeButton.onclick = closeModal;
+
+  modal.addEventListener("click", event => {
+    if (event.target === modal) {
+      closeModal();
+    }
+  });
+
+  document.addEventListener("keydown", handleKeydown);
+}
+
+function getKnockoutLoserTeamId(
+  leg1,
+  leg2,
+  match,
+  isDouble
+) {
+  if (!isDouble) {
+    if (!match || !Number(match.played)) {
+      return null;
+    }
+    
+    const winnerId = match.winner_team_id;
+    
+    if (!winnerId) return null;
+    
+    return winnerId === match.home_team_id ?
+      match.away_team_id :
+      winnerId === match.away_team_id ?
+      match.home_team_id :
+      null;
+  }
+  
+  if (
+    !leg1 ||
+    !leg2 ||
+    !Number(leg1.played) ||
+    !Number(leg2.played)
+  ) {
+    return null;
+  }
+  
+  const homeId = leg1.home_team_id;
+  const awayId = leg1.away_team_id;
+  
+  if (!homeId || !awayId) return null;
+  
+  const scores = {
+    [homeId]: 0,
+    [awayId]: 0
+  };
+  
+  scores[leg1.home_team_id] += Number(leg1.home_score);
+  scores[leg1.away_team_id] += Number(leg1.away_score);
+  
+  scores[leg2.home_team_id] += Number(leg2.home_score);
+  scores[leg2.away_team_id] += Number(leg2.away_score);
+  
+  if (scores[homeId] > scores[awayId]) {
+    return awayId;
+  }
+  
+  if (scores[awayId] > scores[homeId]) {
+    return homeId;
+  }
+  
+  const winnerId = leg2.winner_team_id;
+  
+  if (winnerId === homeId) return awayId;
+  if (winnerId === awayId) return homeId;
+  
+  return null;
+}

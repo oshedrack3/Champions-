@@ -10,12 +10,10 @@ const PAGES = [
   "fixturePageHead",
   "nav",
   "cupHome",
-  "customDropdown",
   "cupTab",
   "teamView",
   "authPage",
   "listOfTournamentPage",
-  "tourListPageHead",
   "compPageHead",
   "competitionPage",
   "notificationPanel",
@@ -97,11 +95,19 @@ function showActionModal(message, type = "") {
   setTimeout(() => modal.classList.remove("show"), 1200);
 }
 
+function leaveHome() {
+  ["mySection", "galaticoGlow", "noticeSection"].forEach(id => {
+    document.getElementById(id)?.style.setProperty("display", "none");
+  });
+}
+
 function goBackHome() {
-  backToGlobalRankings()
-  closeProfileModal();
-  closeHallOfFame();
-  closeGlobalRankings();
+  document.getElementById("noticeSection").style.display="none";
+  renderNotices();
+ backToGlobalRankings()
+closeProfileModal();
+closeHallOfFame();
+closeGlobalRankings();
 }
 const homepageNavButtons = document.querySelectorAll("#homepageNav .homepage-nav-btn");
 
@@ -297,6 +303,9 @@ function setActiveNav(buttonId) {
   document.getElementById(buttonId)?.classList.add("active");
 }
 
+function checkLive() {
+  checkLiveBroadcast(true);
+}
 
 function openLeagueRecorder(match) {
   if (!match) return;
@@ -399,52 +408,7 @@ logoInput.addEventListener("change", function() {
 
 
 function toggleView(view) {
-  const tableView = document.getElementById("tableView");
-  const formView = document.getElementById("formView");
-  const recordsView = document.getElementById("recordsView");
-  const teamView = document.getElementById("teamView");
-  
-  const views = [tableView, formView, recordsView, teamView];
-  
-  views.forEach(v => {
-    if (!v) return;
-    v.style.display = "none";
-  });
-  
-  document.querySelectorAll(".btn-tablePage button").forEach(btn => {
-    btn.classList.remove("active");
-  });
-  
-  const activeBtn =
-    document.querySelector(`[data-view="${view}"]`) ||
-    document.getElementById(`${view}Btn`);
-  
-  if (activeBtn) activeBtn.classList.add("active");
-  
-  currentView = view;
-  
-  let activeView = null;
-  
-  if (view === "table") {
-    activeView = tableView;
-    updateDropdownLabel("table")
-  } else if (view === "form") {
-    activeView = formView;
-    renderFormView();
-    updateDropdownLabel("forms")
-  } else if (view === "records") {
-    activeView = recordsView;
-    renderRecords();
-    updateDropdownLabel("records")
-  } else if (view === "team") {
-    activeView = teamView;
-    renderTeams();
-    updateDropdownLabel("teams")
-  }
-  
-  if (!activeView) return;
-  
-  activeView.style.display = "block";
+  return;
 }
 
 function closeDateResetModal() {
@@ -483,6 +447,9 @@ function handleMenuAction(action) {
   closeMenu();
   
   const actions = {
+    shareTable: shareTable,
+    shareFixtures: shareFixtures,
+    checklive: checkLive,
     paymentHistory: openPaymentHistoryPage,
     registerSeason: openSeasonRegistration,
     seasonend: showSeasonKeyInputModal,
@@ -574,12 +541,6 @@ const menuConfig = {
     
     /*
     {
-      label: "Setup POTS Tournaments",
-      action: "openPOTS",
-      roles: ["admin"]
-    },
-    
-    {
       label: "Share POTS Ranking",
       action: "sharePOTS",
       roles: ["admin", "player"]
@@ -588,236 +549,142 @@ const menuConfig = {
   ],
   
   tournaments: [
-    
-    {
-      label: "Open Tournament",
-      action: "openTournament",
-      roles: ["admin", "player"]
-    },
-    
-    {
-      label: "Create New Tournament",
-      action: "createTournament",
-      roles: ["admin"]
-    },
-    
-    {
-      label: "Import Tournament",
-      action: "importTournament",
-      roles: ["admin"]
-    },
-    
-    {
-      label: "Export Tournament",
-      action: "enableExportMode",
-      roles: ["admin"]
-    },
-    
-    {
-      label: "Delete Tournament",
-      action: "deleteTournament",
-      roles: ["admin"]
-    },
-    
-    {
-      label: "Setup POTS Tournaments",
-      action: "openPOTS",
-      roles: ["admin"]
-    },
-    
-    {
-      label: "Share POTS Ranking",
-      action: "sharePOTS",
-      roles: ["admin", "player"]
-    }
-    
-  ],
+  {
+    label: "Join Tournament",
+    action: "joinTour",
+    roles: ["admin", "player"]
+  },
+  {
+    label: "View Rules and Regulations",
+    action: "viewRules",
+    roles: ["admin", "player"]
+  },
+  {
+    label: "Import Teams",
+    action: "importTeams",
+    roles: ["admin"]
+  },
+  {
+    label: "Set Deadline",
+    action: "deadlineEdit",
+    roles: ["admin"]
+  },
+  {
+    label: "Transactions & Revenue",
+    action: "paymentHistory",
+    roles: ["admin", "player"]
+  },
+  {
+    label: "Point Deduction Section",
+    action: "enforceRule",
+    roles: ["admin"]
+  },
+  {
+    label: "See Point Deductions",
+    action: "reverseRule",
+    roles: ["admin", "player"]
+  }],
   
   league: [
-    
-    {
-      label: "Invite Player",
-      action: "inviteplayer",
-      roles: ["admin"]
-    },
-    
-    {
-      label: "Join Tournament",
-      action: "joinTour",
-      roles: ["admin", "player"]
-    },
-    
-    {
-      label: "Import Teams",
-      action: "importTeams",
-      roles: ["admin"]
-    },
-    
     {
       label: "Edit or Delete Team",
       action: "deleteTeam",
       roles: ["admin"]
     },
     {
-      label: "View Rules and Regulations",
-      action: "viewRules",
-      roles: ["admin", "player"],
-      
-    },
-    {
-      label: "Point Deduction Section",
-      action: "enforceRule",
-      roles: ["admin"]
-      
-    },
-    {
-      label: "See Point Deductions",
-      action: "reverseRule",
-      roles: ["admin", "player"]
-      
-    },
-    {
-      label: "Transactions & Revenue",
-      action: "paymentHistory",
-      roles: ["admin", "player"]
-    }
-    
-  ],
-  group: [
-    {
-      label: "Set Deadline",
-      action: "deadlineEdit",
-      roles: ["admin"]
-    },
-    
-    {
-      label: "Share Group Matches",
-      action: "shareCup",
-      roles: ["admin"]
-    },
-    /*
-    {
-      label: "Register Your Teams",
-      action: "addTeam",
-      roles: ["admin", "player"]
-    },
-    
-    {
-      label: "Import Teams",
-      action: "importTeams",
-      roles: ["admin"]
-    },
-    
-    {
-      label: "Edit or Delete Team",
-      action: "deleteTeam",
-      roles: ["admin"]
-    }
-    */
-  ],
-  bracket: [
-    {
-      label: "Set Deadline",
-      action: "deadlineEdit",
-      roles: ["admin"]
-    },
-    {
-      label: "Join Tournament",
-      action: "joinTour",
-      roles: ["admin", "player"]
-    },
-    
-    {
-      label: "Share Bracket",
-      action: "shareBracket",
-      roles: ["admin"]
-    },
-    
-    {
-      label: "Share Knockout matches",
-      action: "shareKnockout",
-      roles: ["admin"]
-    },
-    
-    {
-      label: "See Cup Fixtures",
-      action: "toggleBracketFixture",
-      roles: ["admin"]
-    },
-    
-    {
-      label: "View Full Bracket",
-      action: "toggleBracketBracket",
+      label: "Share Standing",
+      action: "shareTable",
       roles: ["admin"]
     }
     
   ],
+  
   fixture: [
-    
-    {
-      label: "Generate New Fixture",
-      action: "createFixture",
-      roles: ["admin"]
-    },
-    {
-      label: "Set Deadline",
-      action: "deadlineEdit",
-      roles: ["admin"]
-    },
-    {
-      label: "Change Played Match Date",
-      action: "dateEdit",
-      roles: ["admin"]
-    },
-    {
-      label: "Import Teams",
-      action: "importTeams",
-      roles: ["admin"]
-    }
-    
-    
-    
-  ],
+  {
+    label: "Generate New Fixture",
+    action: "createFixture",
+    roles: ["admin"]
+  },
+  {
+    label: "Share Fixture",
+    action: "shareFixtures",
+    roles: ["admin"]
+  }],
   
   cup: [
-    
-    {
-      label: "Start New Tournament",
-      action: "newCup",
-      roles: ["admin"]
-    },
-    {
-      label: "Join Tournament",
-      action: "joinTour",
-      roles: ["admin", "player"]
-    },
-    {
-      label: "View Rules and Regulations",
-      action: "viewRules",
-      roles: ["admin", "player"]
-    },
-    
-    {
-      label: "Import Teams",
-      action: "importTeams",
-      roles: ["admin"]
-    },
-    /*
-    {
-      label: "Delete or Edit Team",
-      action: "deleteCupTeam",
-      roles: ["admin", "player"]
-    },
-    */
-    {
-      label: "Share Group Table",
-      action: "shareGroupTable",
-      roles: ["admin"]
-    }
-    
-  ]
+  {
+    label: "Start New Tournament",
+    action: "newCup",
+    roles: ["admin"]
+  },
+  {
+    label: "Share Group Table",
+    action: "shareGroupTable",
+    roles: ["admin"]
+  }],
   
+  group: [
+  {
+    label: "Share Group Matches",
+    action: "shareCup",
+    roles: ["admin"]
+  }],
+  
+  bracket: [
+  {
+    label: "Share Bracket",
+    action: "shareBracket",
+    roles: ["admin"]
+  },
+  {
+    label: "Share Knockout Matches",
+    action: "shareKnockout",
+    roles: ["admin"]
+  },
+  {
+    label: "See Cup Fixtures",
+    action: "toggleBracketFixture",
+    roles: ["admin"]
+  },
+  {
+    label: "View Full Bracket",
+    action: "toggleBracketBracket",
+    roles: ["admin"]
+  }],
+  
+  tournamentManagement: [
+  {
+    label: "Create New Tournament",
+    action: "createTournament",
+    roles: ["admin"]
+  },
+  {
+    label: "Import Tournament",
+    action: "importTournament",
+    roles: ["admin"]
+  },
+  {
+    label: "Export Tournament",
+    action: "enableExportMode",
+    roles: ["admin"]
+  },
+  {
+    label: "Delete Tournament",
+    action: "deleteTournament",
+    roles: ["admin"]
+  },
+  {
+    label: "Setup POTS Tournaments",
+    action: "openPOTS",
+    roles: ["admin"]
+  },
+  {
+    label: "Share POTS Ranking",
+    action: "sharePOTS",
+    roles: ["admin", "player"]
+  }]
 };
+
 
 function renderMenu() {
   const menu = document.getElementById("sideMenu");
@@ -825,47 +692,81 @@ function renderMenu() {
   if (!menu) return;
   
   const role = APP_MODE || "view";
+  const isCompetition = currentPage === "competition";
+  const isLeague = currentTournament?.format?.toLowerCase() === "league";
   
-  const items = (menuConfig[currentPage] || []).filter(item => {
-    
-    if (!item.roles || item.roles.length === 0) {
-      return true;
-    }
-    
-    return item.roles.includes(role);
-    
-  });
+  const filterItems = items => items.filter(item =>
+    !item.roles || item.roles.length === 0 || item.roles.includes(role)
+  );
   
-  menu.innerHTML = `
-    <div class="menu-header">
-      ${currentPage ? currentPage.toUpperCase() : "MENU"}
-    </div>
-
-    ${items.map(item => `
-      <button
-        class="menu-item"
-        onclick="handleMenuAction('${item.action}')">
-        ${item.label}
-      </button>
-    `).join("")}
-
-    <button
-      class="btn-logout"
-      style="display:none"
-      onclick="handleLogout()">
-      Logout
+  const standalone = filterItems(
+    menuConfig[isCompetition ? "competition" : "tournaments"] || []
+  );
+  
+  const groups = isLeague ?
+    [
+      { key: "league", label: "League" },
+      { key: "fixture", label: "Fixtures" }
+    ] :
+    [
+      { key: "cup", label: "Cup" },
+      { key: "group", label: "Groups" },
+      { key: "bracket", label: "Knockout" }
+    ];
+  
+  if (role === "admin") {
+    groups.push({
+      key: "tournamentManagement",
+      label: "Tournament Management"
+    });
+  }
+  
+  const renderItem = item => `
+    <button class="menu-item" onclick="handleMenuAction('${item.action}')">
+      ${item.label}
     </button>
   `;
   
-  const logoutBtn = menu.querySelector(".btn-logout");
+  const renderGroup = group => {
+    const items = filterItems(menuConfig[group.key] || []);
+    
+    if (!items.length) return "";
+    
+    return `
+      <div class="menu-group">
+        <button
+          type="button"
+          class="menu-group-toggle"
+          onclick="this.parentElement.classList.toggle('expanded')">
+          <span>${group.label}</span>
+          <span class="menu-group-arrow">⌄</span>
+        </button>
+
+        <div class="menu-group-content">
+          ${items.map(renderItem).join("")}
+        </div>
+      </div>
+    `;
+  };
   
-  if (logoutBtn) {
-    logoutBtn.style.display =
-      currentPage === "competition" ?
-      "block" :
-      "none";
+  if (isCompetition) {
+    menu.innerHTML = `
+      <div class="menu-header">COMPETITION</div>
+      ${standalone.map(renderItem).join("")}
+      <button class="btn-logout" style="display:block" onclick="handleLogout()">
+        Logout
+      </button>
+    `;
+    return;
   }
+  
+  menu.innerHTML = `
+    <div class="menu-header">TOURNAMENT</div>
+    ${standalone.map(renderItem).join("")}
+    ${groups.map(renderGroup).join("")}
+  `;
 }
+
 
 function openAddTeam() {
   closeProfileModal();
@@ -1110,7 +1011,6 @@ function goToListOfTournamentPage() {
   hideAllPages();
   closeTournamentEvents();
   document.getElementById("listOfTournamentPage").style.display = "flex";
-  document.getElementById("tourListPageHead").style.display = "flex";
   document.getElementById("bracketControl").style.display = "none";
   
   currentSwapView = 0;
@@ -1167,10 +1067,11 @@ async function goToCompetitionPage() {
   closeTournamentEvents();
   
   document.getElementById("competitionPage").style.display = "block";
+  document.getElementById("tournamentHeader").style.display = "none";
   document.getElementById("compageToggle").style.display = "flex";
   document.getElementById("homepageNav").style.display = "flex";
   
-  document.getElementById("tourListPageHead").style.display = "none";
+  
   document.getElementById("compPageHead").style.display = "block";
   const currentUser = getCurrentUser();
   document.getElementById("usernameText").textContent = currentUser.username;
@@ -1900,21 +1801,22 @@ function openSubmissionReview(match, submission) {
   buildReviewActions(match, submission);
   modal.style.display = "flex";
 }
+
 function buildReviewActions(match, submission) {
   const actions = document.getElementById("reviewModalActions");
   const rejectInputRow = document.getElementById("reviewModalRejectInputRow");
   const reasonRow = document.getElementById("reviewModalReasonRow");
   const reasonEl = document.getElementById("reviewModalReason");
-
+  
   if (!actions) return;
-
+  
   actions.innerHTML = "";
-
+  
   if (rejectInputRow) rejectInputRow.style.display = "none";
   if (reasonRow) reasonRow.style.display = "none";
-
+  
   const status = String(submission.status || "").toLowerCase();
-
+  
   if (APP_MODE === "admin") {
     if (status === "approved") {
       const reopenBtn = document.createElement("button");
@@ -1924,11 +1826,11 @@ function buildReviewActions(match, submission) {
         closeReviewModal();
         openLeagueRecorder(match);
       };
-
+      
       actions.appendChild(reopenBtn);
       return;
     }
-
+    
     if (status !== "pending") {
       if (status === "rejected") {
         if (reasonRow) reasonRow.style.display = "block";
@@ -1939,41 +1841,41 @@ function buildReviewActions(match, submission) {
       }
       return;
     }
-
+    
     const approveBtn = document.createElement("button");
     approveBtn.className = "btn-save";
     approveBtn.textContent = "✅ Approve";
     approveBtn.onclick = approveSubmission;
-
+    
     const rejectBtn = document.createElement("button");
     rejectBtn.className = "btn-clear";
     rejectBtn.textContent = "❌ Reject";
     rejectBtn.onclick = () => {
       if (rejectInputRow) rejectInputRow.style.display = "block";
-
+      
       rejectBtn.remove();
-
+      
       const confirmBtn = document.createElement("button");
       confirmBtn.className = "btn-clear";
       confirmBtn.textContent = "Confirm Reject";
       confirmBtn.onclick = rejectSubmission;
-
+      
       actions.appendChild(confirmBtn);
     };
-
+    
     actions.append(approveBtn, rejectBtn);
     return;
   }
-
+  
   if (status === "pending" || status === "approved") return;
-
+  
   if (reasonRow) reasonRow.style.display = "block";
-
+  
   if (reasonEl) {
     reasonEl.textContent =
       submission.rejection_reason || "No reason provided.";
   }
-
+  
   const resubmitBtn = document.createElement("button");
   resubmitBtn.className = "btn-resubmit";
   resubmitBtn.textContent = "Resubmit";
@@ -1981,7 +1883,7 @@ function buildReviewActions(match, submission) {
     closeReviewModal();
     openLeagueRecorder(match);
   };
-
+  
   actions.appendChild(resubmitBtn);
 }
 
@@ -2141,6 +2043,7 @@ function setupCompetitionToggle() {
 }
 async function openHallOfFame() {
   goBackHome();
+  leaveHome()
   const mySection =
     document.getElementById(
       "mySection"
@@ -2256,29 +2159,6 @@ function shouldOpenKnockoutDirectly() {
 }
 
 
-function goToCupPage() {
-  document.getElementById("listOfTournamentPage").style.display = "none";
-  hideAllPages();
-  
-  document.getElementById("tournamentPage").style.display = "block";
-  document.getElementById("tourListPageHead").style.display = "none";
-  document.getElementById("cupPage").style.display = "block";
-  document.getElementById("cupPageHead").style.display = "block";
-  document.getElementById("cupHome").style.display = "flex";
-  
-  if (shouldOpenKnockoutDirectly()) {
-    toggleCupView("knockOut");
-    document.getElementById("cupTab").style.display = "none";
-    document.getElementById("btnbackBracket").style.display = "block";
-    
-    
-    return;
-  }
-  
-  
-  toggleCupView("tables");
-  
-}
 
 
 
@@ -2401,38 +2281,36 @@ let teamsToEdit = [];
 
 async function openEditTeam() {
   closeProfileModal();
-
+  
   try {
     const profile = await getUserProfile();
-
-    const teams = Array.isArray(profile?.teams)
-      ? profile.teams
-      : [];
-
+    
+    const teams = Array.isArray(profile?.teams) ?
+      profile.teams : [];
+    
     if (!teams.length) {
       showAlert("You don't have any team to edit");
       return;
     }
-
+    
     teamsToEdit = teams;
-
+    
     if (teams.length === 1) {
       openTeamForEditing(teams[0].id);
       return;
     }
-
+    
     const selected = await showTeamSelectionModal(
-      teams,
-      { mode: "edit" }
+      teams, { mode: "edit" }
     );
-
+    
     if (!selected.length) return;
-
+    
     openTeamForEditing(selected[0]);
-
+    
   } catch (error) {
     console.error("Failed to open edit team:", error);
-
+    
     showAlert(
       error.message || "Failed to load team."
     );
@@ -2443,32 +2321,31 @@ function openTeamForEditing(teamId) {
   const team = teamsToEdit.find(
     item => String(item.id) === String(teamId)
   );
-
+  
   if (!team) return;
-
+  
   editingTeamId = team.id;
-
+  
   document.getElementById(
     "editTitle"
   ).textContent = "Edit Team";
-
+  
   document.getElementById(
     "editNameInput"
   ).value = team.name || "";
-
+  
   const fileInput = document.getElementById(
     "editLogoInput"
   );
-
+  
   if (fileInput) {
     fileInput.value = "";
   }
-
+  
   document.getElementById(
     "editModal"
   ).classList.add("show");
 }
 
-window.openEditTeam = openEditTeam;''
-
+window.openEditTeam = openEditTeam;
 

@@ -341,81 +341,256 @@ function getTournamentFromMemory(id) {
   ) || null;
 }
 
+
 async function openTournament(id) {
   showLoader();
+
   try {
-    const tournament =
-      await getTournament(id);
-    const rules =
-      await getTournamentRules(id);
-    if (
-      rules &&
-      rules.rules &&
-      !rules.accepted
-    ) {
+    const tournament = await getTournament(id);
+    const rules = await getTournamentRules(id);
+
+    if (rules && rules.rules && !rules.accepted) {
       hideLoader();
-      const agreed =
-        await showTournamentRulesModal(
-          rules.rules,
-          true
-        );
-      if (!agreed) {
-        return;
-      }
+
+      const agreed = await showTournamentRulesModal(
+        rules.rules,
+        true
+      );
+
+      if (!agreed) return;
+
       showLoader();
       await acceptTournamentRules(id);
     }
+
     currentTournament = tournament;
-    loadSubmissionDeadlineCountdown(
-      tournament
+
+    loadTournamentImage(
+      tournament,
+      "competitionLogo",
+      document.querySelector(".competition-identity")
     );
+
+    const selector = document.getElementById("competitionTournamentSelector");
+    if (selector) selector.value = String(tournament.id);
+
+    loadSubmissionDeadlineCountdown(tournament);
     startTournamentEvents(id);
-    const name =
-      tournament.name;
-    const season =
-      tournament.season;
-    const formatType =
-      (
-        tournament.format ||
-        "league"
-      ).toLowerCase();
-    if (formatType === "friendly") {
-      goToFixturePage();
-    } else if (formatType === "league") {
-      document.getElementById(
-        "leagueName"
-      ).textContent = name;
-      document.getElementById(
-        "tableTournamentName"
-      ).textContent = name;
-      document.getElementById(
-        "tournamentSeason"
-      ).textContent = season;
-      goToTournamentPage();
-      await rebuildTableFromMatches();
-    } else {
-      document.getElementById(
-        "cupName"
-      ).textContent = name;
-      document.getElementById(
-          "cupName2"
-        ).textContent =
-        `${name} Bracket`;
-      goToCupPage();
-    }
+
+    const name = tournament.name;
+    const season = tournament.season || "";
+
+    const titleElement = document.getElementById("competitionTournamentTitle");
+    const seasonElement = document.getElementById("competitionTournamentSeason");
+    const leagueName = document.getElementById("leagueName");
+    const tableTournamentName = document.getElementById("tableTournamentName");
+    const tournamentSeason = document.getElementById("tournamentSeason");
+
+    if (titleElement) titleElement.textContent = name;
+    if (seasonElement) seasonElement.textContent = season;
+    if (leagueName) leagueName.textContent = name;
+    if (tableTournamentName) tableTournamentName.textContent = name;
+    if (tournamentSeason) tournamentSeason.textContent = season;
+
+    goToTournamentPage();
+    await rebuildTableFromMatches();
+
   } catch (err) {
-    console.error(
-      "openTournament error:",
-      err
-    );
-    showAlert(
-      err.message ||
-      "Failed to open tournament."
-    );
+    console.error("openTournament error:", err);
+    showAlert(err.message || "Failed to open tournament.");
+
   } finally {
     hideLoader();
   }
 }
+
+async function testMyLiveBroadcast(broadcastId) {
+  try {
+    const response = await fetch(
+      `${API}/live/my-session?broadcastId=${encodeURIComponent(broadcastId)}`,
+      {
+        method: "GET",
+        headers: {
+          Authorization: getToken()
+        }
+      }
+    );
+    
+    const result = await response.json();
+    
+    console.log("[Live Admin Test]", result);
+    
+    if (!response.ok || !result.success) {
+      showAlert(result.message || "Unable to inspect broadcast");
+      return;
+    }
+    
+    showAlert(
+      `Broadcast found!\nStatus: ${result.broadcast.status}\nPlayer ID: ${result.broadcast.player_user_id}`
+    );
+  } catch (error) {
+    console.error("[Live Admin Test]", error);
+    showAlert("Unable to inspect broadcast");
+  }
+}
+
+
+async function testLiveBroadcast() {
+  console.log("[Live Test] Starting...");
+  
+  const tournament = getCurrentTournament();
+  
+  console.log("[Live Test] Current tournament:", tournament);
+  
+  if (!tournament?.id) {
+    showAlert("Select a tournament first");
+    return;
+  }
+  
+  let matches;
+  
+  try {
+    console.log("[Live Test] Loading matches...");
+    
+    matches = await getTournamentMatches(tournament.id);
+    
+    console.log("[Live Test] Matches returned:", matches);
+    console.log("[Live Test] Matches count:", matches?.length);
+  } catch (error) {
+    console.error("[Live Test] Match loading failed:", error);
+    showAlert("Unable to load tournament matches");
+    return;
+  }
+  
+  if (!Array.isArray(matches)) {
+    console.error("[Live Test] Invalid matches response:", matches);
+    showAlert("Unable to load tournament matches");
+    return;
+  }
+  
+  const availableMatches = matches.filter(
+    match =>
+    Number(match.played) === 0 &&
+    match.home_team_id &&
+    match.away_team_id
+  );
+  
+  console.log(
+    "[Live Test] Available unplayed matches:",
+    availableMatches.length
+  );
+  
+  if (!availableMatches.length) {
+    showAlert("No unplayed matches available for testing");
+    return;
+  }
+  
+  const match =
+    availableMatches[
+      Math.floor(Math.random() * availableMatches.length)
+    ];
+  
+  const teamId = Math.random() < 0.5 ?
+    match.home_team_id :
+    match.away_team_id;
+  
+  console.log("[Live Test] Selected match:", match);
+  console.log("[Live Test] Selected team:", teamId);
+  
+  showConfirmModal(
+    "Create a test live broadcast using a randomly selected match and player?",
+    "Continue",
+    "Cancel"
+  );
+  
+  confirmYes = async () => {
+    closeConfirmModal();
+    showLoader();
+    
+    const payload = {
+      tournamentId: tournament.id,
+      matchId: match.id,
+      teamId
+    };
+    
+    console.log("[Live Test] Request URL:", `${API}/live/broadcasts`);
+    console.log("[Live Test] Request payload:", payload);
+    console.log("[Live Test] Token exists:", !!getToken());
+    
+    try {
+      const response = await apiRequest(
+        `${API}/live/broadcasts`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: getToken(),
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify(payload)
+        }
+      );
+      
+      console.log("[Live Test] HTTP response:", response);
+      console.log("[Live Test] HTTP status:", response?.status);
+      
+      if (!response) {
+        console.error("[Live Test] API returned null");
+        showAlert("Request failed or was cancelled");
+        return;
+      }
+      
+      let result;
+      
+      try {
+        result = await response.json();
+      } catch (error) {
+        console.error("[Live Test] JSON parsing failed:", error);
+        showAlert("Invalid response received from server");
+        return;
+      }
+      
+      console.log("[Live Test] Parsed API response:", result);
+      
+      if (!response.ok || !result?.success) {
+        console.error("[Live Test] Backend rejected request:", result);
+        
+        showAlert(
+          result?.message ||
+          result?.error ||
+          "Unable to create test broadcast"
+        );
+        return;
+      }
+      
+      console.log(
+        "[Live Test] Broadcast created:",
+        result.broadcast || result
+      );
+      
+      showAlert(
+        `Test broadcast created successfully.\nBroadcast ID: ${
+          result.broadcast?.id || result.id || "Not returned"
+        }`
+      );
+      
+    } catch (error) {
+      console.error("[Live Test] Request error:", error);
+      console.error("[Live Test] Error message:", error.message);
+      
+      showAlert("Something went wrong while creating the broadcast");
+    } finally {
+      hideLoader();
+    }
+  };
+  
+  confirmNo = () => {
+    console.log("[Live Test] Cancelled by user");
+    closeConfirmModal();
+  };
+}
+
+
+
 async function viewTournamentRules() {
   try {
     const result =
@@ -1262,8 +1437,7 @@ async function saveEdit() {
     const profile = await getUserProfile();
     
     const teams = Array.isArray(profile?.teams) ?
-      profile.teams :
-      [];
+      profile.teams : [];
     
     const teamIndex = teams.findIndex(
       team => String(team.id) === String(editingTeamId)
@@ -1639,40 +1813,76 @@ async function loadPublicTournaments() {
   }
 }
 
-async function openCompetition(id) {
-  showLoader();
+function populateCompetitionTournamentSelector(selectedId) {
+  const selector = document.getElementById("competitionTournamentSelector");
   
+  if (!selector) return;
+  
+  selector.innerHTML = "";
+  
+  const sortedTournaments = [...myTournaments].sort((a, b) => {
+    const dateA = new Date(a.created_at || a.createdAt || 0).getTime();
+    const dateB = new Date(b.created_at || b.createdAt || 0).getTime();
+    
+    return dateB - dateA;
+  });
+  
+  sortedTournaments.forEach(tournament => {
+    const option = document.createElement("option");
+    
+    option.value = tournament.id;
+    option.textContent = tournament.season || "Season";
+    option.selected = String(tournament.id) === String(selectedId);
+    
+    selector.appendChild(option);
+  });
+  
+  selector.onchange = async function() {
+    if (this.value) {
+      await openTournament(this.value);
+    }
+  };
+}
+
+async function openCompetition(id) {
   try {
     pageOrigin = "MyComp";
     
     setSelectedCompetition(id);
     
-    currentCompetition =
-      myCompetitions.find(
-        c => String(c.id) === String(id)
-      );
-    
-    const name = currentCompetition.name;
-    
-    document
-      .getElementById("competitionInViewName")
-      .textContent = name;
-    
-    goToListOfTournamentPage();
-    
-    myTournaments =
-      await getMyTournaments(id);
-    
-    renderTournamentList(
-      "tournamentList",
-      myTournaments
+    currentCompetition = myCompetitions.find(
+      c => String(c.id) === String(id)
     );
     
+    if (!currentCompetition) {
+      throw new Error("Competition not found.");
+    }
+    
+   
+    
+    myTournaments = await getMyTournaments(id) || [];
+    
+    if (!myTournaments.length) {
+      showAlert("No tournaments available in this competition yet.");
+      return;
+    }
+    
+    const sortedTournaments = [...myTournaments].sort((a, b) => {
+      const dateA = new Date(a.created_at || a.createdAt || 0).getTime();
+      const dateB = new Date(b.created_at || b.createdAt || 0).getTime();
+      
+      return dateB - dateA;
+    });
+    
+    const latestTournament = sortedTournaments[0];
+    
+    populateCompetitionTournamentSelector(latestTournament.id);
+    
+    await openTournament(latestTournament.id);
+    
   } catch (err) {
-    console.error(err);
-    showAlert(err.message);
-  } finally {
-    hideLoader();
+    console.error("[openCompetition]", err);
+    showAlert(err.message || "Failed to open competition.");
   }
 }
 
@@ -3233,61 +3443,6 @@ function deleteHallOfFameCategory(
   renderHallOfFameAdminEditor();
 }
 
-function buildTableFromTournamentPlayers(tournament) {
-  if (
-    !tournament ||
-    !Array.isArray(tournament.tournament_players)
-  ) {
-    return [];
-  }
-  const table =
-    tournament.tournament_players
-    .filter(
-      player =>
-      player &&
-      player.team_id
-    )
-    .map(player => {
-      const gf =
-        Number(player.gf) || 0;
-      const ga =
-        Number(player.ga) || 0;
-      return {
-        id: player.team_id,
-        name: player.team_name ||
-          player.team?.name ||
-          "",
-        logo: player.team_logo ||
-          player.team?.logo ||
-          null,
-        played: Number(player.played) || 0,
-        wins: Number(player.wins) || 0,
-        draws: Number(player.draws) || 0,
-        losses: Number(player.losses) || 0,
-        gf,
-        ga,
-        gd: gf - ga,
-        pts: Number(player.points) || 0,
-        has_point_deduction: Number(player.has_point_deduction) === 1
-      };
-    });
-  table.sort((a, b) => {
-    if (b.pts !== a.pts) {
-      return b.pts - a.pts;
-    }
-    if (b.gd !== a.gd) {
-      return b.gd - a.gd;
-    }
-    if (b.gf !== a.gf) {
-      return b.gf - a.gf;
-    }
-    return a.name.localeCompare(b.name);
-  });
-  table.forEach((team, index) => {
-    team.pos = index + 1;
-  });
-  return table;
-}
 
 async function importTournamentsData(jsonString) {
   try {
@@ -3560,58 +3715,61 @@ function loadSubmissionDeadlineSettings(tournament) {
 }
 
 function loadSubmissionDeadlineCountdown(tournament) {
-  const isCup =
-    tournament?.format === "cup";
+  if (submissionDeadlineInterval) {
+    clearInterval(submissionDeadlineInterval);
+    submissionDeadlineInterval = null;
+  }
   
-  const countdownElement =
-    document.getElementById(
-      isCup ?
-      "cupSubmissionDeadlineCountdown" :
-      "submissionDeadlineCountdown"
-    );
+  const elements = [
+    document.getElementById("submissionDeadlineCountdown"),
+    document.getElementById("cupSubmissionDeadlineCountdown")
+  ].filter(Boolean);
   
-  const settings =
-    tournament?.settings?.submissionDeadline;
+  elements.forEach(element => {
+    element.textContent = "";
+    element.style.display = "none";
+  });
+  
+  const isCup = tournament?.format === "cup";
+  
+  const countdownElement = document.getElementById(
+    isCup ?
+    "cupSubmissionDeadlineCountdown" :
+    "submissionDeadlineCountdown"
+  );
   
   if (!countdownElement) return;
   
-  if (submissionDeadlineInterval) {
-    clearInterval(
-      submissionDeadlineInterval
-    );
-    
-    submissionDeadlineInterval = null;
-  }
+  countdownElement.style.display = "block";
+  
+  const settings =
+    tournament?.settings?.submissionDeadline;
   
   if (
     !settings ||
     settings.enabled !== true ||
     !settings.deadline
   ) {
-    countdownElement.style.display = "none";
+    countdownElement.textContent =
+      "Submission deadline: Not set";
     return;
   }
   
-  const deadline =
-    Number(settings.deadline);
-  
-  const fromRound =
-    Number(settings.fromRound);
-  
-  const toRound =
-    Number(settings.toRound);
+  const deadline = Number(settings.deadline);
+  const fromRound = Number(settings.fromRound);
+  const toRound = Number(settings.toRound);
   
   if (
     !Number.isFinite(deadline) ||
     !Number.isInteger(fromRound) ||
-    !Number.isInteger(toRound)
+    !Number.isInteger(toRound) ||
+    fromRound < 1 ||
+    toRound < fromRound
   ) {
-    countdownElement.style.display = "none";
+    countdownElement.textContent =
+      "Submission deadline: Not set";
     return;
   }
-  
-  countdownElement.style.display =
-    "block";
   
   const roundText =
     fromRound === toRound ?
@@ -3619,43 +3777,23 @@ function loadSubmissionDeadlineCountdown(tournament) {
     `Rounds ${fromRound}–${toRound}`;
   
   function updateCountdown() {
-    const remaining =
-      deadline - Date.now();
+    const remaining = deadline - Date.now();
     
     if (remaining <= 0) {
       countdownElement.textContent =
         `${roundText} submission deadline has passed.`;
       
-      clearInterval(
-        submissionDeadlineInterval
-      );
-      
+      clearInterval(submissionDeadlineInterval);
       submissionDeadlineInterval = null;
       return;
     }
     
-    const totalSeconds =
-      Math.floor(
-        remaining / 1000
-      );
+    const totalSeconds = Math.floor(remaining / 1000);
     
-    const days =
-      Math.floor(
-        totalSeconds / 86400
-      );
-    
-    const hours =
-      Math.floor(
-        (totalSeconds % 86400) / 3600
-      );
-    
-    const minutes =
-      Math.floor(
-        (totalSeconds % 3600) / 60
-      );
-    
-    const seconds =
-      totalSeconds % 60;
+    const days = Math.floor(totalSeconds / 86400);
+    const hours = Math.floor((totalSeconds % 86400) / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
     
     const timeText =
       days > 0 ?
@@ -3668,11 +3806,12 @@ function loadSubmissionDeadlineCountdown(tournament) {
   
   updateCountdown();
   
-  submissionDeadlineInterval =
-    setInterval(
+  if (deadline > Date.now()) {
+    submissionDeadlineInterval = setInterval(
       updateCountdown,
       1000
     );
+  }
 }
 
 async function loadNotices() {
@@ -3736,6 +3875,7 @@ async function buildFixturesFromMatches(
     };
   });
 }
+
 async function loadTournamentFixtures(
   tournamentId
 ) {
@@ -3875,14 +4015,139 @@ function checkSubmissionAlerts(
   );
 }
 
+
+
+async function buildTableFromTournamentPlayers(tournament) {
+  if (
+    !tournament ||
+    !Array.isArray(tournament.tournament_players)
+  ) {
+    return [];
+  }
+
+  const fixtures =
+    await loadTournamentFixtures(tournament.id);
+
+  const groupMatches = (fixtures || []).filter(
+    match => match.match_type === "group"
+  );
+
+  const settings =
+    readTournamentSettings(tournament);
+
+  const isSingleGroup =
+    settings.tournamentMode === "champions_league" ||
+    (
+      settings.isChampionsLeague === true &&
+      settings.groupFormat === "single"
+    );
+
+  const teamGroupMap = new Map();
+  const groupsMap = new Map();
+
+  groupMatches.forEach(match => {
+    const groupId = match.group_id;
+
+    if (!groupId) return;
+
+    let groupName =
+      match.round?.match(/Group (.+?) - Round/i)?.[1];
+
+    if (!groupName) {
+      groupName = isSingleGroup
+        ? "League Phase"
+        : `Group ${groupsMap.size + 1}`;
+    }
+
+    if (!groupsMap.has(groupId)) {
+      groupsMap.set(groupId, {
+        id: groupId,
+        name: groupName
+      });
+    }
+
+    const group = groupsMap.get(groupId);
+
+    if (match.home_team_id) {
+      teamGroupMap.set(match.home_team_id, group);
+    }
+
+    if (match.away_team_id) {
+      teamGroupMap.set(match.away_team_id, group);
+    }
+  });
+
+  const table =
+    tournament.tournament_players
+    .filter(
+      player =>
+        player &&
+        player.team_id
+    )
+    .map(player => {
+      const gf =
+        Number(player.gf) || 0;
+
+      const ga =
+        Number(player.ga) || 0;
+
+      const group =
+        teamGroupMap.get(player.team_id);
+
+      return {
+        id: player.team_id,
+        name: player.team_name ||
+          player.team?.name ||
+          "",
+        logo: player.team_logo ||
+          player.team?.logo ||
+          null,
+        played: Number(player.played) || 0,
+        wins: Number(player.wins) || 0,
+        draws: Number(player.draws) || 0,
+        losses: Number(player.losses) || 0,
+        gf,
+        ga,
+        gd: gf - ga,
+        pts: Number(player.points) || 0,
+        has_point_deduction:
+          Number(player.has_point_deduction) === 1,
+        groupId: group?.id || null,
+        groupName: group?.name || null
+      };
+    });
+
+  table.sort((a, b) => {
+    if (b.pts !== a.pts) {
+      return b.pts - a.pts;
+    }
+
+    if (b.gd !== a.gd) {
+      return b.gd - a.gd;
+    }
+
+    if (b.gf !== a.gf) {
+      return b.gf - a.gf;
+    }
+
+    return a.name.localeCompare(b.name);
+  });
+
+  table.forEach((team, index) => {
+    team.pos = index + 1;
+  });
+
+  return table;
+}
+
 async function rebuildTableFromMatches(
   shouldRender = true
 ) {
   const tournament =
     getCurrentTournament();
-  
+
   if (!tournament) return;
-  
+
   if (
     cachedTournamentId === tournament.id &&
     tableCache
@@ -3893,84 +4158,50 @@ async function rebuildTableFromMatches(
     ) {
       renderTable(tableCache);
     }
-    
+
     return tableCache;
   }
-  
+
   showLoader();
-  
+
   try {
-    let table = null;
-    
-    if (
-      Array.isArray(
-        tournament.tournament_players
-      )
-    ) {
-      table =
-        buildTableFromTournamentPlayers(
-          tournament
-        );
-    } else {
-      const response =
-        await fetch(
-          `/tournaments/${tournament.id}/table`,
-          {
-            headers: {
-              Authorization: `Bearer ${getToken()}`
-            }
-          }
-        );
-      
-      const data =
-        await response.json();
-      
-      if (
-        !response.ok ||
-        !data.success
-      ) {
-        throw new Error(
-          data.message ||
-          "Failed to load tournament table."
-        );
-      }
-      
-      table =
-        data.table || [];
-    }
-    
+    const table =
+      await buildTableFromTournamentPlayers(
+        tournament
+      );
+
     tableCache = table;
-    
+
     cachedTournamentId =
       tournament.id;
-    
-    tournament.table =
-      table;
-    
+
+    tournament.table = table;
+
     if (
       shouldRender &&
       typeof renderTable === "function"
     ) {
       renderTable(table);
     }
-    
+
     return table;
-    
+
   } catch (err) {
     console.error(
       "[rebuildTableFromMatches]",
       err
     );
-    
+
     showAlert(
       err.message ||
       "Failed to rebuild table."
     );
-    
+
   } finally {
     hideLoader();
   }
 }
+
 async function loadTournamentTeams(tournamentId) {
   if (!tournamentId) {
     throw new Error("Tournament ID is required.");

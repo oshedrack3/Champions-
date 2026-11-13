@@ -2263,8 +2263,6 @@ async function getTournamentMatches(tournamentId) {
   
   const result = await res.json();
   
-  console.log("[getTournamentMatches]", result);
-  
   if (!res.ok || !result.success) {
     throw new Error(
       result.message ||
@@ -2362,13 +2360,15 @@ async function getUserProfile() {
 }
 async function openProfileModal() {
   goBackHome()
+  leaveHome()
   bindNotificationToggle();
   loadAdminSquadRequestsSection();
   const modal =
     document.getElementById(
       "profileModal"
     );
-  if (!modal) return;
+  if (!modal) 
+  return;
   modal.classList.add("active");
   modal.setAttribute(
     "aria-hidden",
@@ -2496,8 +2496,7 @@ async function openUpdateProfile() {
   
   let profile =
     cachedProfile && typeof cachedProfile === "object" ?
-    cachedProfile :
-    {};
+    cachedProfile : {};
   
   if (usernameInput) {
     usernameInput.value = profile.username || "";
@@ -3678,6 +3677,7 @@ async function loadGlobalRankings() {
 
 async function showGlobalRankings() {
   goBackHome();
+  leaveHome();
   document
     .querySelectorAll(
       "#mySection, #noticeSection, #publicSection, #hallOfFameSection"
@@ -5180,8 +5180,7 @@ async function searchComparisonPlayers(query) {
     );
   }
   return Array.isArray(result.players) ?
-    result.players :
-    [];
+    result.players : [];
 }
 
 function renderComparisonRecentMatches(matches, player1, player2) {
@@ -5211,40 +5210,42 @@ function renderComparisonRecentMatches(matches, player1, player2) {
         } else if (awayScore > homeScore) {
           const player1Won = awayId === p1Id;
           resultLabel = player1Won
-            ? `${player1.username} won`
-            : `${player2.username} won`;
+            ? `
+  ${ player1.username } won`
+            : `
+  ${ player2.username } won`;
           resultClass = player1Won ? "win" : "loss";
         }
-        return `
-          <div class="comparison-match-card">
-            <div class="comparison-match-tournament">
+        return ` <
+  div class = "comparison-match-card" >
+  <div class="comparison-match-tournament">
               ${comparisonResultsEscape(match.tournament_name || "Tournament")}
-            </div>
-            <div class="comparison-match-score">
-              <span class="comparison-match-player">
+            </div> <
+  div class = "comparison-match-score" >
+  <span class="comparison-match-player">
                 ${comparisonResultsEscape(match.home_player_name || "Player 1")}
-              </span>
-              <strong>
-                ${comparisonResultsNumber(match.home_score)}
-                -
-                ${comparisonResultsNumber(match.away_score)}
-              </strong>
-              <span class="comparison-match-player">
-                ${comparisonResultsEscape(match.away_player_name || "Player 2")}
-              </span>
-            </div>
-            <div class="comparison-match-result ${resultClass}">
-              ${comparisonResultsEscape(resultLabel)}
-            </div>
-            <div class="comparison-match-date">
-              ${comparisonResultsEscape(comparisonResultsDate(match.played_at))}
-            </div>
-          </div>
-        `;
+              </span> <
+  strong >
+    ${ comparisonResultsNumber(match.home_score) } -
+    ${ comparisonResultsNumber(match.away_score) }
+  </strong> <
+  span class = "comparison-match-player" >
+  ${ comparisonResultsEscape(match.away_player_name || "Player 2") }
+  </span> <
+  /div> <
+  div class = "comparison-match-result ${resultClass}" >
+  ${ comparisonResultsEscape(resultLabel) }
+  </div> <
+  div class = "comparison-match-date" >
+  ${ comparisonResultsEscape(comparisonResultsDate(match.played_at)) }
+  </div> <
+  /div>
+  `;
       }).join("")}
     </div>
   `;
 }
+
 function renderComparisonPlayerSuggestions(
   players,
   playerNumber
@@ -6562,8 +6563,7 @@ async function loadPendingBankTransfers() {
       );
     }
     pendingBankTransfers = Array.isArray(result.transfers) ?
-      result.transfers :
-      [];
+      result.transfers : [];
   } catch (error) {
     console.error("Pending bank transfers error:", error);
     pendingBankTransfersError =
@@ -6782,6 +6782,7 @@ function continueWithFlutterwave() {
   
   startFlutterwavePayment(tournamentId);
 }
+
 function openSelectedSeasonBankTransfer() {
   if (!selectedSeasonForPayment) {
     showMessage(
@@ -8455,11 +8456,11 @@ function renderFinancialPrizes(data) {
             </div> <
   div class = "payment-history-item-side" >
   <div class="payment-history-item-amount">${amount}</div> <
-  span class = "payment-history-status ${statusClass}" > $ { escapeHtml(status) }
+  span class = "payment-history-status ${statusClass}" > ${ escapeHtml(status) }
   </span> <
-  /div> <
-  /article>
-  `;
+  /div> < /
+  article >
+    `;
       }).join("")}
     </div>
   `;
@@ -9066,105 +9067,105 @@ async function openCreatePrizeForm() {
   const modal = document.createElement("div");
   modal.id = "prizePreviewModal";
   modal.style.cssText = `
-    position: fixed;
-    inset: 0;
-    z-index: 100000;
-    background: rgba(0, 0, 0, 0.65);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 16px;
-    box-sizing: border-box;
-    overflow-x: hidden;
-    overflow-y: auto;
-  `;
-  modal.innerHTML = `
-    <div class="prize-preview-container">
-      <h2 style="margin:0 0 6px;">Create Prize Payout</h2>
-      <p style="margin:0 0 20px;color:#666;font-size:14px;">
-        Enter the prize details and review before submitting.
-      </p>
-      <form id="prizePreviewForm">
-        <label for="prizePreviewUserId">Prize Recipient *</label>
-        <select id="prizePreviewUserId" name="user_id" required>
-          <option value="">Select a tournament player</option>
-          ${players.map(player => `
+position: fixed;
+inset: 0;
+z - index: 100000;
+background: rgba(0, 0, 0, 0.65);
+display: flex;
+align - items: center;
+justify - content: center;
+padding: 16 px;
+box - sizing: border - box;
+overflow - x: hidden;
+overflow - y: auto;
+`;
+  modal.innerHTML = ` <
+div class = "prize-preview-container" >
+<h2 style="margin:0 0 6px;">Create Prize Payout</h2> <
+p style = "margin:0 0 20px;color:#666;font-size:14px;" >
+  Enter the prize details and review before submitting. <
+  /p> <
+  form id = "prizePreviewForm" >
+  <label for="prizePreviewUserId">Prize Recipient *</label> <
+  select id = "prizePreviewUserId"
+name = "user_id"
+required >
+  <option value="">Select a tournament player</option>
+${ players.map(player => `
             <option value="${escapeHtml(player.user_id)}">
               ${escapeHtml(player.team_name || "Unknown Team")}
             </option>
-          `).join("")}
-        </select>
-        <label for="prizePreviewName">Prize Name *</label>
-        <input
-          id="prizePreviewName"
-          name="prize_name"
-          type="text"
-          maxlength="200"
-          required
-          placeholder="e.g. League Champion"
-        >
-        <label for="prizePreviewPosition">Finishing Position *</label>
-        <input
-          id="prizePreviewPosition"
-          name="position"
-          type="number"
-          min="1"
-          step="1"
-          required
-          placeholder="e.g. 1"
-        >
-        <label for="prizePreviewAmount">Prize Amount (₦) *</label>
-        <input
-          id="prizePreviewAmount"
-          name="amount"
-          type="number"
-          min="1"
-          step="1"
-          required
-          placeholder="Enter prize amount"
-        >
-        <div class="prize-preview-type">
+          `).join("") }
+</select> <
+label
+for = "prizePreviewName" > Prize Name * </label> <
+  input
+id = "prizePreviewName"
+name = "prize_name"
+type = "text"
+maxlength = "200"
+required
+placeholder = "e.g. League Champion" >
+  <label for="prizePreviewPosition">Finishing Position *</label> <
+  input
+id = "prizePreviewPosition"
+name = "position"
+type = "number"
+min = "1"
+step = "1"
+required
+placeholder = "e.g. 1" >
+  <label for="prizePreviewAmount">Prize Amount (₦) *</label> <
+  input
+id = "prizePreviewAmount"
+name = "amount"
+type = "number"
+min = "1"
+step = "1"
+required
+placeholder = "Enter prize amount" >
+  <div class="prize-preview-type">
           <strong>Tournament:</strong>
           <div>${escapeHtml(tournamentName)}</div>
-        </div>
-        <div
-          id="prizePreviewReview"
-          style="display:none;background:#eff6ff;border:1px solid #bfdbfe;padding:14px;border-radius:8px;margin-bottom:18px;overflow-wrap:anywhere;"
-        >
-          <h3>Review Prize Payout</h3>
-          <div id="prizePreviewReviewContent"></div>
-        </div>
-        <div
-          id="prizePreviewError"
-          role="alert"
-          style="display:none;color:#b91c1c;margin-bottom:12px;overflow-wrap:anywhere;"
-        ></div>
-        <div class="prize-preview-actions">
-          <button
+        </div> <
+  div
+id = "prizePreviewReview"
+style = "display:none;background:#eff6ff;border:1px solid #bfdbfe;padding:14px;border-radius:8px;margin-bottom:18px;overflow-wrap:anywhere;" >
+  <h3>Review Prize Payout</h3> <
+  div id = "prizePreviewReviewContent" > </div> <
+  /div> <
+  div
+id = "prizePreviewError"
+role = "alert"
+style = "display:none;color:#b91c1c;margin-bottom:12px;overflow-wrap:anywhere;" >
+  </div> <
+  div class = "prize-preview-actions" >
+  <button
             type="button"
             id="prizePreviewCancel"
             class="prize-preview-cancel"
           >
             Cancel
-          </button>
-          <button
-            type="button"
-            id="prizePreviewReviewButton"
-            class="prize-preview-review"
-          >
-            Review Details
-          </button>
-          <button
-            type="submit"
-            id="prizePreviewSubmit"
-            class="prize-preview-submit"
-          >
-            Confirm &amp; Submit
-          </button>
-        </div>
-      </form>
-    </div>
-  `;
+          </button> <
+  button
+type = "button"
+id = "prizePreviewReviewButton"
+class = "prize-preview-review" >
+Review Details
+  <
+  /button> <
+  button
+type = "submit"
+id = "prizePreviewSubmit"
+class = "prize-preview-submit" >
+Confirm & amp;
+Submit
+  <
+  /button> <
+  /div> <
+  /form> <
+  /div>
+`;
   document.body.appendChild(modal);
   const form = modal.querySelector("#prizePreviewForm");
   const cancelBtn = modal.querySelector("#prizePreviewCancel");
@@ -9210,14 +9211,26 @@ async function openCreatePrizeForm() {
     const selectedPlayer = players.find(
       player => player.user_id === data.user_id
     );
-    reviewContent.innerHTML = `
-      <div><strong>Recipient:</strong> ${escapeHtml(selectedPlayer?.team_name || "Unknown Team")}</div>
-      <div><strong>User ID:</strong> ${escapeHtml(data.user_id)}</div>
-      <div><strong>Prize Name:</strong> ${escapeHtml(data.prize_name)}</div>
-      <div><strong>Position:</strong> ${data.position}</div>
-      <div><strong>Amount:</strong> ₦${data.amount.toLocaleString("en-NG")}</div>
-      <div><strong>Tournament:</strong> ${escapeHtml(tournamentName)}</div>
-    `;
+    reviewContent.innerHTML = ` <
+div > <strong>Recipient:</strong>
+${ escapeHtml(selectedPlayer?.team_name || "Unknown Team") }
+</div> <
+div > <strong>User ID:</strong>
+${ escapeHtml(data.user_id) }
+</div> <
+div > <strong>Prize Name:</strong>
+${ escapeHtml(data.prize_name) }
+</div> <
+div > <strong>Position:</strong>
+${ data.position }
+</div> <
+div > <strong>Amount:</strong>₦
+${ data.amount.toLocaleString("en-NG") }
+</div> <
+div > <strong>Tournament:</strong>
+${ escapeHtml(tournamentName) }
+</div>
+`;
     reviewPanel.style.display = "block";
     errorBox.style.display = "none";
     reviewBtn.textContent = "Update Review";
@@ -9256,7 +9269,9 @@ async function openCreatePrizeForm() {
       player => player.user_id === data.user_id
     );
     const confirmed = await showConfirmModal(
-      `Create a prize payout of ₦${data.amount.toLocaleString("en-NG")} for ${selectedPlayer?.team_name || "the selected player"}?`,
+      `
+Create a prize payout of ₦${ data.amount.toLocaleString("en-NG") }
+for ${ selectedPlayer?.team_name || "the selected player" } ? `,
       "Create Prize",
       "Cancel"
     );
@@ -9281,10 +9296,15 @@ async function openCreatePrizeForm() {
     errorBox.style.display = "none";
     showLoader();
     try {
-      const response = await apiRequest(`${API}/financial/prizes`, {
+      const response = await apiRequest(`
+${ API }
+/financial/prizes
+`, {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${getToken()}`,
+          Authorization: `
+Bearer ${ getToken() }
+`,
           "Content-Type": "application/json"
         },
         body: JSON.stringify(payload)
@@ -9306,7 +9326,9 @@ async function openCreatePrizeForm() {
       }
       if (!response.ok || !result.success) {
         throw new Error(
-          result.message || `Request failed with HTTP ${response.status}.`
+          result.message || `
+Request failed with HTTP ${ response.status }.
+`
         );
       }
       modal.remove();
@@ -9340,8 +9362,8 @@ async function approveFinancialExpense(id) {
   try {
     const response = await apiRequest(
       `
-$ { API }
-/financial/expenses / $ { encodeURIComponent(id) }
+${ API }
+/financial/expenses / ${ encodeURIComponent(id) }
 /approve`,
 {
   method: "PATCH",
@@ -10120,9 +10142,9 @@ async function openCreateExpenseForm(isTournamentExpense = false) {
   }
   const existingModal = document.getElementById("expensePreviewModal");
   if (existingModal) existingModal.remove();
-  const expenseType = isTournamentExpense
-    ? "Tournament Expense"
-    : "General Expense";
+  const expenseType = isTournamentExpense ?
+    "Tournament Expense" :
+    "General Expense";
   const today = new Date();
   const todayDate = [
     today.getFullYear(),
@@ -10280,6 +10302,7 @@ async function openCreateExpenseForm(isTournamentExpense = false) {
   const errorBox = modal.querySelector("#expensePreviewError");
   const reviewPanel = modal.querySelector("#expensePreviewReview");
   const reviewContent = modal.querySelector("#expensePreviewReviewContent");
+  
   function isValidDate(value) {
     const match = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
     if (!match) return false;
@@ -10293,6 +10316,7 @@ async function openCreateExpenseForm(isTournamentExpense = false) {
       date.getUTCDate() === Number(day)
     );
   }
+  
   function getFormData() {
     return {
       description: form.elements.description.value.trim(),
@@ -10303,6 +10327,7 @@ async function openCreateExpenseForm(isTournamentExpense = false) {
       notes: form.elements.notes.value.trim()
     };
   }
+  
   function validateForm(data) {
     if (!data.description || !data.category) {
       return "Description and category are required.";
@@ -10315,6 +10340,7 @@ async function openCreateExpenseForm(isTournamentExpense = false) {
     }
     return null;
   }
+  
   function showReview() {
     if (!form.reportValidity()) return false;
     const data = getFormData();
@@ -10458,7 +10484,113 @@ function comparisonResultsEscape(value) {
 
 
 
+
+async function checkLiveBroadcast(manual = false) {
+  if (manual) showLoader();
+
+  try {
+    const token = getToken();
+
+    if (!token) {
+      throw new Error("Authentication required. Please log in again.");
+    }
+
+    const response = await fetch(
+      `${API}/live/my-session`,
+      {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      }
+    );
+
+    const result = await response.json();
+
+    if (!response.ok || !result.success) {
+      throw new Error(
+        result.message || "Failed to check live broadcast."
+      );
+    }
+
+    if (!result.broadcast) {
+      if (manual) {
+        showAlert("There are no active live broadcast invitations for you.");
+      }
+
+      return null;
+    }
+
+    const invitationAction = await showLiveInvitation(
+      result.broadcast
+    );
+
+    console.log(
+      "[Galatico Live] Invitation action:",
+      invitationAction
+    );
+
+    return {
+      broadcast: result.broadcast,
+      action: invitationAction
+    };
+  } catch (error) {
+    console.error("[Galatico Live] Check failed:", error);
+
+    if (manual) {
+      showAlert(
+        error.message || "Unable to check for live broadcasts."
+      );
+    }
+
+    return null;
+  } finally {
+    if (manual) hideLoader();
+  }
+}
+
+async function showLiveInvitation(broadcast) {
+  const homeTeam = broadcast.homeTeamName || "Home Team";
+  const awayTeam = broadcast.awayTeamName || "Away Team";
+  const selectedTeam = broadcast.selectedTeamName || "Your Team";
+  const tournament = broadcast.tournamentName || "Tournament";
+  const round = broadcast.roundName || "Round not specified";
+
+  const message = [
+    "GALATICO LIVE INVITATION",
+    "",
+    "Tournament: " + tournament,
+    "Round: " + round,
+    "Match: " + homeTeam + " vs " + awayTeam,
+    "Your team: " + selectedTeam,
+    "",
+    "The tournament admin has invited you to stream this match live."
+  ].join("\n");
+
+  const accepted = await showConfirmModal(
+    message,
+    "Accept",
+    "Decline"
+  );
+
+  if (accepted) {
+    return "accepted";
+  }
+
+  const confirmed = await showConfirmModal(
+    "Declining means you won't be streaming this match. The admin may need to invite you again if you change your mind.\n\nAre you sure you want to decline?",
+    "I know",
+    "Remind me Later"
+  );
+
+  return confirmed ? "declined" : "later";
+}
+
 window.addEventListener("load", async () => {
+const currentYear = new Date().getFullYear();
+
+document.getElementById("galaticoFooterYear").textContent = currentYear;
+document.getElementById("galaticoFooterYear2").textContent = currentYear;
   showLoader();
   try {
     const loggedIn = await verifySession();
@@ -10474,7 +10606,8 @@ window.addEventListener("load", async () => {
       await renderCompetitionList();
       handlePaymentReturn();
       offerBiometricLogin();
-      
+      setupCompetitionNavigation();
+      setupStandingsFilters();
     } else {
       goToLoginPage();
     }
@@ -10484,3 +10617,7 @@ window.addEventListener("load", async () => {
     hideLoader();
   }
 });
+
+
+
+

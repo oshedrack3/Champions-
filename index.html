@@ -7,6 +7,7 @@
   <title> Galatico eSports | eFootball Tournament Hub </title>
   <link rel="stylesheet" href="styles.css" />
   <link rel="stylesheet" href="UI.css" />
+  <link rel="stylesheet" href="league.css" />
   
   
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
@@ -66,25 +67,37 @@
     </button>
   </div>
   
-  <!-- TourList header -->
-  <div class="header" id="tourListPageHead">
-    <div class="page-toggle">
+  
+  <div class="competition-page-header" id="tournamentHeader" style="display: none;">
+    
+    <div class="competition-header-main">
       
-      <div class="tournamentListView" id="competitionInViewName">
-        Tournaments
+      <button class="back" onclick="goToCompetitionPage()">❮</button>
+      
+      <div class="competition-identity">
+        <img id="competitionLogo" src="galaticoLogo1.png" alt="Galatico" class="competition-logo">
+        
+        <div class="competition-heading">
+          <span id="competitionTournamentTitle" class="competition-organizer">
+            GALATICO ESPORT
+          </span>
+          <span id="competitionTournamentSeason">Volume</span>
+        </div>
       </div>
       
+      <button class="menu-btn competition-menu-btn" onclick="setPageAndToggleMenu('tournament')">
+        ☰
+      </button>
       
     </div>
     
-    <button class="menu-btn" onclick="setPageAndToggleMenu('tournaments')">
-      ☰
-    </button>
-    <button class="btn-back" onclick="goToCompetitionPage()">
-      ❮
-    </button>
+    <div class="competition-page-navigation">
+      <button class="competition-nav-btn active" data-view="standings">Table</button>
+      <button class="competition-nav-btn" data-view="fixtures">Fixtures</button>
+      <button class="competition-nav-btn" data-view="stats">Stats/Records</button>
+    </div>
+    
   </div>
-  
   
   
   <!--  Page Head -->
@@ -119,7 +132,7 @@
     
     <div class="searchbar-fixtures">
       
-      <input type="text" id="fixtureSearchInput" placeholder="Search team..." oninput="renderFixtures()" />
+      
       <button class="menu-btn data-admin" onclick="setPageAndToggleMenu('fixture')">
         ☰
       </button>
@@ -209,6 +222,7 @@
         </button>
         
         <button class="menu-btn" onclick="setPageAndToggleMenu('bracket')">
+        
           ☰
         </button>
       </div>
@@ -221,34 +235,13 @@
   
   
   
-  <!-- NAV -->
-  <nav class="bottom-nav" id="nav" style="display:none">
-    
-    <button id="standingsBtn" class="active" onclick="goToTablePage()">
-      <span class="btn-icon">🏆</span>
-      <span class="btn-text">Standings</span>
-    </button>
-    
-    <button id="fixturesBtn" onclick="goToFixturePage()">
-      <span class="btn-icon">📋</span>
-      <span class="btn-text">Fixtures</span>
-    </button>
-    
-  </nav>
   
   <!-- All main content -->
   
   <main>
     
-    <section id="competitionPage" class="comPage">
+    <section id="competitionPage" class="comPage" style="display: none;">
       <section id="noticeSection" class="notice-board-section">
-        <div class="notice-board-header">
-          <div>
-            <h2>Notice Board</h2>
-            <p>Stay updated with the latest announcements.</p>
-          </div>
-        </div>
-        
         <div id="noticeBoard" class="notice-board">
           <div class="notice-loading">
             Loading notices...
@@ -275,105 +268,27 @@
           <span>THE HOME OF COMPETITION</span>
         </div>
       </div>
+      <nav id="homepageNav" style="display: none;">
+        <button type="button" class="homepage-nav-btn" onclick="goBackHome()">
+          Home
+        </button>
+        
+        <button type="button" class="homepage-nav-btn" onclick="openHallOfFame()">
+          Hall of Fame
+        </button>
+        
+        <button type="button" class="homepage-nav-btn" onclick="showGlobalRankings()">
+          Ranking
+        </button>
+        
+        <button type="button" class="homepage-nav-btn" onclick="openProfileModal()">
+          My Profile
+        </button>
+      </nav>
+      
       <div id="mySection">
+        
         <div id="competitionList"></div>
-        
-      </div>
-      
-      <div id="globalRankingsSection" style="display:none;">
-        <div class="rankings-header">
-          <h2>Global Rankings</h2>
-          <p>
-            Global Rankings measure your performance across official
-            Galatico Tournament matches. Every player starts with a rating of 1500.
-          </p>
-          <p>
-            Winning increases your rating, while losing decreases it.
-            Beating a higher-rated player earns more points, while
-            losing to a lower-rated player can cost more.
-          </p>
-          <p>
-            Your rating belongs to your user account, so it remains with
-            you even if you change teams.
-          </p>
-        </div>
-        <div class="rankings-actions">
-          <button type="button" id="openPlayerComparisonButton" class="open-player-comparison-button">
-            <span>⚔️</span>
-            <span>Compare Players</span>
-          </button>
-        </div>
-        <div id="globalRankingsList"></div>
-      </div>
-      <div id="playerComparisonSection" style="display:none;">
-        <div class="player-comparison-page-header">
-          <button type="button" id="backToRankingsButton" class="back-to-rankings-button">
-            ✕
-          </button>
-          <h2>Player Comparison</h2>
-          <p>
-            Compare any two players across Galatico.
-            Explore their career statistics, ratings, trophies, and head-to-head records.
-          </p>
-        </div>
-        <div class="player-comparison-section">
-          <div class="player-comparison-searches">
-            <div class="comparison-player-field">
-              <label for="comparisonPlayer1Search">Player 1</label>
-              <input type="text" id="comparisonPlayer1Search" placeholder="Search username..." autocomplete="off">
-              <div id="comparisonPlayer1Suggestions" class="player-search-suggestions" style="display:none;"></div>
-              <div id="comparisonPlayer1Selected" class="comparison-selected-player">No player selected</div>
-            </div>
-            <div class="comparison-versus">VS</div>
-            <div class="comparison-player-field">
-              <label for="comparisonPlayer2Search">Player 2</label>
-              <input type="text" id="comparisonPlayer2Search" placeholder="Search username..." autocomplete="off">
-              <div id="comparisonPlayer2Suggestions" class="player-search-suggestions" style="display:none;"></div>
-              <div id="comparisonPlayer2Selected" class="comparison-selected-player">No player selected</div>
-            </div>
-          </div>
-          <button type="button" id="comparePlayersButton" class="compare-players-button" disabled>
-            Compare Players
-          </button>
-          <div id="playerComparisonMessage" class="player-comparison-message" style="display:none;"></div>
-          <div id="playerComparisonResults" class="player-comparison-results" style="display:none;"></div>
-        </div>
-      </div>
-      <div id="publicSection" style="display:none;">
-        <div id="publicTournaments"></div>
-        
-      </div>
-      
-      <div id="hallOfFameSection" style="display:none;">
-        
-        <header class="hallOfFameHeader">
-          
-          <div class="hallOfFameHeaderBadge">
-            <span>🏆</span>
-          </div>
-          
-          <div class="hallOfFameHeaderLabel">
-            THE LEGENDS COLLECTION
-          </div>
-          
-          <h1 class="hallOfFameMainTitle">
-            Hall of <span>Fame</span>
-          </h1>
-          
-          <p class="hallOfFameDescription">
-            Celebrating the champions who made history.
-            Every trophy tells a story, every victory builds a legacy.
-          </p>
-          
-          <div class="hallOfFameHeaderDivider">
-            <span></span>
-            <span class="hallOfFameDividerIcon">✦</span>
-            <span></span>
-          </div>
-          
-        </header>
-        
-        <div id="hallOfFameList"></div>
         
       </div>
       
@@ -545,6 +460,154 @@
           </div>
         </div>
       </div>
+      
+      
+      
+      <div id="globalRankingsSection" style="display:none;">
+        <div class="rankings-header">
+          <h2>Global Rankings</h2>
+          <p>
+            Global Rankings measure your performance across official
+            Galatico Tournament matches. Every player starts with a rating of 1500.
+          </p>
+          <p>
+            Winning increases your rating, while losing decreases it.
+            Beating a higher-rated player earns more points, while
+            losing to a lower-rated player can cost more.
+          </p>
+          <p>
+            Your rating belongs to your user account, so it remains with
+            you even if you change teams.
+          </p>
+        </div>
+        <div class="rankings-actions">
+          <button type="button" id="openPlayerComparisonButton" class="open-player-comparison-button">
+            <span>⚔️</span>
+            <span>Compare Players</span>
+          </button>
+        </div>
+        <div id="globalRankingsList"></div>
+      </div>
+      <div id="playerComparisonSection" style="display:none;">
+        <div class="player-comparison-page-header">
+          <button type="button" id="backToRankingsButton" class="back-to-rankings-button">
+            ✕
+          </button>
+          <h2>Player Comparison</h2>
+          <p>
+            Compare any two players across Galatico.
+            Explore their career statistics, ratings, trophies, and head-to-head records.
+          </p>
+        </div>
+        <div class="player-comparison-section">
+          <div class="player-comparison-searches">
+            <div class="comparison-player-field">
+              <label for="comparisonPlayer1Search">Player 1</label>
+              <input type="text" id="comparisonPlayer1Search" placeholder="Search username..." autocomplete="off">
+              <div id="comparisonPlayer1Suggestions" class="player-search-suggestions" style="display:none;"></div>
+              <div id="comparisonPlayer1Selected" class="comparison-selected-player">No player selected</div>
+            </div>
+            <div class="comparison-versus">VS</div>
+            <div class="comparison-player-field">
+              <label for="comparisonPlayer2Search">Player 2</label>
+              <input type="text" id="comparisonPlayer2Search" placeholder="Search username..." autocomplete="off">
+              <div id="comparisonPlayer2Suggestions" class="player-search-suggestions" style="display:none;"></div>
+              <div id="comparisonPlayer2Selected" class="comparison-selected-player">No player selected</div>
+            </div>
+          </div>
+          <button type="button" id="comparePlayersButton" class="compare-players-button" disabled>
+            Compare Players
+          </button>
+          <div id="playerComparisonMessage" class="player-comparison-message" style="display:none;"></div>
+          <div id="playerComparisonResults" class="player-comparison-results" style="display:none;"></div>
+        </div>
+      </div>
+      <div id="publicSection" style="display:none;">
+        <div id="publicTournaments"></div>
+        
+      </div>
+      
+      <div id="hallOfFameSection" style="display:none;">
+        
+        <header class="hallOfFameHeader">
+          
+          <div class="hallOfFameHeaderBadge">
+            <span>🏆</span>
+          </div>
+          
+          <div class="hallOfFameHeaderLabel">
+            THE LEGENDS COLLECTION
+          </div>
+          
+          <h1 class="hallOfFameMainTitle">
+            Hall of <span>Fame</span>
+          </h1>
+          
+          <p class="hallOfFameDescription">
+            Celebrating the champions who made history.
+            Every trophy tells a story, every victory builds a legacy.
+          </p>
+          
+          <div class="hallOfFameHeaderDivider">
+            <span></span>
+            <span class="hallOfFameDividerIcon">✦</span>
+            <span></span>
+          </div>
+          
+        </header>
+        
+        <div id="hallOfFameList"></div>
+        
+      </div>
+      
+      
+      
+      
+      
+      
+      <footer class="galatico-footer">
+        <div class="galatico-footer-content">
+          
+          <div class="galatico-footer-brand">
+            <img src="galaticoLogo1.png" alt="Galatico eSport">
+            <h3>GALATICO ESPORT</h3>
+            <p>Competitive eFootball. Built for champions.</p>
+          </div>
+          
+          <div class="galatico-footer-section">
+            <h4>JOIN OUR COMMUNITY</h4>
+            <a href="https://chat.whatsapp.com/C6eD17eBiRiLxcj9smqjnF" target="_blank" rel="noopener noreferrer">
+              WhatsApp Community
+            </a>
+          </div>
+          
+          <div class="galatico-footer-section">
+            <h4>WATCH LIVE</h4>
+            <a href="https://youtube.com/@galaticoesport?si=VyHbFb-lob0ooi6e" target="_blank" rel="noopener noreferrer">
+              YouTube - Galatico eSport TV
+            </a>
+          </div>
+          
+          <div class="galatico-footer-section">
+            <h4>FOLLOW US</h4>
+            <a href="https://www.tiktok.com/@galaticoesport" target="_blank" rel="noopener noreferrer">
+              TikTok - @galaticoesport
+            </a>
+          </div>
+          
+          <div class="galatico-footer-section">
+            <h4>CONTACT ADMIN</h4>
+            <a href="https://wa.me/2349073166537" target="_blank" rel="noopener noreferrer">
+              WhatsApp: 09073166537
+            </a>
+          </div>
+          
+        </div>
+        
+        <div class="galatico-footer-bottom">
+          <p>© <span id="galaticoFooterYear"></span> Galatico eSport. All rights reserved.</p>
+        </div>
+      </footer>
     </section>
     <section id="listOfTournamentPage" class="page" style="display:none">
       
@@ -594,10 +657,15 @@
       
     </section>
     
-    
+    </section>
     
     
     <section id="tournamentPage" style="display:none">
+      <div class="competition-season-selector">
+        
+        <select id="competitionTournamentSelector"></select>
+      </div>
+      
       
       <!-- Cup Page -->
       <section id="cupPage" style="display:none">
@@ -849,142 +917,252 @@
       
       
       
-      <!-- League TABLE PAGE -->
-      <section id="tablePage" style="display:none">
+      
+      <section id="tablePage">
         
         <div id="tableView">
           
-          <div class="table-wrapper">
-            
-            <div class="table-tournament-name">
-              <img src="galaticoLogo1.png" alt="GALATICO Logo" class="table-galatico-logo">
-              <span id="tableTournamentName"></span>
-              <span class="table-tagline">WHERE CHAMPIONS ARE MADE</span>
-              <span id="tournamentSeason"></span>
-              
-            </div>
-            
-            <div class="table-zones">
-              
-              <div class="table-zone">
-                <span class="zone-indicator champions-zone"></span>
-                <span>Champions League Qualification</span>
-                
-              </div>
-              
-              <div class="table-zone">
-                <span class="zone-indicator relegation-zone"></span>
-                <span>Relegation</span>
-              </div>
-              <div class="table-zone">
-                <span class="deduction-dot"></span>
-                <span>Has Point Deduction</span>
-              </div>
-              
-            </div>
-            <div class="official-standings-heading">
-              <span class="standings-line"></span>
-              <h3>OFFICIAL LEAGUE STANDINGS</h3>
-              <span class="standings-line"></span>
-            </div>
-            
-            <table id="leagueTable">
-              
-              <thead>
-                <tr>
-                  <th>#</th>
-                  <th>Team</th>
-                  <th>P</th>
-                  <th>W</th>
-                  <th>D</th>
-                  <th>L</th>
-                  <th>GF</th>
-                  <th>GA</th>
-                  <th>GD</th>
-                  <th>Pts</th>
-                  <th>Last 5</th>
-                </tr>
-              </thead>
-              
-              <tbody id="tableBody"></tbody>
-              
-            </table>
-            
+          <div class="standings-filters">
+            <button type="button" class="standings-filter active" data-table-filter="full">Full</button>
+            <button type="button" class="standings-filter" data-table-filter="basic">Basic</button>
+            <button type="button" class="standings-filter" data-table-filter="form">Form</button>
           </div>
           
+          <div class="table-wrapper">
+            
+            <div class="table-responsive">
+              <table id="leagueTable">
+                <thead>
+                  <tr>
+                    <th>Pos</th>
+                    <th colspan="2">Player</th>
+                    <th>P</th>
+                    <th>W-D-L</th>
+                    <th>G</th>
+                    <th>+/-</th>
+                    <th>Pts</th>
+                    <th id="formColumnHeader" style="display:none">Form</th>
+                  </tr>
+                </thead>
+                <tbody id="tableBody"></tbody>
+              </table>
+            </div>
+            
+          </div>
         </div>
         
-        <div id="teamView" style="display:none">
+        <div id="teamView" style="display:none;">
           <div id="teamList"></div>
         </div>
         
-        <div id="formView" style="display:none">
-          <div class="form-text">
-            <span> Recent Forms </span>
-            <button onclick="shareForm()">📤 Share Form</button>
-            <span> Last 5</span></p>
-          </div>
-          <div id="formContainer"></div>
+        <div id="formView" style="display:none;">
+          <div id="formList"></div>
         </div>
         
-        <div id="recordsView" style="display:none">
-          
-          
-          <div id="championPodium"></div>
-          <div id="teamPerformance"></div>
-          <div id="bestAttack"></div>
-          
-          <div id="bestDefense"></div>
-          
-          <div id="goalDifference"></div>
-          
-          <div id="mostWins"></div>
-          
-          <div id="biggestWin"></div>
-          
-          <div id="highestScoringMatch"></div>
-          
-          <div id="longestWinningRun"></div>
-          
-          <div id="longestUnbeatenRun"></div>
-          <div id="mostDraws"></div>
-          <div id="fewestLosses"></div>
-          <div id="mostGoalsConceded"></div>
-          <div id="mostCleanSheets"></div>
-          <div id="mostGoalsByTeamInMatch"></div>
-          
-          <div id="longestScoringRun"></div>
-          <div id="longestCleanSheetRun"></div>
-          <div id="longestScoringDrought"></div>
-          
-          <div id="highestPossession"></div>
-          <div id="mostShots"></div>
-          <div id="mostShotsOnTarget"></div>
-        </div>
-        </div>
+        
         </div>
         
       </section>
+      
+      
+      <div id="recordsView" class="stats-view" style="display:none;">
+        
+        
+        <nav class="stats-nav" id="statsNavigation">
+          <button class="stats-nav-btn active" data-stats-tab="overview">Overview</button>
+          <button class="stats-nav-btn" data-stats-tab="players">Player Stats</button>
+          <button class="stats-nav-btn" data-stats-tab="records">Records</button>
+          <button class="stats-nav-btn" data-stats-tab="matches">Match Stats</button>
+        </nav>
+        
+        <div class="stats-content">
+          
+          <section class="stats-panel active" id="stats-overview">
+            
+            <div class="player-leaderboards">
+              
+              <section class="player-leaderboard">
+                <div class="player-leaderboard-heading">
+                  <h3>BEST DEFENCE</h3>
+                </div>
+                <div id="overviewBestDefense"></div>
+              </section>
+              
+              <section class="player-leaderboard">
+                <div class="player-leaderboard-heading">
+                  <h3>MOST WINS</h3>
+                </div>
+                <div id="overviewMostWins"></div>
+              </section>
+              
+              <section class="player-leaderboard">
+                <div class="player-leaderboard-heading">
+                  <h3>GOAL DIFFERENCE</h3>
+                </div>
+                <div id="overviewGoalDifference"></div>
+              </section>
+              
+            </div>
+            
+          </section>
+          
+          <section class="stats-panel" id="stats-players">
+            
+            
+            <div class="player-leaderboards">
+              
+              <section class="player-leaderboard">
+                <div class="player-leaderboard-heading">
+                  <h3>GOALS</h3>
+                </div>
+                <div id="playerGoals"></div>
+              </section>
+              
+              <section class="player-leaderboard">
+                <div class="player-leaderboard-heading">
+                  <h3>SHOTS</h3>
+                </div>
+                <div id="playerShots"></div>
+              </section>
+              
+              <section class="player-leaderboard">
+                <div class="player-leaderboard-heading">
+                  <h3>CLEAN SHEETS</h3>
+                </div>
+                <div id="playerCleanSheets"></div>
+              </section>
+              
+              <section class="player-leaderboard">
+                <div class="player-leaderboard-heading">
+                  <h3>MOST DRAWS</h3>
+                </div>
+                <div id="mostDraws"></div>
+              </section>
+              
+              <section class="player-leaderboard">
+                <div class="player-leaderboard-heading">
+                  <h3>FEWEST LOSSES</h3>
+                </div>
+                <div id="fewestLosses"></div>
+              </section>
+              
+              <section class="player-leaderboard">
+                <div class="player-leaderboard-heading">
+                  <h3>MOST GOALS CONCEDED</h3>
+                </div>
+                <div id="mostGoalsConceded"></div>
+              </section>
+              
+            </div>
+            
+          </section>
+          
+          <section class="stats-panel" id="stats-records">
+            
+            
+            <div class="player-leaderboards">
+              
+              
+              
+              
+              
+              <section class="player-leaderboard">
+                <div class="player-leaderboard-heading">
+                  <h3>LONGEST WINNING RUN</h3>
+                </div>
+                <div id="longestWinningRun"></div>
+              </section>
+              
+              <section class="player-leaderboard">
+                <div class="player-leaderboard-heading">
+                  <h3>LONGEST UNBEATEN RUN</h3>
+                </div>
+                <div id="longestUnbeatenRun"></div>
+              </section>
+              
+              <section class="player-leaderboard">
+                <div class="player-leaderboard-heading">
+                  <h3>LONGEST SCORING RUN</h3>
+                </div>
+                <div id="longestScoringRun"></div>
+              </section>
+              
+              <section class="player-leaderboard">
+                <div class="player-leaderboard-heading">
+                  <h3>LONGEST CLEAN-SHEET RUN</h3>
+                </div>
+                <div id="longestCleanSheetRun"></div>
+              </section>
+              
+              <section class="player-leaderboard">
+                <div class="player-leaderboard-heading">
+                  <h3>LONGEST SCORING DROUGHT</h3>
+                </div>
+                <div id="longestScoringDrought"></div>
+              </section>
+              
+            </div>
+            
+          </section>
+          
+          <section class="stats-panel" id="stats-matches">
+            
+            
+            <div class="player-leaderboards">
+              
+              <section class="player-leaderboard">
+                <div class="player-leaderboard-heading">
+                  <h3>HIGHEST POSSESSION</h3>
+                </div>
+                <div id="highestPossession"></div>
+              </section>
+              
+              <section class="player-leaderboard">
+                <div class="player-leaderboard-heading">
+                  <h3>MOST SHOTS IN A MATCH</h3>
+                </div>
+                <div id="mostShots"></div>
+              </section>
+              
+              <section class="player-leaderboard">
+                <div class="player-leaderboard-heading">
+                  <h3>MOST SHOTS ON TARGET</h3>
+                </div>
+                <div id="mostShotsOnTarget"></div>
+              </section>
+              
+            </div>
+            
+          </section>
+          
+        </div>
+        
+      </div>
+      
+      
       
       
       
       <!-- FIXTURES -->
       
       
-      <section class="page" id="fixturePage" style="display:none;">
+      
+      <section class="page" id="fixturePage" style="display: none;">
         
-        <div class="content">
+        <div class="fixture-top-bar">
+          <div id="submissionDeadlineCountdown"></div>
+          <input type="text" id="fixtureSearchInput" placeholder="Search team..." oninput="renderFixtures()" />
           
+        </div>
+        <div class="content">
           <div id="fixtureScreenshotArea">
             
             
             
             
-            <div id="submissionDeadlineCountdown"></div>
-            
             <div id="fixtureList"></div>
             
-            <div id="friendlyFixtureGenerator" style="display:none;">
+            <div id="friendlyFixtureGenerator" style="display: none;">
               <div class="friendly-generator-card">
                 <h3>Friendly Fixture Generator</h3>
                 <p>Choose how many opponents each team will face.</p>
@@ -1012,6 +1190,8 @@
               </div>
             </div>
             
+          </div>
+        </div>
       </section>
       
       
@@ -1022,7 +1202,49 @@
       
       
       
-      
+      <footer class="galatico-footer">
+        <div class="galatico-footer-content">
+          
+          <div class="galatico-footer-brand">
+            <img src="galaticoLogo1.png" alt="Galatico eSport">
+            <h3>GALATICO ESPORT</h3>
+            <p>Competitive eFootball. Built for champions.</p>
+          </div>
+          
+          <div class="galatico-footer-section">
+            <h4>JOIN OUR COMMUNITY</h4>
+            <a href="https://chat.whatsapp.com/C6eD17eBiRiLxcj9smqjnF" target="_blank" rel="noopener noreferrer">
+              WhatsApp Community
+            </a>
+          </div>
+          
+          <div class="galatico-footer-section">
+            <h4>WATCH LIVE</h4>
+            <a href="https://youtube.com/@galaticoesport?si=VyHbFb-lob0ooi6e" target="_blank" rel="noopener noreferrer">
+              YouTube - Galatico eSport TV
+            </a>
+          </div>
+          
+          <div class="galatico-footer-section">
+            <h4>FOLLOW US</h4>
+            <a href="https://www.tiktok.com/@galaticoesport" target="_blank" rel="noopener noreferrer">
+              TikTok - @galaticoesport
+            </a>
+          </div>
+          
+          <div class="galatico-footer-section">
+            <h4>CONTACT ADMIN</h4>
+            <a href="https://wa.me/2349073166537" target="_blank" rel="noopener noreferrer">
+              WhatsApp: 09073166537
+            </a>
+          </div>
+          
+        </div>
+        
+        <div class="galatico-footer-bottom">
+          <p>© <span id="galaticoFooterYear2"></span> Galatico eSport. All rights reserved.</p>
+        </div>
+      </footer>
       
       
       
@@ -1030,6 +1252,7 @@
       
       
     </section>
+    
     
   </main>
   
@@ -1125,7 +1348,11 @@
         
       </div>
       
+      
     </div>
+    
+    
+    
     
   </div>
   
@@ -1542,23 +1769,6 @@
   
   
   
-  <div class="custom-dropdown" id="customDropdown" style="display:none">
-    <button class="dropdown-toggle" onclick="toggleDropdown()">
-      📊 Table </button>
-    
-    <div id="dropdownMenu" class="dropdown-menu">
-      <div onclick="handleMenuClick('table')">📊 Table</div>
-      <div onclick="handleMenuClick('fullview')">🖥️ Full Table View</div>
-      <div data-admin onclick="handleMenuClick('share')">
-        📷 Share Table
-      </div>
-      
-      <div onclick="handleMenuClick('team')">
-        👥 Teams
-      </div>
-      <div onclick="handleMenuClick('records')">🏆 Records</div>
-    </div>
-  </div>
   
   
   <div id="alertModal" class="modal-overlay alert">
@@ -2268,28 +2478,6 @@
     </section>
   </div>
   
-  <nav id="homepageNav" style="display: none;">
-    <button type="button" class="homepage-nav-btn" onclick="goBackHome()">
-      <span>🏠</span>
-      <span>Home</span>
-    </button>
-    
-    <button type="button" class="homepage-nav-btn" onclick="openHallOfFame()">
-      <span>🏆</span>
-      <span>Hall of Fame</span>
-    </button>
-    
-    <button type="button" class="homepage-nav-btn" onclick="showGlobalRankings()">
-      <span>📊</span>
-      <span>Ranking</span>
-    </button>
-    
-    <button type="button" class="homepage-nav-btn" onclick="openProfileModal()">
-      <span>👤</span>
-      <span>My Profile</span>
-    </button>
-  </nav>
-  
   <div id="fixtureSquadModal" class="fixture-squad-modal" style="display: none;" aria-hidden="true">
     <div class="fixture-squad-backdrop" onclick="closeFixtureSquads()"></div>
     
@@ -2749,6 +2937,9 @@
       </div>
     </div>
   </div>
+  
+  
+  
   
   
   <script src="https://docs.opencv.org/4.x/opencv.js"></script>

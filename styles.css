@@ -371,23 +371,6 @@ main {
 
 
 
-#tablePage {
-  padding-bottom: 40px;
-  padding-top: 65px;
-  padding-left: 10px;
-  padding-right: 10px;
-}
-
-#fixturePage {
-  padding-top: 70px;
-  padding-bottom: 40px;
-  padding-left: 10px;
-  padding-right: 10px;
-  background: white;
-}
-
-
-
 
 .create-tournament h2 {
   padding-bottom: 15px;
@@ -543,19 +526,8 @@ select:focus {
   width: 100%;
 }
 
-#fixturePage h2 {
-  font-size: 20px;
-  font-weight: 700;
-  paddind-bottom: 8px;
-  text-align: center;
-}
 
 
-#fixtureList {
-  display: flex;
-  flex-direction: column;
-  background: white;
-}
 
 
 
@@ -855,46 +827,7 @@ select:focus {
 
 
 
-#knockOut {
-  overflow: auto;
-  display: flex;
-  flex-direction: column;
-  position: fixed;
-  width: 100%;
-  height: 100%;
-  background-color: #f8f7f4;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  padding-top: 60px;
-  padding-bottom: 60px;
-}
 
-
-.bracketControls {
-  display: flex;
-  position: fixed;
-  left: 0;
-  right: 0;
-  top: 0;
-  height: 40px;
-  align-items: center;
-  gap: 10px;
-  padding: 24px 16px;
-  z-index: 1000;
-  overflow-x: auto;
-  background: rgba(128, 128, 128, 0.3);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
- 
-}
-
-.bracketTopActions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-left: auto;
-  margin-right: auto;
-  height: 40px;
-}
 
 
 
@@ -1336,23 +1269,22 @@ team-logo-preview.show {
   display: block;
 }
 
+
+
 .menu-btn {
   position: fixed;
-  top: 5px;
-  right: 5px;
-  
-  
-  border: 1px solid rgba(88, 166, 255, 0.3);
-  background: #cccccc;
-  color: #0d1117;
-  
-  font-size: 20px;
-  height: 30px;
+  top: 12px;
+  right: 12px;
   width: 30px;
+  height: 30px;
   display: flex;
   align-items: center;
   justify-content: center;
-  
+  border: 1px solid rgba(88, 166, 255, 0.3);
+  border-radius: 6px;
+  color: #0d1117;
+  font-size: 20px;
+  cursor: pointer;
   z-index: 999;
 }
 
@@ -1360,38 +1292,10 @@ team-logo-preview.show {
   position: fixed;
   inset: 0;
   background: rgba(0, 0, 0, 0.6);
-  
   opacity: 0;
   pointer-events: none;
   transition: 0.2s;
-  
   z-index: 1000;
-}
-
-.side-menu {
-  position: fixed;
-  top: 0;
-  right: -260px;
-  
-  width: 240px;
-  height: fit-content;
-  
-  background: white;
-  border-right: 1px solid rgba(88, 166, 255, 0.2);
-  
-  padding: 60px 12px 12px;
-  border-bottom-left-radius: 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  
-  transition: 0.25s ease;
-  
-  z-index: 1002;
-}
-
-.side-menu.open {
-  right: 0;
 }
 
 .menu-overlay.active {
@@ -1399,257 +1303,152 @@ team-logo-preview.show {
   pointer-events: auto;
 }
 
-.menu-item {
-  padding: 10px;
-  border-radius: 8px;
-  
-  background: transparent;
-  border: 1px solid grey;
-  
-  color: #0d1117;
-  text-align: left;
-  
-  font-size: 14px;
+.side-menu {
+  position: fixed;
+  top: 0;
+  right: -260px;
+  width: 240px;
+  height: 100vh;
+  height: 100dvh;
+  max-height: 100dvh;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  box-sizing: border-box;
+  background: #fff;
+  border-left: 1px solid rgba(88, 166, 255, 0.2);
+  padding: 60px 12px 20px;
+  border-bottom-left-radius: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  transition: right 0.25s ease;
+  z-index: 1002;
 }
 
-.menu-item:hover {
-  background: rgba(88, 166, 255, 0.1);
+.side-menu.open {
+  right: 0;
 }
 
-.menu-title {
+.menu-header {
+  flex-shrink: 0;
   font-size: 13px;
   font-weight: 700;
   letter-spacing: 1px;
   color: #0d1117;
-  
-  margin-bottom: 12px;
-  padding-bottom: 8px;
-  
-  border-bottom: 1px solid #0d1117;
+  margin-bottom: 4px;
+  padding: 0 10px 10px;
+  border-bottom: 1px solid #d1d5db;
 }
 
-.form-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 8px;
+.menu-item {
+  width: 100%;
+  flex-shrink: 0;
+  box-sizing: border-box;
+  padding: 10px;
   border-radius: 8px;
-  margin-bottom: 5px;
-  background: white;
+  background: transparent;
   border: 1px solid grey;
-  
-}
-
-.form-team {
-  display: flex;
-  align-items: center;
-  gap: 10px;
   color: #0d1117;
-  font-size: 12px;
-}
-
-.Form-team-logo {
-  height: 20px;
-  width: 20px;
-  object-fit: contain;
-}
-
-.form-results {
-  display: flex;
-  gap: 3px;
-  
-}
-
-.form-text {
-  color: #0d1117;
-  display: flex;
-  margin-bottom: 10px;
-  margin-left: 20px;
-  justify-content: space-between;
-  align-items: center;
-  width: auto;
-}
-
-.form-text button {
-  padding: 4px;
-  height: auto;
-  width: auto;
-  border: solid 1px grey;
-  border-radius: 10px;
-}
-
-
-.form-badge {
-  display: flex;
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 700;
+  text-align: left;
   font-size: 14px;
-  line-height: 1;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
 }
 
-.form-badge.✓ {
-  
-  background: #16a34a;
+.menu-item:hover {
+  background: rgba(88, 166, 255, 0.1);
+  border-color: #94a3b8;
 }
 
-.form-badge.– {
-  background: grey;
+.menu-group {
+  flex-shrink: 0;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #fff;
 }
 
-.form-badge.✕ {
-  background: #dc2626;
-}
-
-
-.form-position {
-  width: 28px;
-  height: 28px;
-  
+.menu-group-toggle {
+  width: 100%;
+  min-height: 42px;
   display: flex;
   align-items: center;
-  justify-content: center;
-  
-  font-weight: 700;
-  font-size: 13px;
-  
-  border-radius: 50%;
-  
-  
-  color: #0d1117;
-}
-
-
-.streak-row {
-  display: flex;
   justify-content: space-between;
-  align-items: center;
+  padding: 10px;
+  border: none;
+  background: #f1f2f4;
+  color: #0d1117;
+  font-size: 14px;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.2s;
 }
 
-
-.record-card {
-  background: white;
-  
-  border: 3px solid #58a6ff;
-  border-radius: 12px;
-  padding: 12px;
-  margin-bottom: 12px;
+.menu-group-toggle:hover {
+  background: #e9ecef;
 }
 
-.record-card.hero {
-  border: 1px solid #58a6ff;
-  background: white;
+.menu-group-arrow {
+  font-size: 18px;
+  transition: transform 0.2s ease;
 }
 
-
-
-.match-vertical {
-  display: flex;
+.menu-group-content {
+  display: none;
   flex-direction: column;
   gap: 6px;
+  padding: 8px;
+  background: #fff;
 }
 
-
-.team-row {
+.menu-group.expanded .menu-group-content {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
 }
 
-.team-side {
-  display: flex;
-  align-items: center;
-  gap: 6px;
+.menu-group.expanded .menu-group-arrow {
+  transform: rotate(180deg);
 }
 
-
-.team-score {
-  font-weight: bold;
+.menu-group-content .menu-item {
+  padding: 9px 10px;
+  border-color: #e5e7eb;
+  font-size: 13px;
 }
 
+.menu-group-content .menu-item:hover {
+  background: rgba(88, 166, 255, 0.1);
+}
 
-.team-logo,
-.team-logo-placeholder {
-  width: 32px;
-  height: 32px;
+.btn-logout {
+  width: 100%;
   flex-shrink: 0;
-}
-
-
-.team-logo {
-  object-fit: contain;
-}
-
-.team-logo-placeholder {
-  background: #ccc;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 10px;
-}
-
-.record-sub.center {
-  text-align: center;
-  font-weight: bold;
-  margin-top: 4px;
-}
-
-
-
-
-#bestAttack,
-#bestDefense,
-#goalDifference,
-#mostWins,
-#biggestWin,
-#highestScoringMatch,
-#longestWinningRun,
-#longestUnbeatenRun {
-  color: #0d1117;
-}
-
-.record-row {
-  display: flex;
-  justify-content: space-between;
-  padding: 6px 0;
-}
-
-.team {
-  flex: 1;
-  margin-left: 8px;
-  color: #0d1117;
-}
-
-.value {
-  font-weight: bold;
-  color: #0d1117;
-}
-
-.record-title {
+  padding: 10px;
+  border: 1px solid #dc2626;
+  border-radius: 8px;
+  background: #fff;
+  color: #dc2626;
   font-size: 14px;
-  font-weight: 700;
-  margin-bottom: 10px;
-  color: #0d1117;
-  
-  display: block;
-  text-align: center;
+  cursor: pointer;
 }
+
+.btn-logout:hover {
+  background: #fef2f2;
+}
+
+
+
+
+
+
+
 
 #viewIndicator {
   color: #0d1117;
 }
 
-#recordsView {
-  padding-top: 15px;
-  padding-bottom: 30px;
-  padding-left: 15px;
-  padding-right: 15px;
-  
-}
 
 .data-actions {
   display: flex;
@@ -1920,130 +1719,6 @@ select {
 }
 
 
-
-
-.team-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 14px 16px;
-  font-size: 14px;
-}
-
-.home-row {
-  border-bottom: 1px solid #e2e8f0;
-}
-
-.team-side {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  min-width: 0;
-  flex: 1;
-}
-
-.fixture-team-logo,
-.fixture-team-logo-placeholder {
-  width: 28px;
-  height: 28px;
-  flex-shrink: 0;
-}
-
-.fixture-team-logo {
-  object-fit: contain;
-}
-
-.fixture-team-logo-placeholder {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: #edf2f7;
-  color: #4a5568;
-  font-weight: 700;
-  border-radius: 6px;
-}
-
-.team-name {
-  font-weight: 600;
-  color: #1a202c;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.score-value {
-  font-size: 18px;
-  font-weight: 800;
-  color: #1a202c;
-  flex-shrink: 0;
-}
-
-.vs-container {
-  width: 20px;
-  position: absolute;
-  right: 50%;
-  transform: translateY(-50%);
-  
-  pointer-events: none;
-  z-index: 10;
-  text-align: center;
-}
-
-.Kvs-text {
-  margin-left: auto;
-  font-size: 18px;
-  font-weight: 500;
-  color: #4a5568;
-  background-color: #edf2f7;
-  width: 45px;
-  padding: 5px 6px;
-  border-radius: 6px;
-  letter-spacing: 0.5px;
-  box-shadow: 0 0 0 4px #ffffff;
-}
-
-.kft-badge {
-  position: absolute;
-  right: 0;
-  top: 50%;
-  transform: translateY(-50%);
-  color: #4a5568;
-  padding: 5px;
-  font-size: 10px;
-  background: white;
-}
-
-
-.kmatch-time {
-  white-space: nowrap;
-  display: inline-block;
-  width: 100%;
-  text-align: center;
-  color: #1a202c;
-  opacity: 0.7;
-  
-}
-
-.pending-match {
-  border: 1px solid #a0aec0;
-  background-color: #f7fafc;
-  cursor: default;
-}
-
-.pending-match .team-name {
-  color: #1a202c;
-  font-weight: 500;
-  font-style: normal;
-}
-
-.pending-match:hover {
-  transform: none;
-  border-color: #a0aec0;
-}
-
-#bracket-Container {
-  padding-top: 40px;
-}
 
 
 .team-card {
@@ -2354,68 +2029,6 @@ select {
   justify-content: center;
   font-size: 10px;
 }
-
-.champion-card {
-  text-align: center;
-  padding: 16px;
-  margin-bottom: 12px;
-  border-radius: 12px;
-  background: #fff;
-  
-  border: 2px solid #ffd700;
-  
-  box-shadow:
-    0 0 6px #ffd700,
-    0 0 14px #ffd700,
-    0 0 26px rgba(255, 215, 0, 0.8),
-    0 0 40px rgba(255, 215, 0, 0.4);
-}
-
-.champion-tournament-logo {
-  margin-bottom: 8px;
-}
-
-.tournament-logo {
-  width: 40px;
-  height: 40px;
-  object-fit: contain;
-}
-
-.champion-title {
-  font-weight: 800;
-  font-size: 16px;
-  margin-bottom: 18px;
-}
-
-.champion-team {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  margin-top: 6px;
-  margin-bottom: 12px;
-}
-
-.champion-team-logo {
-  width: 62px;
-  height: 62px;
-  object-fit: contain;
-  
-}
-
-.champion-name {
-  font-size: 16px;
-  font-weight: 700;
-  color: #111827;
-  margin-bottom: 5px;
-}
-
-.champion-stats {
-  font-size: 13px;
-  opacity: 0.8;
-  color: #111827;
-}
-
 
 
 
@@ -3054,53 +2667,6 @@ select {
 }
 
 
-.dropdown-toggle {
-  padding: 4px;
-  width: 100%;
-  height: 33px;
-  color: #222;
-  font-size: 12px;
-  border-radius: 20px;
-  position: fixed;
-  top: 38px;
-  justify-content: center;
-  text-align: center;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 999;
-}
-
-.dropdown-menu {
-  position: fixed;
-  top: 70px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: white;
-  border-radius: 8px;
-  overflow: hidden;
-  display: none;
-  min-width: 150px;
-  z-index: 1000;
-  border: solid 1px grey;
-  z-index: 40;
-}
-
-.dropdown-menu div {
-  padding: 10px;
-  color: #222;
-  cursor: pointer;
-  z-index: 35;
-}
-
-.dropdown-menu div:hover {
-  background: #444;
-}
-
-.dropdown-menu.show {
-  display: block;
-}
-
-
 
 .view-container {
   overflow: hidden;
@@ -3243,28 +2809,6 @@ select {
 }
 
 
-.match-card {
-  position: relative;
-  background-color: rgba(255, 255, 255, 0.1);
-  border: 1px solid #1a202c;
-  border-radius: 10px;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
-  overflow: hidden;
-  margin: 25px 0;
-  width: 100%;
-  cursor: pointer;
-  transition: transform 0.15s ease, border-color 0.15s ease;
-}
-
-.match-card:hover {
-  border-color: #1a202c;
-  transform: translateY(-2px);
-}
-
-
-.groupMatches {
-  background-color: transparent;
-}
 
 .fixture-row {
   background-color: transparent;
@@ -3450,5 +2994,113 @@ select {
   to {
     opacity: 1;
     transform: translateY(0) scale(1);
+  }
+}
+
+
+
+.galatico-footer {
+  width: 100%;
+  margin-top: 25px;
+  padding: 16px 18px 0;
+  background: #fff;
+  color: #6b7280;
+  box-sizing: border-box;
+}
+
+.galatico-footer-content {
+  max-width: 1000px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px 20px;
+  padding-bottom: 14px;
+}
+
+.galatico-footer-brand {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  text-align: center;
+}
+
+.galatico-footer-brand img {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+}
+
+.galatico-footer-brand h3 {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 800;
+  color: #6b7280;
+  text-align: center;
+}
+
+.galatico-footer-brand p {
+  margin: 0;
+  color: #858b96;
+  font-size: 11px;
+  line-height: 1.4;
+  text-align: center;
+}
+
+.galatico-footer-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 5px;
+}
+
+.galatico-footer-section h4 {
+  margin: 0;
+  color: #737b88;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  text-align: center;
+}
+
+.galatico-footer-section a {
+  color: #858b96;
+  font-size: 11px;
+  line-height: 1.5;
+  text-align: center;
+  text-decoration: none;
+}
+
+.galatico-footer-section a:hover {
+  color: #2563eb;
+}
+
+.galatico-footer-bottom {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 10px 0;
+  border-top: 1px solid #f0f1f3;
+  text-align: center;
+}
+
+.galatico-footer-bottom p {
+  margin: 0;
+  color: #999faa;
+  font-size: 10px;
+  text-align: center;
+}
+
+@media (min-width: 700px) {
+  .galatico-footer-content {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 18px;
+  }
+  
+  .galatico-footer-brand {
+    grid-column: 1 / -1;
   }
 }

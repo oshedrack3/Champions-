@@ -1,119 +1,6 @@
 const LOGO_DB_NAME = "TournamentLogosDB";
 const LOGO_STORE = "logos";
 
-async function renderFixtures() {
-  const tournament =
-    getCurrentTournament();
-  if (!tournament) return;
-  const container =
-    document.getElementById("fixtureList");
-  if (!container) return;
-  const search =
-    document.getElementById("fixtureSearchInput")
-    ?.value.toLowerCase().trim() || "";
-  try {
-    showLoader();
-    await loadTournamentFixtures(
-      tournament.id
-    );
-    toggleRoundCarousel(
-      search
-    );
-    const visibleMatches =
-      getVisibleMatches(search);
-    visibleMatches.sort((a, b) => {
-      const roundDiff =
-        (Number(a.round) || 1) -
-        (Number(b.round) || 1);
-      if (roundDiff !== 0) {
-        return roundDiff;
-      }
-      const aPending =
-        getMatchSubmissionStatus(a) === "pending";
-      const bPending =
-        getMatchSubmissionStatus(b) === "pending";
-      return Number(bPending) -
-        Number(aPending);
-    });
-    container.innerHTML = `
-      <div class="fixtures-tournament-header">
-        <div class="fixtures-tournament-name">
-          ${tournament.name || ""}
-        </div>
-        <div class="fixtures-tournament-season">
-          ${tournament.season || ""}
-        </div>
-      </div>
-    `;
-    if (!visibleMatches.length) {
-      renderEmptyFixtures(
-        container,
-        search
-      );
-      renderRoundList();
-      return;
-    }
-    let lastRound = null;
-    visibleMatches.forEach(match => {
-      const round =
-        Number(match.round) || 1;
-      if (round !== lastRound) {
-        lastRound = round;
-        container.appendChild(
-          createRoundHeader(round)
-        );
-      }
-      container.appendChild(
-        createFixtureCard(
-          tournament,
-          match
-        )
-      );
-    });
-    renderRoundList();
-  } catch (err) {
-    console.error(
-      "[renderFixtures]",
-      err
-    );
-    container.innerHTML = "";
-    renderEmptyFixtures(
-      container,
-      false
-    );
-    showAlert(
-      err.message ||
-      "Failed to load fixtures."
-    );
-  } finally {
-    hideLoader();
-  }
-}
-function getVisibleMatches(search = "") {
-  const matches =
-    Array.isArray(fixtures) ? [...fixtures] : [];
-  
-  if (search) {
-    return matches.filter(
-      match =>
-      (match.home || "")
-      .toLowerCase()
-      .includes(search) ||
-      (match.away || "")
-      .toLowerCase()
-      .includes(search)
-    );
-  }
-  
-  const currentRound =
-    getCurrentRound();
-  
-  return matches.filter(
-    match =>
-    Number(match.round) ===
-    currentRound
-  );
-}
 
 function getSubmission(match, tournament) {
   return Object.values(
@@ -424,90 +311,10 @@ function formatRecordedTime(value) {
   return `${formattedDate}, ${formattedTime}`;
 }
 
-function setCurrentRound(round) {
-  const tournament =
-    getCurrentTournament();
-  
-  if (!tournament) return;
-  
-  const maxRound =
-    getMaxRound();
-  
-  const newRound =
-    Math.max(
-      1,
-      Math.min(
-        Number(round) || 1,
-        maxRound
-      )
-    );
-  
-  localStorage.setItem(
-    `currentRound_${tournament.id}`,
-    String(newRound)
-  );
-}
 
-function getCurrentRound() {
-  const tournament =
-    getCurrentTournament();
-  
-  if (!tournament) return 1;
-  
-  const savedRound =
-    localStorage.getItem(
-      `currentRound_${tournament.id}`
-    );
-  
-  const round =
-    Number(savedRound);
-  
-  const maxRound =
-    getMaxRound();
-  
-  if (
-    !Number.isFinite(round) ||
-    round < 1
-  ) {
-    return 1;
-  }
-  
-  return Math.min(
-    round,
-    maxRound
-  );
-}
-async function prevRound() {
-  const current =
-    getCurrentRound();
-  
-  if (current <= 1) {
-    return;
-  }
-  
-  setCurrentRound(
-    current - 1
-  );
-  
-  await renderFixtures();
-}
-async function nextRound() {
-  const current =
-    getCurrentRound();
-  
-  const max =
-    getMaxRound();
-  
-  if (current >= max) {
-    return;
-  }
-  
-  setCurrentRound(
-    current + 1
-  );
-  
-  await renderFixtures();
-}
+
+
+
 
 
 function deleteTeam(index) {
@@ -1492,28 +1299,6 @@ function recordMatchResult(matchId, homeGoals, awayGoals) {
 
 
 
-function toggleDropdown() {
-  document.getElementById("dropdownMenu").classList.toggle("show");
-}
-
-function handleMenuClick(value) {
-  
-  if (value === "fullview") toggleScreenshotMode();
-  else if (value === "share") shareTable();
-  else toggleView(value);
-  
-  
-  document.getElementById("dropdownMenu").classList.remove("show");
-}
-
-
-
-document.addEventListener("click", function(e) {
-  const dropdown = document.querySelector(".custom-dropdown");
-  if (!dropdown.contains(e.target)) {
-    document.getElementById("dropdownMenu").classList.remove("show");
-  }
-});
 
 
 
@@ -1613,36 +1398,7 @@ function enableSwipeForRounds() {
   }
 }
 
-function updateDropdownLabel(view) {
-  const dropdownToggle = document.querySelector(".dropdown-toggle");
-  
-  const labels = {
-    table: "📊 Table",
-    forms: "📈 Forms",
-    teams: "👥 Teams",
-    records: "🏆 Records"
-  };
-  
-  if (APP_MODE === "admin") {
-    labels.register = "📝 Register Team";
-  }
-  
-  dropdownToggle.textContent = labels[view] || "📊 Table";
-}
 
-function getMaxRound() {
-  if (!Array.isArray(fixtures) || !fixtures.length) {
-    return 1;
-  }
-  
-  return Math.max(
-    ...fixtures.map(
-      match =>
-      Number(match.round) || 1
-    ),
-    1
-  );
-}
 
 function getTournaments() {
   return myTournaments || [];
@@ -3856,644 +3612,173 @@ checkOpenCV();
 
 
 
-function renderTable(data) {
-  const tbody =
-    document.getElementById("tableBody");
-  if (!tbody) {
-    return;
-  }
-  tbody.innerHTML = "";
-  if (
-    !Array.isArray(data) ||
-    data.length === 0
-  ) {
-    tbody.innerHTML = `
-      <tr>
-        <td colspan="11" style="text-align:center;">
-          No table data
-        </td>
-      </tr>
-    `;
-    return;
-  }
-  data.forEach((team, index) => {
-    const tr =
-      document.createElement("tr");
-    tr.setAttribute(
-      "data-row-index",
-      index
-    );
-    if (index < 4) {
-      tr.classList.add("champions-league");
-    }
-    if (index >= data.length - 3) {
-      tr.classList.add("relegation");
-    }
-    const played =
-      Number(team.played) || 0;
-    const wins =
-      Number(team.wins) || 0;
-    const draws =
-      Number(team.draws) || 0;
-    const losses =
-      Number(team.losses) || 0;
-    const gf =
-      Number(team.gf) || 0;
-    const ga =
-      Number(team.ga) || 0;
-    const gd =
-      team.gd !== undefined &&
-      team.gd !== null ?
-      Number(team.gd) || 0 :
-      gf - ga;
-    const pts =
-      team.pts !== undefined &&
-      team.pts !== null ?
-      Number(team.pts) || 0 :
-      Number(team.points) || 0;
-    const gdClass =
-      gd < 0 ? "neg" : "";
-    const indicator =
-      typeof getChangeIndicator ===
-      "function" ?
-      getChangeIndicator(team.change) :
-      "";
-    const teamId =
-      String(team.id || "");
-    const hasPointDeduction =
-      team.has_point_deduction === true ||
-      Number(team.has_point_deduction) === 1;
-    tr.innerHTML = `
-      <td>
-        <div class="rank-cell">
-          <span class="rank-num">
-            ${index + 1}
-          </span>
-          ${indicator}
-        </div>
-      </td>
-      <td>
-        <div class="table-team-cell">
-          <div class="team-logo-placeholder">
-            ?
-          </div>
-          <div class="team-name-wrapper">
-            <strong class="team-name"></strong>
-            ${
-              hasPointDeduction
-                ? `<span class="deduction-dot" title="Active disciplinary point deduction" aria-label="Active disciplinary point deduction"></span>`
-                : ""
-            }
-          </div>
-        </div>
-      </td>
-      <td>${played}</td>
-      <td>${wins}</td>
-      <td>${draws}</td>
-      <td>${losses}</td>
-      <td>${gf}</td>
-      <td>${ga}</td>
-      <td class="${gdClass}">
-        ${gd >= 0 ? "+" + gd : gd}
-      </td>
-      <td>
-        <strong>
-          ${pts}
-        </strong>
-      </td>
-      <td
-        class="table-form-cell"
-        data-team-id="${teamId}"
-      >
-        <div class="form-results"></div>
-      </td>
-    `;
-    const teamName =
-      tr.querySelector(".team-name");
-    if (teamName) {
-      teamName.textContent =
-        team.name || "";
-    }
-    if (team.logo) {
-      const teamCell =
-        tr.querySelector(".table-team-cell");
-      const placeholder =
-        teamCell?.querySelector(
-          ".team-logo-placeholder"
-        );
-      if (
-        teamCell &&
-        placeholder
-      ) {
-        const img =
-          document.createElement("img");
-        img.className =
-          "table-team-logo";
-        img.src =
-          team.logo;
-        img.alt =
-          team.name || "Logo";
-        img.onerror = () => {
-          img.replaceWith(
-            placeholder
-          );
-        };
-        teamCell.replaceChild(
-          img,
-          placeholder
-        );
-      }
-    }
-    tbody.appendChild(tr);
-  });
-  renderFormView();
-}
-
-async function renderFormView() {
-  const tournament =
-    getCurrentTournament();
-  
-  if (!tournament) return;
-  
-  const table =
-    document.getElementById(
-      "leagueTable"
-    );
-  
-  if (!table) return;
-  
-  try {
-    showLoader();
-    
-    await loadTournamentFixtures(
-      tournament.id
-    );
-    
-    const rebuiltTable =
-      await rebuildTableFromMatches(
-        false
-      );
-    
-    if (
-      !Array.isArray(rebuiltTable) ||
-      !rebuiltTable.length
-    ) {
-      document
-        .querySelectorAll(
-          ".table-form-cell"
-        )
-        .forEach(cell => {
-          cell.innerHTML = `
-            <div class="empty-state">
-              No team form available.
-            </div>
-          `;
-        });
-      
-      return;
-    }
-    
-    const sortedTable =
-      getSortedTable(
-        [...rebuiltTable]
-      );
-    
-    sortedTable.forEach(
-      tableRow => {
-        const teamId =
-          String(
-            tableRow.id || ""
-          );
-        
-        const form =
-          getTeamForm(
-            teamId,
-            fixtures
-          );
-        
-        const cell =
-          table.querySelector(
-            `.table-form-cell[data-team-id="${teamId}"]`
-          );
-        
-        if (!cell) {
-          return;
-        }
-        
-        const results =
-          cell.querySelector(
-            ".form-results"
-          );
-        
-        if (!results) {
-          return;
-        }
-        
-        results.innerHTML =
-          form.map(result => `
-            <span class="form-badge ${result}">
-              ${result}
-            </span>
-          `).join("");
-      }
-    );
-    
-  } catch (err) {
-    console.error(
-      "[renderFormView]",
-      err
-    );
-    
-    document
-      .querySelectorAll(
-        ".table-form-cell"
-      )
-      .forEach(cell => {
-        cell.innerHTML = `
-          <div class="empty-state">
-            Failed to load team form.
-          </div>
-        `;
-      });
-    
-    showAlert(
-      err.message ||
-      "Failed to load team form."
-    );
-    
-  } finally {
-    hideLoader();
-  }
-}
-
-
-function getTeamForm(
-  teamId,
-  fixtures
-) {
-  const playedMatches =
-    (fixtures || [])
-    .filter(match =>
-      Number(match.played) === 1 &&
-      (
-        String(match.home_team_id) ===
-        String(teamId) ||
-        String(match.away_team_id) ===
-        String(teamId)
-      )
-    )
-    .sort(
-      (a, b) =>
-      Number(
-        a.playedAt ??
-        a.played_at ??
-        a.updated_at ??
-        a.created_at ??
-        0
-      ) -
-      Number(
-        b.playedAt ??
-        b.played_at ??
-        b.updated_at ??
-        b.created_at ??
-        0
-      )
-    );
-  
-  return playedMatches
-    .slice(-5)
-    .map(match => {
-      const isHome =
-        String(match.home_team_id) ===
-        String(teamId);
-      
-      const teamGoals =
-        Number(
-          isHome ?
-          match.homeGoals :
-          match.awayGoals
-        );
-      
-      const opponentGoals =
-        Number(
-          isHome ?
-          match.awayGoals :
-          match.homeGoals
-        );
-      
-      if (
-        teamGoals >
-        opponentGoals
-      ) {
-        return "W";
-      }
-      
-      if (
-        teamGoals <
-        opponentGoals
-      ) {
-        return "L";
-      }
-      
-      return "D";
-    });
-}
 
 
 
+function openLiveInviteModal(match) {
+  const overlay = document.createElement("div");
 
-function createFixtureCard(
-  tournament,
-  match
-) {
-  const div =
-    document.createElement("div");
-  
-  const played =
-    Boolean(match.played);
-  
-  const round =
-    Number(match.round) || 1;
-  
-  const homeName =
-    match.home || "Home";
-  
-  const awayName =
-    match.away || "Away";
-  
-  let stats = null;
-  
-  if (match.stats) {
-    try {
-      stats =
-        typeof match.stats === "string" ?
-        JSON.parse(match.stats) :
-        match.stats;
-    } catch {
-      stats = null;
-    }
-  }
-  
-  const hasStats =
-    stats &&
-    stats.possession &&
-    stats.shots &&
-    stats.shotsOnTarget;
-  
-  div.className =
-    `fixture-row ${
-      played
-        ? "played"
-        : "not-played"
-    }`;
-  
-  div.innerHTML = `
-    <div class="fixture-label">
-      ${tournament.name || "Tournament"} •
-      R${String(round).padStart(2, "0")}
-      ${getSubmissionBadge(match)}
-    </div>
-
-    <div class="fixture-row-content">
-      <div class="fixture-teams-stack">
-        <div class="team-row-item team-home-container">
-          <div class="fixture-team-logo-placeholder">
-            ?
-          </div>
-          <span class="fixture-team-name">
-            ${homeName}
-          </span>
-        </div>
-
-        <div class="team-row-item team-away-container">
-          <div class="fixture-team-logo-placeholder">
-            ?
-          </div>
-          <span class="fixture-team-name">
-            ${awayName}
-          </span>
-        </div>
-      </div>
-
-      <div class="fixture-status-pane">
-        ${
-          played
-            ? `
-              <div class="score-stack">
-                <span class="score-badge played">
-                  ${match.homeGoals ?? 0}
-                </span>
-                <span class="ft-badge">
-                  Full Time
-                </span>
-                <span class="score-badge played">
-                  ${match.awayGoals ?? 0}
-                </span>
-              </div>
-            `
-            : `
-              <span class="vs-text-alt">
-                ${formatMatchDay(
-                  match.scheduledAt
-                )}
-              </span>
-            `
-        }
-      </div>
-
-      <div class="fixture-contact-area">
-        <button
-          class="fixture-squad-btn"
-          type="button"
-          aria-label="View registered squads"
-          title="View registered squads"
-        >
-          👕
-        </button>
-
-        <button
-          class="fixture-contact-btn"
-          type="button"
-          aria-label="Team contacts"
-          title="Team contacts"
-        >
-          ☎
-        </button>
-      </div>
-    </div>
-
-    ${
-      played && hasStats
-        ? `
-          <div class="fixture-match-stats">
-            <div class="fixture-stat-row">
-              <span>Possession</span>
-              <span>
-                ${stats.possession[0]}% -
-                ${stats.possession[1]}%
-              </span>
-            </div>
-
-            <div class="fixture-stat-row">
-              <span>Shots</span>
-              <span>
-                ${stats.shots[0]} -
-                ${stats.shots[1]}
-              </span>
-            </div>
-
-            <div class="fixture-stat-row">
-              <span>Shots on Target</span>
-              <span>
-                ${stats.shotsOnTarget[0]} -
-                ${stats.shotsOnTarget[1]}
-              </span>
-            </div>
-          </div>
-        `
-        : ""
-    }
-
-    ${
-      played
-        ? `
-          <div class="match-playedTime">
-            ${formatRecordedTime(
-              match.playedAt
-            )}
-          </div>
-        `
-        : ""
-    }
+  overlay.style.cssText = `
+    position: fixed;
+    inset: 0;
+    z-index: 10000;
+    background: rgba(0,0,0,0.65);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
   `;
-  
-  replaceTeamLogo(
-    div,
-    ".team-home-container",
-    match.homeLogo,
-    homeName
-  );
-  
-  replaceTeamLogo(
-    div,
-    ".team-away-container",
-    match.awayLogo,
-    awayName
-  );
-  
-  div.style.cursor = "pointer";
-  
-  div.onclick = () =>
-    onFixtureClick(match);
-  
-  const contactBtn =
-    div.querySelector(
-      ".fixture-contact-btn"
-    );
-  
-  if (contactBtn) {
-    contactBtn.onclick = (event) => {
-      event.stopPropagation();
-      openMatchContacts(match);
-    };
+
+  const modal = document.createElement("div");
+
+  modal.style.cssText = `
+    width: 100%;
+    max-width: 380px;
+    background: #fff;
+    border-radius: 16px;
+    padding: 22px;
+    box-shadow: 0 15px 50px rgba(0,0,0,0.2);
+  `;
+
+  modal.innerHTML = `
+    <h3 style="
+      margin: 0 0 7px;
+      color: #1f2937;
+      font-size: 18px;
+    ">Invite to Live</h3>
+
+    <p style="
+      margin: 0 0 20px;
+      color: #64748b;
+      font-size: 13px;
+    ">Select the team you want to invite.</p>
+
+    <div id="liveInviteTeams"></div>
+
+    <button
+      type="button"
+      id="liveInviteCancel"
+      style="
+        width: 100%;
+        margin-top: 12px;
+        padding: 13px;
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+        background: #f8fafc;
+        color: #475569;
+        font-weight: 700;
+      "
+    >Cancel</button>
+  `;
+
+  overlay.appendChild(modal);
+  document.body.appendChild(overlay);
+
+  const teamsContainer =
+    modal.querySelector("#liveInviteTeams");
+
+  const teams = [
+    {
+      id: match.home_team_id,
+      name: match.home || "Home Team"
+    },
+    {
+      id: match.away_team_id,
+      name: match.away || "Away Team"
+    }
+  ];
+
+  function closeModal() {
+    overlay.remove();
   }
-  
-  const squadBtn =
-    div.querySelector(
-      ".fixture-squad-btn"
-    );
-  
-  if (squadBtn) {
-    squadBtn.onclick = (event) => {
-      event.stopPropagation();
-      openFixtureSquads(match);
+
+  teams.forEach(team => {
+    const button = document.createElement("button");
+
+    button.type = "button";
+    button.textContent = team.name;
+
+    button.style.cssText = `
+      display: block;
+      width: 100%;
+      padding: 15px;
+      margin-bottom: 10px;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      background: #f8fafc;
+      color: #1f2937;
+      font-size: 14px;
+      font-weight: 800;
+      text-align: left;
+    `;
+
+    button.onclick = () => {
+      closeModal();
+      createLiveBroadcast(match.id, team.id);
     };
-  }
-  
-  return div;
+
+    teamsContainer.appendChild(button);
+  });
+
+  modal.querySelector(
+    "#liveInviteCancel"
+  ).onclick = closeModal;
+
+  overlay.onclick = event => {
+    if (event.target === overlay) {
+      closeModal();
+    }
+  };
 }
+async function createLiveBroadcast(matchId, teamId) {
+  const token = getToken();
 
-
-async function onFixtureClick(match) {
-  if (APP_MODE === "view") {
+  if (!token) {
+    showAlert("Please log in again.");
     return;
   }
-  
-  const tournament = getCurrentTournament();
-  if (!tournament) return;
-  
-  if (
-    String(tournament.season_status || "").toLowerCase() ===
-    "completed"
-  ) {
-    return;
-  }
-  
-  const status = String(
-    match.submission_status || ""
-  ).toLowerCase();
-  
-  const user = getCurrentUser();
-  const isAdmin = user?.role === "admin";
-  
-  if (!isAdmin && status === "approved") return;
-  
-  if (
-    !isAdmin &&
-    status !== "pending" &&
-    status !== "rejected"
-  ) {
-    return openLeagueRecorder(match);
-  }
-  
-  if (
-    isAdmin &&
-    status !== "pending" &&
-    status !== "rejected" &&
-    status !== "approved"
-  ) {
-    return openLeagueRecorder(match);
-  }
-  
+
+  showLoader();
+
   try {
-    showLoader();
-    
-    let submission;
-    
-    if (isAdmin) {
-      const submissions = await getMatchSubmissions(
-        tournament.id,
-        match.id
-      );
-      
-      submission = Array.isArray(submissions) ?
-        submissions[0] :
-        null;
-    } else {
-      submission = await getMatchSubmission(
-        tournament.id,
-        match.id
+    const res = await apiRequest(
+      `${API}/live/broadcasts`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: token
+        },
+        body: JSON.stringify({
+          matchId,
+          teamId
+        })
+      },
+      () => createLiveBroadcast(matchId, teamId)
+    );
+
+    if (!res) return;
+
+    const result = await res.json();
+
+    if (!res.ok || !result.success) {
+      throw new Error(
+        result.message || "Unable to create broadcast."
       );
     }
-    
-    if (!submission) {
-      showAlert("Submission not found.");
-      return;
-    }
-    
-    openSubmissionReview(match, submission);
-  } catch (err) {
-    console.error("[onFixtureClick]", err);
+
     showAlert(
-      err.message || "Failed to load submission."
+      "Live invitation sent successfully."
+    );
+
+  } catch (error) {
+    showAlert(
+      error.message || "Unable to create broadcast."
     );
   } finally {
     hideLoader();
   }
 }
-
-
-
 
 
 
