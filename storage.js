@@ -1858,12 +1858,23 @@ async function openCompetition(id) {
       throw new Error("Competition not found.");
     }
     
-   
-    
     myTournaments = await getMyTournaments(id) || [];
     
     if (!myTournaments.length) {
-      showAlert("No tournaments available in this competition yet.");
+      if (APP_MODE === "admin") {
+        const confirmed = await showConfirmModal(
+          "This competition has no tournaments yet. Would you like to create one?",
+          "Yes, Create",
+          "No"
+        );
+        
+        if (confirmed) {
+          openCreateTournament();
+        }
+      } else {
+        showAlert("No tournaments available in this competition yet.");
+      }
+      
       return;
     }
     
@@ -1885,7 +1896,6 @@ async function openCompetition(id) {
     showAlert(err.message || "Failed to open competition.");
   }
 }
-
 async function loadMyTournaments() {
   try {
     const tournaments = await getMyTournaments();
@@ -1900,7 +1910,16 @@ async function loadMyTournaments() {
     return [];
   }
 }
-
+function openEditTournament() {
+  const tournament = getCurrentTournament();
+  
+  if (!tournament) {
+    showAlert("Tournament not found.");
+    return;
+  }
+  
+  editTournament(tournament.id);
+}
 function editTournament(tournamentId) {
   const tournament = myTournaments.find(
     t => String(t.id) === String(tournamentId)
@@ -5027,6 +5046,16 @@ async function removeTournamentPlayer(
 }
 
 
+function deleteTournamentInfo() {
+  const tournament = getCurrentTournament();
+  
+  if (!tournament) {
+    showAlert("Tournament not found.");
+    return;
+  }
+  
+  deleteTournament(tournament.id);
+}
 
 async function deleteTournament(id) {
   const tournament =

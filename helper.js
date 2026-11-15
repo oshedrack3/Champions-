@@ -442,7 +442,6 @@ function toggleMenu() {
   }
 }
 
-
 function handleMenuAction(action) {
   closeMenu();
   
@@ -461,38 +460,26 @@ function handleMenuAction(action) {
     deadlineEdit: openSubmissionDeadlineModal,
     editHallofFame: showHallOfFameEditor,
     addTeam: openAddTeam,
-    shareCup: shareCupFixture,
     importTeams: importTeams,
     deleteTeam: deleteTeamInfo,
     createTournament: openCreateTournament,
-    enableExportMode: enableExportMode,
     newCup: openCupBox,
-    importTournament: openImportTournament,
     openTournament: openTournamentInfo,
+    editTournament: openEditTournament,
     deleteTournament: deleteTournamentInfo,
-    sharePOTS: sharePOTS,
-    openPOTS: openPOTSSetup,
-    shareGroupTable: shareCupTable,
     createFixture: handleGenerateFixtures,
     inviteplayer: openInvitePlayerModal,
     createComp: openCreateCompetitionModal,
     deleteAcc: openDeleteAccountModal,
     deleteUser: openDeleteAccountModal,
     dateEdit: openDateResetModal,
-    deleteCupTeam: deleteCupTeamInfo,
-    shareBracket: shareBracket,
-    shareKnockout: shareCupFixture,
-    toggleBracketFixture: toggleBracketFixture,
-    toggleBracketBracket: toggleBracketBracket
+    deleteCupTeam: deleteCupTeamInfo
   };
   
   actions[action]?.();
 }
-
-
 const menuConfig = {
   competition: [
-    
     {
       label: "Create New Competition",
       action: "createComp",
@@ -503,19 +490,16 @@ const menuConfig = {
       action: "deleteAcc",
       roles: ["admin", "player"]
     },
-    
     {
       label: "Delete User Account",
       action: "managerDeleteUser",
       roles: ["admin", "management"]
     },
-    
     {
       label: "Edit Hall of Fame",
       action: "editHallofFame",
       roles: ["admin"]
     },
-    
     {
       label: "Add New Notice",
       action: "newNotice",
@@ -526,212 +510,168 @@ const menuConfig = {
       action: "seasonend",
       roles: ["admin"]
     },
-    
     {
       label: "Season Registration",
       action: "registerSeason",
       roles: ["admin", "player"]
     },
-    
     {
       label: "Transactions",
       action: "paymentHistory",
       roles: ["admin"]
-    },
-    
-    /*
+    }
+  ],
+
+  tournaments: [
     {
-      label: "Share POTS Ranking",
-      action: "sharePOTS",
+      label: "Join Tournament",
+      action: "joinTour",
+      roles: ["admin", "player"]
+    },
+    {
+      label: "View Rules and Regulations",
+      action: "viewRules",
+      roles: ["admin", "player"]
+    },
+    {
+      label: "Import Teams",
+      action: "importTeams",
+      roles: ["admin"]
+    },
+    {
+      label: "Set Deadline",
+      action: "deadlineEdit",
+      roles: ["admin"]
+    },
+    {
+      label: "Transactions & Revenue",
+      action: "paymentHistory",
+      roles: ["admin", "player"]
+    },
+    {
+      label: "Point Deduction Section",
+      action: "enforceRule",
+      roles: ["admin"]
+    },
+    {
+      label: "See Point Deductions",
+      action: "reverseRule",
       roles: ["admin", "player"]
     }
-    */
   ],
-  
-  tournaments: [
-  {
-    label: "Join Tournament",
-    action: "joinTour",
-    roles: ["admin", "player"]
-  },
-  {
-    label: "View Rules and Regulations",
-    action: "viewRules",
-    roles: ["admin", "player"]
-  },
-  {
-    label: "Import Teams",
-    action: "importTeams",
-    roles: ["admin"]
-  },
-  {
-    label: "Set Deadline",
-    action: "deadlineEdit",
-    roles: ["admin"]
-  },
-  {
-    label: "Transactions & Revenue",
-    action: "paymentHistory",
-    roles: ["admin", "player"]
-  },
-  {
-    label: "Point Deduction Section",
-    action: "enforceRule",
-    roles: ["admin"]
-  },
-  {
-    label: "See Point Deductions",
-    action: "reverseRule",
-    roles: ["admin", "player"]
-  }],
-  
+
+  sharing: [
+    {
+      label: "Share Fixtures",
+      action: "shareFixtures",
+      roles: ["admin"]
+    },
+    {
+      label: "Share Standings",
+      action: "shareTable",
+      roles: ["admin"]
+    }
+  ],
+
   league: [
     {
       label: "Edit or Delete Team",
       action: "deleteTeam",
       roles: ["admin"]
-    },
+    }
+  ],
+
+  fixture: [
     {
-      label: "Share Standing",
-      action: "shareTable",
+      label: "Generate New Fixture",
+      action: "createFixture",
       roles: ["admin"]
     }
-    
   ],
-  
-  fixture: [
-  {
-    label: "Generate New Fixture",
-    action: "createFixture",
-    roles: ["admin"]
-  },
-  {
-    label: "Share Fixture",
-    action: "shareFixtures",
-    roles: ["admin"]
-  }],
-  
+
   cup: [
-  {
-    label: "Start New Tournament",
-    action: "newCup",
-    roles: ["admin"]
-  },
-  {
-    label: "Share Group Table",
-    action: "shareGroupTable",
-    roles: ["admin"]
-  }],
-  
-  group: [
-  {
-    label: "Share Group Matches",
-    action: "shareCup",
-    roles: ["admin"]
-  }],
-  
-  bracket: [
-  {
-    label: "Share Bracket",
-    action: "shareBracket",
-    roles: ["admin"]
-  },
-  {
-    label: "Share Knockout Matches",
-    action: "shareKnockout",
-    roles: ["admin"]
-  },
-  {
-    label: "See Cup Fixtures",
-    action: "toggleBracketFixture",
-    roles: ["admin"]
-  },
-  {
-    label: "View Full Bracket",
-    action: "toggleBracketBracket",
-    roles: ["admin"]
-  }],
-  
+    {
+      label: "Start New Tournament",
+      action: "newCup",
+      roles: ["admin"]
+    }
+  ],
+
+  group: [],
+
   tournamentManagement: [
-  {
-    label: "Create New Tournament",
-    action: "createTournament",
-    roles: ["admin"]
-  },
-  {
-    label: "Import Tournament",
-    action: "importTournament",
-    roles: ["admin"]
-  },
-  {
-    label: "Export Tournament",
-    action: "enableExportMode",
-    roles: ["admin"]
-  },
-  {
-    label: "Delete Tournament",
-    action: "deleteTournament",
-    roles: ["admin"]
-  },
-  {
-    label: "Setup POTS Tournaments",
-    action: "openPOTS",
-    roles: ["admin"]
-  },
-  {
-    label: "Share POTS Ranking",
-    action: "sharePOTS",
-    roles: ["admin", "player"]
-  }]
+    {
+      label: "Create New Tournament",
+      action: "createTournament",
+      roles: ["admin"]
+    },
+    {
+      label: "Edit Tournament",
+      action: "editTournament",
+      roles: ["admin"]
+    },
+    {
+      label: "Delete Tournament",
+      action: "deleteTournament",
+      roles: ["admin"]
+    }
+  ]
 };
-
-
 function renderMenu() {
   const menu = document.getElementById("sideMenu");
-  
+
   if (!menu) return;
-  
+
   const role = APP_MODE || "view";
   const isCompetition = currentPage === "competition";
-  const isLeague = currentTournament?.format?.toLowerCase() === "league";
-  
+
   const filterItems = items => items.filter(item =>
-    !item.roles || item.roles.length === 0 || item.roles.includes(role)
+    !item.roles ||
+    item.roles.length === 0 ||
+    item.roles.includes(role)
   );
-  
+
   const standalone = filterItems(
     menuConfig[isCompetition ? "competition" : "tournaments"] || []
   );
-  
-  const groups = isLeague ?
-    [
-      { key: "league", label: "League" },
-      { key: "fixture", label: "Fixtures" }
-    ] :
-    [
-      { key: "cup", label: "Cup" },
-      { key: "group", label: "Groups" },
-      { key: "bracket", label: "Knockout" }
-    ];
-  
+
+  const sharingItems = filterItems(menuConfig.sharing || []);
+
+  const groups = [];
+
+  const isLeague =
+    currentTournament?.format?.toLowerCase() === "league";
+
+  groups.push(
+    ...(isLeague ?
+      [
+        { key: "league", label: "League" },
+        { key: "fixture", label: "Fixtures" }
+      ] :
+      [
+        { key: "cup", label: "Cup" },
+        { key: "group", label: "Groups" }
+      ])
+  );
+
   if (role === "admin") {
     groups.push({
       key: "tournamentManagement",
       label: "Tournament Management"
     });
   }
-  
+
   const renderItem = item => `
     <button class="menu-item" onclick="handleMenuAction('${item.action}')">
       ${item.label}
     </button>
   `;
-  
+
   const renderGroup = group => {
     const items = filterItems(menuConfig[group.key] || []);
-    
+
     if (!items.length) return "";
-    
+
     return `
       <div class="menu-group">
         <button
@@ -748,7 +688,7 @@ function renderMenu() {
       </div>
     `;
   };
-  
+
   if (isCompetition) {
     menu.innerHTML = `
       <div class="menu-header">COMPETITION</div>
@@ -759,10 +699,11 @@ function renderMenu() {
     `;
     return;
   }
-  
+
   menu.innerHTML = `
     <div class="menu-header">TOURNAMENT</div>
     ${standalone.map(renderItem).join("")}
+    ${sharingItems.map(renderItem).join("")}
     ${groups.map(renderGroup).join("")}
   `;
 }
@@ -850,11 +791,6 @@ function deleteCupTeamInfo() {
 }
 
 
-function deleteTournamentInfo() {
-  closeMenu();
-  showAlert("Click on the menu icon on the tornament to see the delete button");
-  
-}
 
 function openTournamentInfo() {
   
@@ -1136,7 +1072,7 @@ document.getElementById("editLogoInput").addEventListener("change", function(e) 
 });
 
 async function shareTable() {
-  const wrapper = document.querySelector('.table-wrapper');
+  const wrapper = document.querySelector('.table-responsive');
   
   try {
     const width = wrapper.scrollWidth;
@@ -1188,216 +1124,14 @@ async function shareTable() {
   }
 }
 
-async function shareCupTable() {
+async function shareCupTable(){
   closeMenu();
+  shareTable();
   
-  const wrapper =
-    document.getElementById(
-      'cupTables'
-    );
-  
-  if (!wrapper) {
-    showActionModal(
-      'Screenshot target area not found!',
-      'delete'
-    );
-    return;
-  }
-  
-  const wasInScreenshotMode =
-    wrapper.classList.contains(
-      'screenshot-mode'
-    );
-  
-  wrapper.classList.add(
-    'screenshot-mode'
-  );
-  
-  await new Promise(
-    resolve =>
-    setTimeout(resolve, 100)
-  );
-  
-  try {
-    const canvas =
-      await html2canvas(
-        wrapper,
-        {
-          backgroundColor: '#ffffff',
-          scale: 2,
-          useCORS: true
-        }
-      );
-    
-    canvas.toBlob(
-      async (blob) => {
-        if (!blob) {
-          showActionModal(
-            'Failed to process screenshot image.',
-            'delete'
-          );
-          return;
-        }
-        
-        const file =
-          new File(
-            [blob],
-            'cup-table.png',
-            {
-              type: 'image/png'
-            }
-          );
-        
-        if (
-          navigator.canShare &&
-          navigator.canShare({
-            files: [file]
-          })
-        ) {
-          await navigator.share({
-            title: 'eFootball Cup Table',
-            text: 'Cup Group Stage Table',
-            files: [file]
-          });
-        } else {
-          const url =
-            URL.createObjectURL(blob);
-          
-          const a =
-            document.createElement('a');
-          
-          a.href = url;
-          a.download = 'cup-table.png';
-          a.click();
-          
-          URL.revokeObjectURL(url);
-          
-          showActionModal(
-            'Image downloaded! Share it manually.',
-            'success'
-          );
-        }
-      }
-    );
-    
-  } catch (err) {
-    console.error(
-      'Share failed:',
-      err
-    );
-    
-    showActionModal(
-      'Could not capture table',
-      'delete'
-    );
-    
-  } finally {
-    if (!wasInScreenshotMode) {
-      wrapper.classList.remove(
-        'screenshot-mode'
-      );
-    }
-  }
 }
 
 async function shareCupFixture() {
-  closeMenu();
-  const wrapper = document.getElementById('cupFixtures');
-  
-  if (!wrapper) {
-    showActionModal('Screenshot target area not found!', 'delete');
-    return;
-  }
-  
-  const wasInScreenshotMode =
-    wrapper.classList.contains('screenshot-mode');
-  
-  wrapper.classList.add('screenshot-mode');
-  
-  await new Promise(
-    resolve => setTimeout(resolve, 100)
-  );
-  
-  try {
-    const canvas =
-      await html2canvas(
-        wrapper,
-        {
-          backgroundColor: '#ffffff',
-          scale: 2,
-          useCORS: true
-        }
-      );
-    
-    canvas.toBlob(
-      async (blob) => {
-        if (!blob) {
-          showActionModal(
-            'Failed to process screenshot image.',
-            'delete'
-          );
-          return;
-        }
-        
-        const file =
-          new File(
-            [blob],
-            'match-records.png',
-            {
-              type: 'image/png'
-            }
-          );
-        
-        if (
-          navigator.canShare &&
-          navigator.canShare({
-            files: [file]
-          })
-        ) {
-          await navigator.share({
-            title: 'eFootball Match Records',
-            text: 'Group Stage Matches',
-            files: [file]
-          });
-        } else {
-          const url =
-            URL.createObjectURL(blob);
-          
-          const a =
-            document.createElement('a');
-          
-          a.href = url;
-          a.download = 'match-records.png';
-          a.click();
-          
-          URL.revokeObjectURL(url);
-          
-          showActionModal(
-            'Image downloaded! Share it manually.',
-            'success'
-          );
-        }
-      }
-    );
-    
-  } catch (err) {
-    console.error(
-      'Share failed:',
-      err
-    );
-    
-    showActionModal(
-      'Could not capture records',
-      'delete'
-    );
-    
-  } finally {
-    if (!wasInScreenshotMode) {
-      wrapper.classList.remove(
-        'screenshot-mode'
-      );
-    }
-  }
+  shareFixtures()
 }
 
 

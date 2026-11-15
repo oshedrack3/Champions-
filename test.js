@@ -1603,77 +1603,7 @@ function shareForm() {
 }
 
 function shareBracket() {
-  closeMenu();
-  const element = document.getElementById('bracket-container');
-  const titleText = document.getElementById('roundLabel')?.textContent || 'Bracket';
-  const fileName = titleText.replace(/\s/g, '-');
-  
-  if (!element) {
-    showAlert('Bracket container not found!');
-    return;
-  }
-  
-  
-  const width = element.scrollWidth;
-  const height = element.scrollHeight;
-  
-  const options = {
-    useCORS: true,
-    allowTaint: false,
-    logging: false,
-    imageTimeout: 0,
-    backgroundColor: '#21262d',
-    scale: Math.min(2, window.devicePixelRatio),
-    
-    
-    width: width,
-    height: height,
-    windowWidth: width,
-    windowHeight: height,
-    scrollX: 0,
-    scrollY: 0,
-    
-    onclone: (doc) => {
-      const original = doc.getElementById('bracket-container');
-      if (!original) return;
-      
-      
-      original.style.transform = 'none';
-      original.style.position = 'static';
-      original.style.margin = '0';
-      
-      
-      doc.body.style.overflow = 'visible';
-      doc.documentElement.style.overflow = 'visible';
-    }
-  };
-  
-  html2canvas(element, options).then(canvas => {
-    canvas.toBlob(blob => {
-      if (!blob) {
-        showAlert('Failed to process screenshot image.');
-        return;
-      }
-      
-      const file = new File([blob], `bracket-${fileName}.png`, { type: 'image/png' });
-      
-      if (navigator.canShare && navigator.canShare({ files: [file] })) {
-        navigator.share({
-          files: [file],
-          title: titleText,
-          text: `Check out the latest ${titleText}!`
-        }).catch(() => {});
-      } else {
-        const link = document.createElement('a');
-        link.download = `bracket-${fileName}.png`;
-        link.href = canvas.toDataURL('image/png');
-        link.click();
-      }
-    }, 'image/png');
-  }).catch((err) => {
-    console.error(err);
-    showAlert('Could not take screenshot');
-  });
+  shareFixtures();
 }
 
 

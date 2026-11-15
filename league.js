@@ -128,69 +128,63 @@ async function generateFixtures(rounds) {
 
 function shareFixtures() {
   const element = document.getElementById('fixtureScreenshotArea');
-  
-  const track = document.querySelector('#roundCarousel .roundTrack');
-  const activeRoundEl = track?.querySelector('.roundText.active');
-  
-  let titleText = activeRoundEl ? activeRoundEl.textContent.trim() : 'Fixtures';
-  const roundText = titleText.replace(/\s+/g, '-');
-  
+  const roundText = getCurrentRound();
+
   if (!element) {
     showAlert('Screenshot target area not found!');
     return;
   }
-  
+
   const options = {
     useCORS: true,
     allowTaint: true,
     logging: false,
     imageTimeout: 0,
-    
     scale: Math.min(4, window.devicePixelRatio * 2),
-    
+
     onclone: (doc) => {
       const cloned = doc.getElementById('fixtureScreenshotArea');
+
       if (cloned) {
-        cloned.style.background = '#0d1117';
+        cloned.style.background = 'transparent';
         cloned.style.webkitFontSmoothing = 'antialiased';
         cloned.style.textRendering = 'geometricPrecision';
       }
     }
   };
-  
+
   html2canvas(element, options).then(canvas => {
-    
     canvas.toBlob(blob => {
       if (!blob) {
         show('Failed to process screenshot image.');
         return;
       }
-      
+
       const file = new File(
         [blob],
-        `fixtures-${roundText}.png`, { type: 'image/png' }
+        `${roundText}.png`,
+        { type: 'image/png' }
       );
-      
+
       if (navigator.canShare && navigator.canShare({ files: [file] })) {
         navigator.share({
           files: [file],
-          title: titleText,
-          text: `Check out the latest ${titleText}!`
+          title: roundText,
+          text: `Round: ${roundText}!`
         }).catch(err => console.log('Share dismissed', err));
       } else {
         const link = document.createElement('a');
-        link.download = `fixtures-${roundText}.png`;
+        link.download = `${roundText}.png`;
         link.href = canvas.toDataURL('image/png');
         link.click();
       }
     }, 'image/png');
-    
+
   }).catch(err => {
     console.error('Screenshot failed:', err);
     showAlert('Could not take screenshot');
   });
 }
-
 
 function toggleFriendlyFixtureButtons() {
   const buttons = document.getElementById(
