@@ -304,7 +304,15 @@
         </div>
         <div class="profile-page-content">
           <div class="profile-page-user-section">
-            
+            <div class="profile-page-avatar-wrapper">
+              <img id="profilePageAvatar" class="profile-page-avatar" src="" alt="Profile picture" hidden>
+              <div id="profilePageAvatarPlaceholder" class="profile-page-avatar-placeholder">
+                <svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="8" r="4" />
+                  <path d="M5 21a7 7 0 0 1 14 0" />
+                </svg>
+              </div>
+            </div>
             <div id="profileUsername" class="profile-page-username">
               Username
             </div>
@@ -2655,6 +2663,30 @@
         </button>
       </div>
       <div class="update-profile-modal-content">
+        <div class="update-profile-image-section">
+          <div class="update-profile-image-preview-wrapper">
+            <img id="updateProfileImagePreview" class="update-profile-image-preview" src="" alt="Profile picture" hidden>
+            <div class="update-profile-image-placeholder">
+              <span>+</span>
+            </div>
+          </div>
+          
+          <label for="updateProfileImageInput" class="update-profile-image-button">
+            Change Profile Picture
+          </label>
+          
+          <input type="file" id="updateProfileImageInput" accept="image/*" hidden onchange="previewProfileImage(event)">
+          
+          <p class="update-profile-description">
+            Choose a clear profile picture. Your picture may be used in Galatico promotional materials, including tournament flyers, match graphics, player profiles, video thumbnails, and livestream broadcasts on platforms such as YouTube and TikTok.
+            
+            By uploading your picture, you grant Galatico eSport permission to use, reproduce, publish, display, edit, crop, resize, and incorporate your image, in whole or in part, into promotional, informational, and tournament-related content across its official platforms and communication channels.
+            
+            This permission includes the use of your picture in live broadcasts, recorded matches, highlights, social media posts, and other content promoting Galatico eSport and its tournaments.
+            
+            Please ensure that the picture you upload is yours and that you have the right to grant this permission. By uploading, you acknowledge and agree to these terms.
+          </p>
+        </div>
         <div class="update-profile-input-group">
           <label for="updateProfileUsername" class="update-profile-input-label">
             Username
@@ -2922,6 +2954,51 @@
     </div>
   </section>
   
+  <div id="matchThumbnailModal" class="match-thumbnail-modal" hidden>
+  <div class="match-thumbnail-overlay"></div>
+
+  <div class="match-thumbnail-container">
+    <div class="match-thumbnail-header">
+      <h3>Match Thumbnail</h3>
+
+      <button
+        type="button"
+        id="closeMatchThumbnail"
+        class="match-thumbnail-close"
+      >
+        &times;
+      </button>
+    </div>
+
+    <div class="match-thumbnail-content">
+      <div id="matchThumbnailPreview" class="match-thumbnail-preview">
+        <div class="match-thumbnail-loader"></div>
+      </div>
+    </div>
+
+    <div class="match-thumbnail-actions">
+      <button
+        type="button"
+        id="downloadMatchThumbnail"
+        class="match-thumbnail-download"
+        disabled
+      >
+        <i class="fas fa-download"></i>
+        Download
+      </button>
+
+      <button
+        type="button"
+        id="shareMatchThumbnail"
+        class="match-thumbnail-share"
+        disabled
+      >
+        <i class="fas fa-share-alt"></i>
+        Share
+      </button>
+    </div>
+  </div>
+</div>
   
   <div id="friendlyTeamsModal" class="friendly-teams-modal">
     <div class="friendly-teams-modal-content">

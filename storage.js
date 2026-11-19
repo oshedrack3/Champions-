@@ -6,6 +6,7 @@ let myCompetitions = [];
 let currentCompetition = null;
 let fixtureSquadRequestId = 0;
 myTournaments = null;
+let selectedProfileImage = null;
 let disciplinarySubmitting = false;
 let disciplinaryReversalSubmitting = false;
 let globalRankings = null;

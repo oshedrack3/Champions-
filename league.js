@@ -129,22 +129,22 @@ async function generateFixtures(rounds) {
 function shareFixtures() {
   const element = document.getElementById('fixtureScreenshotArea');
   const roundText = getCurrentRound();
-
+  
   if (!element) {
     showAlert('Screenshot target area not found!');
     return;
   }
-
+  
   const options = {
     useCORS: true,
     allowTaint: true,
     logging: false,
     imageTimeout: 0,
     scale: Math.min(4, window.devicePixelRatio * 2),
-
+    
     onclone: (doc) => {
       const cloned = doc.getElementById('fixtureScreenshotArea');
-
+      
       if (cloned) {
         cloned.style.background = 'transparent';
         cloned.style.webkitFontSmoothing = 'antialiased';
@@ -152,20 +152,19 @@ function shareFixtures() {
       }
     }
   };
-
+  
   html2canvas(element, options).then(canvas => {
     canvas.toBlob(blob => {
       if (!blob) {
         show('Failed to process screenshot image.');
         return;
       }
-
+      
       const file = new File(
         [blob],
-        `${roundText}.png`,
-        { type: 'image/png' }
+        `${roundText}.png`, { type: 'image/png' }
       );
-
+      
       if (navigator.canShare && navigator.canShare({ files: [file] })) {
         navigator.share({
           files: [file],
@@ -179,7 +178,7 @@ function shareFixtures() {
         link.click();
       }
     }, 'image/png');
-
+    
   }).catch(err => {
     console.error('Screenshot failed:', err);
     showAlert('Could not take screenshot');
@@ -2819,6 +2818,9 @@ function createFixtureCard(tournament, match) {
         <button type="button" class="fixture-squad-btn">👕 Squads</button>
 
         <button type="button" class="fixture-contact-btn">☎ Contacts</button>
+        <button type="button" class="fixture-thumbnail-btn">
+  🖼 Flyer
+</button>
       </div>
 
     </div>
@@ -2889,6 +2891,15 @@ function createFixtureCard(tournament, match) {
       openFixtureSquads(match);
     };
   }
+  
+  const thumbnailBtn = div.querySelector(".fixture-thumbnail-btn");
+
+if (thumbnailBtn) {
+  thumbnailBtn.onclick = event => {
+    event.stopPropagation();
+    openMatchThumbnail(match);
+  };
+}
   
   return div;
 }
