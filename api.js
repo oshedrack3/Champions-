@@ -10922,6 +10922,8 @@ async function handleShareMatchThumbnail() {
 }
 
 
+
+
 async function renderMatchThumbnail(match) {
   initMatchThumbnailModalEvents();
   currentThumbnailMatch = match || null;
@@ -10935,10 +10937,13 @@ async function renderMatchThumbnail(match) {
   const home = match.home_team;
   const away = match.away_team;
 
-  const homePlayer = (home?.owner?.username || "Home Player").toUpperCase();
-  const awayPlayer = (away?.owner?.username || "Away Player").toUpperCase();
+  const homePlayer = home?.owner?.username || "Home Player";
+  const awayPlayer = away?.owner?.username || "Away Player";
   const homeTeamName = (home?.name || "Home Team").toUpperCase();
   const awayTeamName = (away?.name || "Away Team").toUpperCase();
+
+  const isPlayed =
+    Number(match.played) === 1 || match.played === true;
 
   const currentTournament =
     typeof getCurrentTournament === "function"
@@ -10962,8 +10967,23 @@ async function renderMatchThumbnail(match) {
     loadThumbnailImage(home?.owner?.profile_pic),
     loadThumbnailImage(away?.owner?.profile_pic),
     loadThumbnailImage("galaticoLogo1.png"),
-    loadThumbnailImage("https://www.gstatic.com/youtube/img/branding/favicon/favicon_144x144.png")
+    isPlayed
+      ? Promise.resolve(null)
+      : loadThumbnailImage("https://www.gstatic.com/youtube/img/branding/favicon/favicon_144x144.png")
   ]);
+
+  const fitText = (text, maxWidth, startSize, minSize, weight = "900") => {
+    let size = startSize;
+
+    ctx.font = `${weight} ${size}px 'Arial Black', Arial, sans-serif`;
+
+    while (ctx.measureText(text).width > maxWidth && size > minSize) {
+      size -= 1;
+      ctx.font = `${weight} ${size}px 'Arial Black', Arial, sans-serif`;
+    }
+
+    return ctx.font;
+  };
 
   const bgGrad = ctx.createRadialGradient(640, 340, 40, 640, 360, 820);
   bgGrad.addColorStop(0, "#5c0912");
@@ -10988,8 +11008,8 @@ async function renderMatchThumbnail(match) {
   ctx.fillRect(640, 0, 640, 720);
   ctx.restore();
 
-  drawEsportsPortrait(ctx, homeImage, 0, 55, 610, 665, homePlayer, "left");
-  drawEsportsPortrait(ctx, awayImage, 670, 55, 610, 665, awayPlayer, "right");
+  drawEsportsPortrait(ctx, homeImage, 0, 55, 610, 665, homePlayer.toUpperCase(), "left");
+  drawEsportsPortrait(ctx, awayImage, 670, 55, 610, 665, awayPlayer.toUpperCase(), "right");
 
   const bottomFade = ctx.createLinearGradient(0, 445, 0, 720);
   bottomFade.addColorStop(0, "rgba(6, 7, 10, 0)");
@@ -10998,24 +11018,33 @@ async function renderMatchThumbnail(match) {
   ctx.fillStyle = bottomFade;
   ctx.fillRect(0, 445, 1280, 275);
 
-  const topFade = ctx.createLinearGradient(0, 0, 0, 130);
-  topFade.addColorStop(0, "rgba(5, 5, 7, 0.92)");
-  topFade.addColorStop(0.7, "rgba(5, 5, 7, 0.55)");
+  const topFade = ctx.createLinearGradient(0, 0, 0, 150);
+  topFade.addColorStop(0, "rgba(5, 5, 7, 0.96)");
+  topFade.addColorStop(0.7, "rgba(5, 5, 7, 0.65)");
   topFade.addColorStop(1, "rgba(5, 5, 7, 0)");
   ctx.fillStyle = topFade;
-  ctx.fillRect(0, 0, 1280, 130);
+  ctx.fillRect(0, 0, 1280, 150);
 
   drawCenterRoundEmblem(ctx, 640, 325, roundText);
   drawAngularAccents(ctx);
 
   ctx.save();
+
+  const headerWidth = 1000;
   ctx.textAlign = "center";
   ctx.shadowColor = "rgba(0, 0, 0, 0.95)";
-  ctx.shadowBlur = 16;
+  ctx.shadowBlur = 18;
+
+  ctx.fillStyle = "#d4af37";
+  ctx.fillRect(390, 22, 500, 2);
 
   ctx.fillStyle = "#ffffff";
-  ctx.font = "900 38px 'Arial Black', Arial, sans-serif";
-  ctx.fillText(tournamentName, 640, 58);
+  ctx.font = fitText(tournamentName, headerWidth, 38, 22);
+  ctx.fillText(tournamentName, 640, 72);
+
+  ctx.fillStyle = "rgba(212, 175, 55, 0.9)";
+  ctx.fillRect(490, 88, 300, 2);
+
   ctx.restore();
 
   if (brandLogo) {
@@ -11034,32 +11063,35 @@ async function renderMatchThumbnail(match) {
 
   ctx.save();
   ctx.shadowColor = "rgba(0, 0, 0, 0.95)";
-  ctx.shadowBlur = 14;
+  ctx.shadowBlur = 16;
   ctx.shadowOffsetY = 3;
 
   ctx.textAlign = "left";
+
   ctx.fillStyle = "#ffffff";
-  ctx.font = "900 40px 'Arial Black', Arial, sans-serif";
-  ctx.fillText(homePlayer, 65, 625);
+  ctx.font = fitText(homePlayer.toUpperCase(), 430, 42, 24);
+  ctx.fillText(homePlayer.toUpperCase(), 65, 625);
 
   ctx.fillStyle = "#d4af37";
   ctx.font = "bold 22px Arial, sans-serif";
   ctx.fillText(homeTeamName, 67, 658);
 
   ctx.textAlign = "right";
+
   ctx.fillStyle = "#ffffff";
-  ctx.font = "900 40px 'Arial Black', Arial, sans-serif";
-  ctx.fillText(awayPlayer, 1215, 625);
+  ctx.font = fitText(awayPlayer.toUpperCase(), 430, 42, 24);
+  ctx.fillText(awayPlayer.toUpperCase(), 1215, 625);
 
   ctx.fillStyle = "#d4af37";
   ctx.font = "bold 22px Arial, sans-serif";
   ctx.fillText(awayTeamName, 1213, 658);
+
   ctx.restore();
 
   ctx.save();
   ctx.textAlign = "center";
 
-  if (Number(match.played) === 1 || match.played === true) {
+  if (isPlayed) {
     ctx.fillStyle = "rgba(10, 10, 14, 0.9)";
     ctx.strokeStyle = "#d4af37";
     ctx.lineWidth = 2;
@@ -11096,59 +11128,66 @@ async function renderMatchThumbnail(match) {
     ctx.fillText(upcomingLabel, 640, 616);
   }
 
-  const youtubeText = "WATCH LIVE ON YOUTUBE";
-  const youtubeHandle = "@galaticoesport";
+  if (isPlayed) {
+    ctx.textAlign = "center";
+    ctx.fillStyle = "#d4af37";
+    ctx.font = "900 22px 'Arial Black', Arial, sans-serif";
+    ctx.fillText("FT", 640, 674);
+  } else {
+    const youtubeText = "WATCH LIVE ON YOUTUBE";
+    const youtubeHandle = "@galaticoesport";
 
-  ctx.font = "bold 18px Arial";
-  const labelWidth = ctx.measureText(youtubeText).width;
+    ctx.font = "bold 18px Arial";
+    const labelWidth = ctx.measureText(youtubeText).width;
 
-  ctx.font = "bold 20px Arial";
-  const handleWidth = ctx.measureText(youtubeHandle).width;
+    ctx.font = "bold 20px Arial";
+    const handleWidth = ctx.measureText(youtubeHandle).width;
 
-  const iconSize = 28;
-  const gap = 9;
-  const spaceBetween = 12;
+    const iconSize = 28;
+    const gap = 9;
+    const spaceBetween = 12;
 
-  const totalWidth =
-    (youtubeIcon ? iconSize + gap : 0) +
-    labelWidth +
-    spaceBetween +
-    handleWidth;
-
-  const startX = (1280 - totalWidth) / 2;
-  const youtubeY = 674;
-
-  if (youtubeIcon) {
-    ctx.drawImage(
-      youtubeIcon,
-      startX,
-      youtubeY - iconSize + 2,
-      iconSize,
-      iconSize
-    );
-  }
-
-  ctx.textAlign = "left";
-  ctx.fillStyle = "#ffffff";
-  ctx.font = "bold 18px Arial";
-
-  ctx.fillText(
-    youtubeText,
-    startX + (youtubeIcon ? iconSize + gap : 0),
-    youtubeY
-  );
-
-  ctx.fillStyle = "#ff4b4b";
-  ctx.font = "bold 20px Arial";
-
-  ctx.fillText(
-    youtubeHandle,
-    startX +
+    const totalWidth =
       (youtubeIcon ? iconSize + gap : 0) +
       labelWidth +
-      spaceBetween,
-    youtubeY
-  );
+      spaceBetween +
+      handleWidth;
+
+    const startX = (1280 - totalWidth) / 2;
+    const youtubeY = 674;
+
+    if (youtubeIcon) {
+      ctx.drawImage(
+        youtubeIcon,
+        startX,
+        youtubeY - iconSize + 2,
+        iconSize,
+        iconSize
+      );
+    }
+
+    ctx.textAlign = "left";
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "bold 18px Arial";
+
+    ctx.fillText(
+      youtubeText,
+      startX + (youtubeIcon ? iconSize + gap : 0),
+      youtubeY
+    );
+
+    ctx.fillStyle = "#ff4b4b";
+    ctx.font = "bold 20px Arial";
+
+    ctx.fillText(
+      youtubeHandle,
+      startX +
+        (youtubeIcon ? iconSize + gap : 0) +
+        labelWidth +
+        spaceBetween,
+      youtubeY
+    );
+  }
 
   ctx.textAlign = "center";
   ctx.fillStyle = "rgba(255, 255, 255, 0.72)";
@@ -11543,3 +11582,7 @@ document.getElementById("galaticoFooterYear2").textContent = currentYear;
     hideLoader();
   }
 });
+
+
+
+
