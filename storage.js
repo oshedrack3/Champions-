@@ -1969,7 +1969,7 @@ function editTournament(tournamentId) {
   
   if (seasonStatusInput) {
     seasonStatusInput.value =
-      tournament.seasonStatus || "upcoming";
+      tournament.season_status || "upcoming";
   }
   
   if (startDateInput) {
