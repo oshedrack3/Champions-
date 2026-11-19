@@ -361,53 +361,107 @@ function resetLogoUI() {
 
 
 
+let tournamentStatsMatches = [];
+const tournamentStatsCache = new Map();
 
-
-
-function resolvePlayerStatsMatches(matches, tournament) {
-  const participantsByTeamId = new Map(
-    (tournament?.tournament_players || [])
-    .filter(player => player.team_id)
-    .map(player => [
-      String(player.team_id),
-      player
-    ])
+async function loadTournamentStatisticsMatches(tournamentId, forceRefresh = false) {
+  const cacheKey = String(tournamentId);
+  
+  if (!forceRefresh && tournamentStatsCache.has(cacheKey)) {
+    tournamentStatsMatches = tournamentStatsCache.get(cacheKey);
+    return tournamentStatsMatches;
+  }
+  
+  const token = getToken();
+  
+  const res = await fetch(
+    `${API}/tournaments/${tournamentId}/statistics`,
+    {
+      method: "GET",
+      headers: {
+        Authorization: token
+      }
+    }
   );
   
+  const result = await res.json();
+  
+  if (!res.ok || !result.success) {
+    throw new Error(
+      result.message || "Failed to load tournament statistics."
+    );
+  }
+  
+  tournamentStatsMatches = result.matches || [];
+  tournamentStatsCache.set(cacheKey, tournamentStatsMatches);
+  
+  return tournamentStatsMatches;
+}
+
+function resolvePlayerStatsMatches(matches) {
   return matches.map(match => {
-    const homeParticipant = participantsByTeamId.get(
-      String(match.home_team_id || "")
-    );
+    const homeParticipant = {
+      id: match.home_user_id,
+      username: match.home_username || "Unknown",
+      profile_pic: match.home_profile_pic || "",
+      team_id: match.home_team_id,
+      team_name: match.home_team_name || "",
+      team_logo: match.home_team_logo || ""
+    };
     
-    const awayParticipant = participantsByTeamId.get(
-      String(match.away_team_id || "")
-    );
+    const awayParticipant = {
+      id: match.away_user_id,
+      username: match.away_username || "Unknown",
+      profile_pic: match.away_profile_pic || "",
+      team_id: match.away_team_id,
+      team_name: match.away_team_name || "",
+      team_logo: match.away_team_logo || ""
+    };
     
     return {
       ...match,
-      home: homeParticipant?.username || match.home || "Unknown",
-      away: awayParticipant?.username || match.away || "Unknown",
+      home: homeParticipant.username,
+      away: awayParticipant.username,
       homeParticipant,
       awayParticipant,
-      homeTeamName: homeParticipant?.team_name || "",
-      awayTeamName: awayParticipant?.team_name || "",
-      homeLogo: homeParticipant?.team_logo || "",
-      awayLogo: awayParticipant?.team_logo || "",
-      homeGoals: Number(match.homeGoals ?? match.home_score ?? 0),
-      awayGoals: Number(match.awayGoals ?? match.away_score ?? 0),
+      homeTeamName: homeParticipant.team_name,
+      awayTeamName: awayParticipant.team_name,
+      homeLogo: homeParticipant.team_logo,
+      awayLogo: awayParticipant.team_logo,
+      homeGoals: Number(match.home_score ?? 0),
+      awayGoals: Number(match.away_score ?? 0),
       played: match.played === true || Number(match.played) === 1,
-      playedAt: match.playedAt ?? match.played_at
+      playedAt: match.played_at
     };
   });
 }
 
-
 function getRecordPlayer(username) {
-  const tournament = getCurrentTournament();
+  for (const match of tournamentStatsMatches) {
+    if (match.home_username === username) {
+      return {
+        id: match.home_user_id,
+        username: match.home_username,
+        profile_pic: match.home_profile_pic,
+        team_id: match.home_team_id,
+        team_name: match.home_team_name,
+        team_logo: match.home_team_logo
+      };
+    }
+    
+    if (match.away_username === username) {
+      return {
+        id: match.away_user_id,
+        username: match.away_username,
+        profile_pic: match.away_profile_pic,
+        team_id: match.away_team_id,
+        team_name: match.away_team_name,
+        team_logo: match.away_team_logo
+      };
+    }
+  }
   
-  return (tournament?.tournament_players || []).find(
-    player => player.username === username
-  ) || null;
+  return null;
 }
 
 
@@ -631,24 +685,57 @@ function getLongestWinningRuns(matches) {
     .sort((a, b) => b[1] - a[1]);
 }
 
-
-
+function getLongestUnbeatenRuns(matches) {
+  const playedMatches = getPlayedMatches(matches)
+    .sort((a, b) => Number(a.played_at) - Number(b.played_at));
+  
+  const streaks = {};
+  
+  playedMatches.forEach(match => {
+    const home = match.home;
+    const away = match.away;
+    
+    [home, away].forEach(team => {
+      if (!streaks[team]) {
+        streaks[team] = {
+          current: 0,
+          best: 0
+        };
+      }
+    });
+    
+    if (match.homeGoals >= match.awayGoals) {
+      streaks[home].current++;
+    } else {
+      streaks[home].current = 0;
+    }
+    
+    if (match.awayGoals >= match.homeGoals) {
+      streaks[away].current++;
+    } else {
+      streaks[away].current = 0;
+    }
+    
+    streaks[home].best = Math.max(
+      streaks[home].best,
+      streaks[home].current
+    );
+    
+    streaks[away].best = Math.max(
+      streaks[away].best,
+      streaks[away].current
+    );
+  });
+  
+  return Object.entries(streaks)
+    .map(([team, data]) => [team, data.best])
+    .sort((a, b) => b[1] - a[1]);
+}
 
 
 function getRecordTeamLogo(username) {
-  if (!username) return null;
-  
-  const tournament = getCurrentTournament();
-  
-  const participant = (tournament?.tournament_players || []).find(
-    player =>
-    String(player.username || "").toLowerCase() ===
-    String(username).toLowerCase()
-  );
-  
-  return participant?.team_logo || null;
+  return getRecordPlayer(username)?.team_logo || "";
 }
-
 
 function renderStreakCard(
   containerId,
@@ -1205,30 +1292,37 @@ function renderMatchCard(
 }
 ''
 
-function getPlayerLeaderboards(matches, tournament) {
+function getPlayerLeaderboards(matches) {
   const players = new Map();
   
-  (tournament?.tournament_players || []).forEach(player => {
-    if (!player.team_id) return;
+  function getPlayer(participant) {
+    const teamId = String(participant?.team_id || "");
     
-    players.set(String(player.team_id), {
-      username: player.username,
-      logo: player.team_logo || "",
-      teamName: player.team_name || "",
-      goals: Number(player.gf) || 0,
-      shots: 0,
-      cleanSheets: 0
-    });
-  });
+    if (!teamId) return null;
+    
+    if (!players.has(teamId)) {
+      players.set(teamId, {
+        username: participant.username || "Unknown",
+        logo: participant.team_logo || "",
+        profilePic: participant.profile_pic || "",
+        teamName: participant.team_name || "",
+        goals: 0,
+        shots: 0,
+        cleanSheets: 0
+      });
+    }
+    
+    return players.get(teamId);
+  }
   
   getPlayedMatches(matches).forEach(match => {
-    const homeKey = String(match.homeParticipant?.team_id || "");
-    const awayKey = String(match.awayParticipant?.team_id || "");
-    
-    const home = players.get(homeKey);
-    const away = players.get(awayKey);
+    const home = getPlayer(match.homeParticipant);
+    const away = getPlayer(match.awayParticipant);
     
     if (!home || !away) return;
+    
+    home.goals += match.homeGoals;
+    away.goals += match.awayGoals;
     
     if (match.awayGoals === 0) {
       home.cleanSheets++;
@@ -1320,14 +1414,13 @@ function renderPlayerLeaderboard(containerId, players, stat) {
   `;
 }
 
-function renderPlayerStatistics(matches, tournament) {
-  const stats = getPlayerLeaderboards(matches, tournament);
+function renderPlayerStatistics(matches) {
+  const stats = getPlayerLeaderboards(matches);
   
   renderPlayerLeaderboard("playerGoals", stats.goals, "goals");
   renderPlayerLeaderboard("playerShots", stats.shots, "shots");
   renderPlayerLeaderboard("playerCleanSheets", stats.cleanSheets, "cleanSheets");
 }
-
 async function renderRecords() {
   const tournament = getCurrentTournament();
   
@@ -1336,13 +1429,11 @@ async function renderRecords() {
   try {
     showLoader();
     
-    await loadTournamentFixtures(tournament.id);
-    await rebuildTableFromMatches(false);
-    
-    const statsMatches = resolvePlayerStatsMatches(
-      fixtures || [],
-      tournament
+    const matches = await loadTournamentStatisticsMatches(
+      tournament.id
     );
+    
+    const statsMatches = resolvePlayerStatsMatches(matches);
     
     const records = getRecords(statsMatches);
     
@@ -1356,8 +1447,6 @@ async function renderRecords() {
     renderTournamentHighlight("fewestLosses", records.fewestLosses);
     renderTournamentHighlight("mostGoalsConceded", records.mostGoalsConceded);
     renderTournamentHighlight("mostCleanSheets", records.mostCleanSheets);
-    
-    
     
     renderTournamentHighlight("longestWinningRun", records.longestWinningRuns);
     renderTournamentHighlight("longestUnbeatenRun", records.longestUnbeatenRuns);
@@ -2893,13 +2982,13 @@ function createFixtureCard(tournament, match) {
   }
   
   const thumbnailBtn = div.querySelector(".fixture-thumbnail-btn");
-
-if (thumbnailBtn) {
-  thumbnailBtn.onclick = event => {
-    event.stopPropagation();
-    openMatchThumbnail(match);
-  };
-}
+  
+  if (thumbnailBtn) {
+    thumbnailBtn.onclick = event => {
+      event.stopPropagation();
+      openMatchThumbnail(match);
+    };
+  }
   
   return div;
 }

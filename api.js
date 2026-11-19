@@ -2263,7 +2263,6 @@ async function getTournamentMatches(tournamentId) {
   );
   
   const result = await res.json();
-  
   if (!res.ok || !result.success) {
     throw new Error(
       result.message ||
@@ -11417,7 +11416,6 @@ function loadThumbnailImage(url) {
     image.src = url;
   });
 }
-
 
 
 function comparisonSearchEscapeHtml(value) {

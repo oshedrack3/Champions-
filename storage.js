@@ -2846,40 +2846,6 @@ function getPlayedMatches(matches = []) {
     .sort((a, b) => a.playedAt - b.playedAt);
 }
 
-function getLongestUnbeatenRuns(matches) {
-  const playedMatches = getPlayedMatches(matches);
-  
-  const streaks = {};
-  
-  playedMatches.forEach(m => {
-    
-    [m.home, m.away].forEach(team => {
-      if (!streaks[team]) {
-        streaks[team] = { current: 0, best: 0 };
-      }
-    });
-    
-    if (m.homeGoals >= m.awayGoals) {
-      streaks[m.home].current++;
-    } else {
-      streaks[m.home].current = 0;
-    }
-    
-    if (m.awayGoals >= m.homeGoals) {
-      streaks[m.away].current++;
-    } else {
-      streaks[m.away].current = 0;
-    }
-    
-    
-    streaks[m.home].best = Math.max(streaks[m.home].best, streaks[m.home].current);
-    streaks[m.away].best = Math.max(streaks[m.away].best, streaks[m.away].current);
-  });
-  
-  return Object.entries(streaks)
-    .map(([team, data]) => [team, data.best])
-    .sort((a, b) => b[1] - a[1]);
-}
 
 
 function resetMatchPlayedAt(tournament, homeTeam, awayTeam, newDate) {
