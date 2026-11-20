@@ -1536,36 +1536,24 @@ function openSubmissionReview(match, submission) {
   modal.style.display = "flex";
 }
 
+
 function buildReviewActions(match, submission) {
   const actions = document.getElementById("reviewModalActions");
   const rejectInputRow = document.getElementById("reviewModalRejectInputRow");
   const reasonRow = document.getElementById("reviewModalReasonRow");
   const reasonEl = document.getElementById("reviewModalReason");
-  
+
   if (!actions) return;
-  
+
   actions.innerHTML = "";
-  
+
   if (rejectInputRow) rejectInputRow.style.display = "none";
   if (reasonRow) reasonRow.style.display = "none";
-  
+
   const status = String(submission.status || "").toLowerCase();
-  
+
   if (APP_MODE === "admin") {
-    if (status === "approved") {
-      const reopenBtn = document.createElement("button");
-      reopenBtn.className = "btn-save";
-      reopenBtn.textContent = "📝 Reopen Match Recorder";
-      reopenBtn.onclick = () => {
-        closeReviewModal();
-        openLeagueRecorder(match);
-      };
-      
-      actions.appendChild(reopenBtn);
-      return;
-    }
-    
-    if (status !== "pending") {
+    if (status === "approved" || status === "rejected") {
       if (status === "rejected") {
         if (reasonRow) reasonRow.style.display = "block";
         if (reasonEl) {
@@ -1573,43 +1561,55 @@ function buildReviewActions(match, submission) {
             submission.rejection_reason || "No reason provided.";
         }
       }
+
+      const reopenBtn = document.createElement("button");
+      reopenBtn.className = "btn-save";
+      reopenBtn.textContent = "📝 Reopen Match Recorder";
+      reopenBtn.onclick = () => {
+        closeReviewModal();
+        openLeagueRecorder(match);
+      };
+
+      actions.appendChild(reopenBtn);
       return;
     }
-    
+
+    if (status !== "pending") return;
+
     const approveBtn = document.createElement("button");
     approveBtn.className = "btn-save";
     approveBtn.textContent = "✅ Approve";
     approveBtn.onclick = approveSubmission;
-    
+
     const rejectBtn = document.createElement("button");
     rejectBtn.className = "btn-clear";
     rejectBtn.textContent = "❌ Reject";
     rejectBtn.onclick = () => {
       if (rejectInputRow) rejectInputRow.style.display = "block";
-      
+
       rejectBtn.remove();
-      
+
       const confirmBtn = document.createElement("button");
       confirmBtn.className = "btn-clear";
       confirmBtn.textContent = "Confirm Reject";
       confirmBtn.onclick = rejectSubmission;
-      
+
       actions.appendChild(confirmBtn);
     };
-    
+
     actions.append(approveBtn, rejectBtn);
     return;
   }
-  
+
   if (status === "pending" || status === "approved") return;
-  
+
   if (reasonRow) reasonRow.style.display = "block";
-  
+
   if (reasonEl) {
     reasonEl.textContent =
       submission.rejection_reason || "No reason provided.";
   }
-  
+
   const resubmitBtn = document.createElement("button");
   resubmitBtn.className = "btn-resubmit";
   resubmitBtn.textContent = "Resubmit";
@@ -1617,7 +1617,7 @@ function buildReviewActions(match, submission) {
     closeReviewModal();
     openLeagueRecorder(match);
   };
-  
+
   actions.appendChild(resubmitBtn);
 }
 
