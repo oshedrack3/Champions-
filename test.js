@@ -1688,22 +1688,25 @@ function getSortedCompetitions(
 
 
 async function renderCompetitionList() {
-  const container =
-    document.getElementById(
-      "competitionList"
-    );
+  const container = document.getElementById("competitionList");
   if (!container) return;
-  const currentUser =
-    getCurrentUser();
-  const competitions =
-    getSortedCompetitions(
-      myCompetitions || []
-    );
+  
+  const currentUser = getCurrentUser();
+  
+  if (typeof myCompetitions === "undefined" || myCompetitions === null) {
+    container.innerHTML = `
+      <p class="emptyText">
+        Loading competitions, please wait…
+      </p>
+    `;
+    return;
+  }
+  
+  const competitions = getSortedCompetitions(myCompetitions || []);
+  
   container.innerHTML = "";
-  if (
-    !competitions ||
-    competitions.length === 0
-  ) {
+  
+  if (competitions.length === 0) {
     container.innerHTML = `
       <p class="emptyText">
         No competitions available
@@ -1717,19 +1720,12 @@ async function renderCompetitionList() {
     `;
     return;
   }
-  competitions.forEach(
-    competition => {
-      const card =
-        createCompetitionCard(
-          competition
-        );
-      container.appendChild(
-        card
-      );
-    }
-  );
+  
+  competitions.forEach(competition => {
+    const card = createCompetitionCard(competition);
+    container.appendChild(card);
+  });
 }
-
 function getCompetitionTournamentCount(competition) {
   return competition.tournament_count ?? 0;
 }

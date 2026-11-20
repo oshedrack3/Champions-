@@ -5348,6 +5348,7 @@ async function searchComparisonPlayers(query) {
     result.players : [];
 }
 
+
 function renderComparisonRecentMatches(matches, player1, player2) {
   if (!Array.isArray(matches) || matches.length === 0) {
     return `
@@ -5356,60 +5357,73 @@ function renderComparisonRecentMatches(matches, player1, player2) {
       </div>
     `;
   }
+
   return `
     <div class="comparison-matches-list">
       ${matches.slice(0, 5).map(match => {
         const homeId = String(match.home_player_id ?? "");
         const awayId = String(match.away_player_id ?? "");
         const p1Id = String(player1.id);
+
         const homeScore = Number(match.home_score);
         const awayScore = Number(match.away_score);
+
         let resultLabel = "Draw";
         let resultClass = "draw";
+
         if (homeScore > awayScore) {
           const player1Won = homeId === p1Id;
+
           resultLabel = player1Won
             ? `${player1.username} won`
             : `${player2.username} won`;
+
           resultClass = player1Won ? "win" : "loss";
         } else if (awayScore > homeScore) {
           const player1Won = awayId === p1Id;
+
           resultLabel = player1Won
-            ? `
-  $ { player1.username } won`
-            : `
-  $ { player2.username } won`;
+            ? `${player1.username} won`
+            : `${player2.username} won`;
+
           resultClass = player1Won ? "win" : "loss";
         }
-        return ` <
-  div class = "comparison-match-card" >
-  <div class="comparison-match-tournament">
+
+        return `
+          <div class="comparison-match-card">
+            <div class="comparison-match-tournament">
               ${comparisonResultsEscape(match.tournament_name || "Tournament")}
-            </div> <
-  div class = "comparison-match-score" >
-  <span class="comparison-match-player">
+            </div>
+
+            <div class="comparison-match-score">
+              <span class="comparison-match-player">
                 ${comparisonResultsEscape(match.home_player_name || "Player 1")}
-              </span> <
-  strong >
-    $ { comparisonResultsNumber(match.home_score) } -
-    $ { comparisonResultsNumber(match.away_score) }
-  </strong> <
-  span class = "comparison-match-player" >
-  $ { comparisonResultsEscape(match.away_player_name || "Player 2") }
-  </span> <
-  /div> <
-  div class = "comparison-match-result ${resultClass}" >
-  $ { comparisonResultsEscape(resultLabel) }
-  </div> <
-  div class = "comparison-match-date" >
-  $ { comparisonResultsEscape(comparisonResultsDate(match.played_at)) }
-  </div> <
-  /div>
-  `;
+              </span>
+
+              <strong>
+                ${comparisonResultsNumber(match.home_score)} -
+                ${comparisonResultsNumber(match.away_score)}
+              </strong>
+
+              <span class="comparison-match-player">
+                ${comparisonResultsEscape(match.away_player_name || "Player 2")}
+              </span>
+            </div>
+
+            <div class="comparison-match-result ${resultClass}">
+              ${comparisonResultsEscape(resultLabel)}
+            </div>
+
+            <div class="comparison-match-date">
+              ${comparisonResultsEscape(comparisonResultsDate(match.played_at))}
+            </div>
+          </div>
+        `;
       }).join("")}
     </div>
   `;
 }
+
 
 function renderComparisonPlayerSuggestions(
   players,
