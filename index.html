@@ -249,25 +249,7 @@
         </div>
       </section>
       
-      <div id="galaticoGlow" class="competition-branding">
-        <div class="competition-branding-content">
-          <div class="competition-logo-wrap">
-            <div class="competition-gold-ring"></div>
-            <img src="galaticoLogo1.png" alt="Galatico Esports" class="competition-brand-logo">
-          </div>
-          <h1 class="competition-brand-name">GALATICO</h1>
-          <div class="competition-brand-divider">
-            <span></span>
-            <div></div>
-            <span></span>
-          </div>
-          <p class="competition-brand-subtitle">ESPORTS</p>
-          <p class="competition-brand-tagline">COMPETE. CONQUER. MAKE HISTORY.</p>
-        </div>
-        <div class="competition-brand-footer">
-          <span>THE HOME OF COMPETITION</span>
-        </div>
-      </div>
+      
       <nav id="homepageNav" style="display: none;">
         <button type="button" class="homepage-nav-btn" onclick="goBackHome()">
           Home
@@ -1590,7 +1572,10 @@
           <label>Season Status</label>
           
           <select id="seasonStatusInput">
-            <option value="upcoming" selected>
+            <option value="scheduled" selected>
+              Scheduled
+            </option>
+            <option value="upcoming">
               Upcoming
             </option>
             <option value="active">
@@ -2974,7 +2959,7 @@
     
     <div class="match-thumbnail-container">
       <div class="match-thumbnail-header">
-       <h3 id="matchThumbnailTitle">Match Thumbnail</h3>
+        <h3 id="matchThumbnailTitle">Match Thumbnail</h3>
         
         <button type="button" id="closeMatchThumbnail" class="match-thumbnail-close">
           &times;

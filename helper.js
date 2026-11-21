@@ -96,14 +96,13 @@ function showActionModal(message, type = "") {
 }
 
 function leaveHome() {
-  ["mySection", "galaticoGlow", "noticeSection"].forEach(id => {
+  ["mySection",, "noticeSection"].forEach(id => {
     document.getElementById(id)?.style.setProperty("display", "none");
   });
 }
 
 function goBackHome() {
-  document.getElementById("noticeSection").style.display="none";
-  renderNotices();
+  document.getElementById("noticeSection").style.display="block";
  backToGlobalRankings()
 closeProfileModal();
 closeHallOfFame();

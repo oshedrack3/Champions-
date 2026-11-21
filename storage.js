@@ -2217,7 +2217,7 @@ async function tournamentCreator() {
   }
   
   
-  if (!["upcoming", "active", "completed"].includes(seasonStatus)) {
+  if (!["upcoming","scheduled", "active", "completed"].includes(seasonStatus)) {
     showAlert("Invalid season status");
     return;
   }
@@ -6070,20 +6070,21 @@ function setupNoticeDynamicHeight() {
 }
 
 
+
 async function renderNotices(notices) {
   const container = document.getElementById("noticeBoard");
   const noticeSection = document.getElementById("noticeSection");
-  const galaticoGlow = document.getElementById("galaticoGlow");
 
   if (!container) return;
 
-  const hasNotices = Array.isArray(notices) && notices.length > 0;
+  if (noticeSection) noticeSection.style.display = "";
 
-  if (noticeSection) noticeSection.style.display = hasNotices ? "" : "none";
-  if (galaticoGlow) galaticoGlow.style.display = hasNotices ? "none" : "flex";
-
-  if (!hasNotices) {
-    container.innerHTML = "";
+  if (!Array.isArray(notices) || !notices.length) {
+    container.innerHTML = `
+      <div class="notice-empty">
+        No announcements available.
+      </div>
+    `;
     return;
   }
 
