@@ -6,6 +6,7 @@ let myCompetitions = [];
 let currentCompetition = null;
 let fixtureSquadRequestId = 0;
 myTournaments = null;
+let noticeScrollDirection = 1;
 let selectedProfileImage = null;
 let disciplinarySubmitting = false;
 let disciplinaryReversalSubmitting = false;
@@ -1230,23 +1231,25 @@ async function refreshTournamentFromSSE() {
     
   }
 }
+
+let isLoadingCompetitions = false;
 async function loadMyCompetitions() {
+  isLoadingCompetitions = true;
+  renderCompetitionList();
+  
   showLoader();
   
   try {
-    myCompetitions =
-      await getMyCompetitions();
-    
-    renderCompetitionList();
-    
+    myCompetitions = await getMyCompetitions();
   } catch (err) {
     console.error(err);
     showAlert(err.message);
   } finally {
+    isLoadingCompetitions = false;
+    renderCompetitionList();
     hideLoader();
   }
 }
-
 function setSelectedCompetition(id) {
   selectedCompetitionId = id;
 }
@@ -3800,33 +3803,6 @@ function loadSubmissionDeadlineCountdown(tournament) {
   }
 }
 
-async function loadNotices() {
-  const container =
-    document.getElementById("noticeBoard");
-  
-  if (!container) return;
-  
-  container.innerHTML = `
-    <div class="notice-loader">
-      Loading notices...
-    </div>
-  `;
-  
-  try {
-    const notices = await getNotices();
-    
-    renderNotices(notices);
-    
-  } catch (err) {
-    console.error("[loadNotices]", err);
-    
-    container.innerHTML = `
-      <div class="notice-empty">
-        Failed to load notices.
-      </div>
-    `;
-  }
-}
 
 async function buildFixturesFromMatches(
   matches,
@@ -5995,4 +5971,426 @@ function closeFixtureSquads() {
   modal.style.display = "none";
   modal.setAttribute("aria-hidden", "true");
   document.body.style.overflow = "";
+}
+
+
+
+async function loadNotices() {
+  const container =
+    document.getElementById("noticeBoard");
+  
+  if (!container) return;
+  
+  container.innerHTML = `
+    <div class="notice-loader">
+      Loading notices...
+    </div>
+  `;
+  
+  try {
+    const notices = await getNotices();
+    
+    await renderNotices(notices);
+    
+  } catch (err) {
+    console.error("[loadNotices]", err);
+    
+    container.innerHTML = `
+      <div class="notice-empty">
+        Failed to load notices.
+      </div>
+    `;
+  }
+}
+
+
+
+
+
+function setupNoticeDynamicHeight() {
+  const slider = document.querySelector(".notice-slider");
+  if (!slider) return;
+  
+  const cards = [...slider.querySelectorAll(".notice-card")];
+  if (!cards.length) return;
+  
+  let heightTimer = null;
+  let resizeFrame = null;
+  
+  const updateHeight = () => {
+    const index = Math.max(
+      0,
+      Math.min(
+        Math.round(slider.scrollLeft / slider.clientWidth),
+        cards.length - 1
+      )
+    );
+    
+    const activeCard = cards[index];
+    
+    if (activeCard) {
+      slider.style.height = `${activeCard.offsetHeight}px`;
+    }
+  };
+  
+  const scheduleHeightUpdate = (delay = 250) => {
+    clearTimeout(heightTimer);
+    
+    heightTimer = setTimeout(() => {
+      cancelAnimationFrame(resizeFrame);
+      resizeFrame = requestAnimationFrame(updateHeight);
+    }, delay);
+  };
+  
+  slider.addEventListener("scroll", () => {
+    scheduleHeightUpdate(350);
+  }, { passive: true });
+  
+  slider.addEventListener("touchend", () => {
+    scheduleHeightUpdate(500);
+  }, { passive: true });
+  
+  slider.addEventListener("pointerup", () => {
+    scheduleHeightUpdate(500);
+  });
+  
+  const observer = new ResizeObserver(() => {
+    scheduleHeightUpdate(100);
+  });
+  
+  cards.forEach(card => observer.observe(card));
+  
+  slider.querySelectorAll("img").forEach(image => {
+    image.addEventListener("load", () => scheduleHeightUpdate(100));
+  });
+  
+  window.addEventListener("resize", () => scheduleHeightUpdate(100));
+  
+  scheduleHeightUpdate(0);
+}
+
+
+async function renderNotices(notices) {
+  const container = document.getElementById("noticeBoard");
+  const noticeSection = document.getElementById("noticeSection");
+  const galaticoGlow = document.getElementById("galaticoGlow");
+
+  if (!container) return;
+
+  const hasNotices = Array.isArray(notices) && notices.length > 0;
+
+  if (noticeSection) noticeSection.style.display = hasNotices ? "" : "none";
+  if (galaticoGlow) galaticoGlow.style.display = hasNotices ? "none" : "flex";
+
+  if (!hasNotices) {
+    container.innerHTML = "";
+    return;
+  }
+
+  container.innerHTML = `
+    <div class="notice-loader">Loading notices...</div>
+  `;
+
+  try {
+    container.innerHTML = `
+      <div class="notice-slider">
+        ${notices.map((notice, index) => {
+          const images = Array.isArray(notice.images)
+            ? notice.images.filter(image => image?.url)
+            : [];
+
+          const date = notice.created_at
+            ? new Date(notice.created_at).toLocaleString("en-NG", {
+                day: "numeric",
+                month: "short",
+                year: "numeric",
+                hour: "numeric",
+                minute: "2-digit",
+                hour12: true
+              })
+            : "";
+
+          return `
+            <article class="notice-card" data-notice-index="${index}">
+              <div class="notice-flash">
+                <div class="notice-flash-meta">
+                  <span class="notice-category">
+                    ${escapeHtml(String(notice.category || "General").toUpperCase())}
+                  </span>
+
+                  <span class="notice-date">
+                    ${escapeHtml(date)}
+                  </span>
+                </div>
+
+                <div class="notice-flash-title">
+                  ${escapeHtml(notice.title || "Announcement")}
+                </div>
+
+                ${notice.content ? `
+                  <div class="notice-flash-content">
+                    ${escapeHtml(notice.content)}
+                  </div>
+                ` : ""}
+              </div>
+
+              ${images.length ? `
+                <div class="notice-original-images">
+                  ${images.map(image => `
+                    <img
+                      src="${escapeHtml(image.url)}"
+                      alt="${escapeHtml(notice.title || "Notice image")}"
+                      class="notice-original-image"
+                      loading="lazy"
+                      draggable="false"
+                    >
+                  `).join("")}
+                </div>
+              ` : ""}
+            </article>
+          `;
+        }).join("")}
+      </div>
+    `;
+
+    container.querySelectorAll(".notice-card").forEach((card, index) => {
+      setupNoticeHoldToDelete(card, notices[index]);
+    });
+
+    setupNoticeInteraction();
+    setupNoticeScrollTracking();
+    setupNoticeDynamicHeight();
+    startNoticeAutoScroll();
+
+  } catch (err) {
+    console.error("[renderNotices]", err);
+
+    container.innerHTML = `
+      <div class="notice-empty">
+        ${escapeHtml(err.message || "Unable to load notices")}
+      </div>
+    `;
+  }
+}
+
+
+function formatNoticeDate(timestamp) {
+  if (!timestamp) return "";
+  
+  return new Date(timestamp).toLocaleString(
+    "en-NG",
+    {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true
+    }
+  );
+}
+
+
+function setupNoticeDynamicHeight() {
+  const slider = document.querySelector(".notice-slider");
+  if (!slider) return;
+
+  const cards = [...slider.querySelectorAll(".notice-card")];
+
+  if (!cards.length) return;
+
+  const updateHeight = () => {
+    const index = Math.max(
+      0,
+      Math.min(
+        Math.round(slider.scrollLeft / slider.clientWidth),
+        cards.length - 1
+      )
+    );
+
+    const activeCard = cards[index];
+
+    if (activeCard) {
+      slider.style.height = `${activeCard.offsetHeight}px`;
+    }
+  };
+
+  let frame;
+
+  slider.addEventListener("scroll", () => {
+    cancelAnimationFrame(frame);
+    frame = requestAnimationFrame(updateHeight);
+  }, { passive: true });
+
+  const observer = new ResizeObserver(updateHeight);
+
+  cards.forEach(card => observer.observe(card));
+
+  slider.querySelectorAll("img").forEach(image => {
+    image.addEventListener("load", updateHeight);
+  });
+
+  window.addEventListener("resize", updateHeight);
+
+  requestAnimationFrame(updateHeight);
+}
+
+
+
+
+
+
+function startNoticeAutoScroll() {
+  const slider = document.querySelector(".notice-slider");
+
+  if (!slider) return;
+
+  const cards = slider.querySelectorAll(".notice-card");
+
+  if (cards.length <= 1) return;
+
+  if (noticeScrollTimer) {
+    clearInterval(noticeScrollTimer);
+  }
+
+  noticeScrollIndex = Math.max(
+    0,
+    Math.min(
+      Math.round(slider.scrollLeft / slider.clientWidth),
+      cards.length - 1
+    )
+  );
+
+  if (noticeScrollIndex >= cards.length - 1) {
+    noticeScrollDirection = -1;
+  } else {
+    noticeScrollDirection = 1;
+  }
+
+  noticeScrollTimer = setInterval(() => {
+    if (slider.dataset.interacting === "true") return;
+
+    if (noticeScrollIndex >= cards.length - 1) {
+      noticeScrollDirection = -1;
+    } else if (noticeScrollIndex <= 0) {
+      noticeScrollDirection = 1;
+    }
+
+    noticeScrollIndex += noticeScrollDirection;
+
+    slider.scrollTo({
+      left: slider.clientWidth * noticeScrollIndex,
+      behavior: "smooth"
+    });
+  }, 5000);
+}
+
+function setupNoticeInteraction() {
+  const slider = document.querySelector(".notice-slider");
+
+  if (!slider) return;
+
+  slider.addEventListener("pointerdown", () => {
+    slider.dataset.interacting = "true";
+
+    if (noticeInteractionTimeout) {
+      clearTimeout(noticeInteractionTimeout);
+    }
+  });
+
+  slider.addEventListener("pointerup", () => {
+    resumeNoticeAutoScroll(slider);
+  });
+
+  slider.addEventListener("pointercancel", () => {
+    resumeNoticeAutoScroll(slider);
+  });
+
+  slider.addEventListener("pointerleave", () => {
+    resumeNoticeAutoScroll(slider);
+  });
+}
+
+function resumeNoticeAutoScroll(slider) {
+  if (!slider) return;
+
+  if (noticeInteractionTimeout) {
+    clearTimeout(noticeInteractionTimeout);
+  }
+
+  noticeInteractionTimeout = setTimeout(() => {
+    slider.dataset.interacting = "false";
+
+    const cards = slider.querySelectorAll(".notice-card");
+
+    if (!cards.length) return;
+
+    noticeScrollIndex = Math.max(
+      0,
+      Math.min(
+        Math.round(slider.scrollLeft / slider.clientWidth),
+        cards.length - 1
+      )
+    );
+
+    if (noticeScrollIndex === 0) {
+      noticeScrollDirection = 1;
+    } else if (noticeScrollIndex === cards.length - 1) {
+      noticeScrollDirection = -1;
+    }
+  }, 1500);
+}
+
+function setupNoticeScrollTracking() {
+  const slider = document.querySelector(".notice-slider");
+
+  if (!slider) return;
+
+  slider.addEventListener("scroll", () => {
+    const width = slider.clientWidth;
+
+    if (!width) return;
+
+    const cards = slider.querySelectorAll(".notice-card");
+
+    const index = Math.max(
+      0,
+      Math.min(
+        Math.round(slider.scrollLeft / width),
+        cards.length - 1
+      )
+    );
+
+    noticeScrollIndex = index;
+  }, { passive: true });
+}
+
+function setupNoticeHoldToDelete(element, notice) {
+  if (getCurrentUser()?.role !== "admin") return;
+  
+  let holdTimer = null;
+  let triggered = false;
+  
+  const startHold = () => {
+    triggered = false;
+    clearTimeout(holdTimer);
+    
+    holdTimer = setTimeout(() => {
+      triggered = true;
+      deleteNotice(notice.id);
+    }, 800);
+  };
+  
+  const cancelHold = () => {
+    clearTimeout(holdTimer);
+  };
+  
+  element.addEventListener("pointerdown", startHold);
+  element.addEventListener("pointerup", cancelHold);
+  element.addEventListener("pointerleave", cancelHold);
+  element.addEventListener("pointercancel", cancelHold);
+  
+  element.addEventListener("contextmenu", e => {
+    e.preventDefault();
+  });
 }

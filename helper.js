@@ -446,6 +446,8 @@ function handleMenuAction(action) {
   closeMenu();
   
   const actions = {
+    champFlyer: showCurrentTournamentChampionsThumbnail,
+    showFlyer: showCurrentTournamentFlyer,
     shareTable: shareTable,
     shareFixtures: shareFixtures,
     checklive: checkLive,
@@ -614,7 +616,18 @@ const menuConfig = {
       label: "Delete Tournament",
       action: "deleteTournament",
       roles: ["admin"]
-    }
+    },
+    {
+  label: " Tournament Flyer",
+  action: "showFlyer",
+  roles: ["admin"]
+},
+    {
+  label: " Champions Flyer",
+  action: "champFlyer",
+  roles: ["admin"]
+}
+
   ]
 };
 function renderMenu() {
@@ -668,27 +681,30 @@ function renderMenu() {
   `;
 
   const renderGroup = group => {
-    const items = filterItems(menuConfig[group.key] || []);
+  const sourceItems = menuConfig[group.key] || [];
+  
+  const items = group.key === "tournamentManagement" ?
+    sourceItems :
+    filterItems(sourceItems);
+  
+  if (!items.length) return "";
+  
+  return `
+    <div class="menu-group">
+      <button
+        type="button"
+        class="menu-group-toggle"
+        onclick="this.parentElement.classList.toggle('expanded')">
+        <span>${group.label}</span>
+        <span class="menu-group-arrow">⌄</span>
+      </button>
 
-    if (!items.length) return "";
-
-    return `
-      <div class="menu-group">
-        <button
-          type="button"
-          class="menu-group-toggle"
-          onclick="this.parentElement.classList.toggle('expanded')">
-          <span>${group.label}</span>
-          <span class="menu-group-arrow">⌄</span>
-        </button>
-
-        <div class="menu-group-content">
-          ${items.map(renderItem).join("")}
-        </div>
+      <div class="menu-group-content">
+        ${items.map(renderItem).join("")}
       </div>
-    `;
-  };
-
+    </div>
+  `;
+};
   if (isCompetition) {
     menu.innerHTML = `
       <div class="menu-header">COMPETITION</div>
@@ -1408,56 +1424,57 @@ async function handleResultAction() {
   
 }
 
-function fileToBase64(file, maxWidth = 1200) {
-  
+
+function fileToBase64(file, maxWidth = 1200, preserveTransparency = false) {
   return new Promise((resolve, reject) => {
-    
     const img = new Image();
     const reader = new FileReader();
-    
+
     reader.onload = e => {
       img.src = e.target.result;
     };
-    
+
     reader.onerror = reject;
-    
+
     img.onload = () => {
-      
       const canvas = document.createElement("canvas");
-      
+
       let width = img.width;
       let height = img.height;
-      
+
       if (width > maxWidth) {
         const ratio = maxWidth / width;
         width = maxWidth;
         height *= ratio;
       }
-      
+
       canvas.width = width;
       canvas.height = height;
-      
+
       const ctx = canvas.getContext("2d");
       ctx.drawImage(img, 0, 0, width, height);
-      
+
       let quality = 0.8;
-      let base64 = canvas.toDataURL("image/jpeg", quality);
-      
+      const format = preserveTransparency
+        ? "image/webp"
+        : "image/jpeg";
+
+      let base64 = canvas.toDataURL(format, quality);
+
       while (
         base64.length > 500 * 1024 &&
         quality > 0.3
       ) {
         quality -= 0.1;
-        base64 = canvas.toDataURL("image/jpeg", quality);
+        base64 = canvas.toDataURL(format, quality);
       }
-      
+
       resolve(base64);
     };
-    
+
     img.onerror = reject;
-    
+
     reader.readAsDataURL(file);
-    
   });
 }
 

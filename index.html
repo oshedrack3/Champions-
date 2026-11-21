@@ -2151,27 +2151,24 @@
     
   </div>
   
- 
-
-
-
-<div id="loader" class="loader-overlay" style="display:none;">
-  <div class="galatico-mini-loader">
-    <div class="galatico-loader-word">
-      <span>G</span>
-      <span>A</span>
-      <span>L</span>
-      <span>A</span>
-      <span>T</span>
-      <span>I</span>
-      <span>C</span>
-      <span>O</span>
+  
+  
+  <div id="loader" class="loader-overlay" style="display:none;">
+    <div class="galatico-mini-loader">
+      <div class="orbit-loader">
+        <div class="orbit-ring"></div>
+        <div class="orbit-center"></div>
+        <div class="orbit-track">
+          <div class="orbit-particle"></div>
+        </div>
+      </div>
+      <div class="galatico-loader-esport">Please Wait..</div>
     </div>
-    <div class="galatico-loader-esport">ESPORT</div>
   </div>
-</div>
-
-
+  
+  
+  
+  
   
   <div id="submissionDeadlineModal" class="modal-overlay" style="display:none">
     <div class="modal-box submission-deadline-modal">
@@ -2406,6 +2403,7 @@
       <div id="srMessage" class="sr-message" hidden></div>
       <div id="srList" class="sr-list"></div>
       <div id="srAdminReviewsList" class="sr-list" hidden></div>
+      
       <div id="srPaymentMethodModal" class="sr-payment-modal" hidden>
         <div class="sr-payment-dialog" role="dialog" aria-modal="true" aria-labelledby="srPaymentMethodTitle">
           <button type="button" id="srPaymentMethodClose" class="sr-payment-close" aria-label="Close">×</button>
@@ -2414,14 +2412,29 @@
           <h2 id="srPaymentMethodTitle">Choose Payment Method</h2>
           <p id="srPaymentMethodDescription"></p>
           
+          <div class="sr-refund-terms">
+            <strong>Non-Refundable Payment Policy</strong>
+            <p>
+              Registration payments are strictly non-refundable once completed.
+              No refunds will be issued if you withdraw, fail to participate, or are expelled
+              from the tournament for misconduct. Refunds will only be made if Galatico eSport
+              officially cancels the tournament.
+            </p>
+            
+            <label class="sr-consent-label">
+              <input type="checkbox" id="srPaymentConsent">
+              <span>I have read and agree to the non-refundable payment terms.</span>
+            </label>
+          </div>
+          
           <div class="sr-payment-options">
-            <button type="button" id="srChooseFlutterwave" class="sr-payment-option">
+            <button type="button" id="srChooseFlutterwave" class="sr-payment-option" disabled>
               <span>💳</span>
               <strong>Flutterwave</strong>
               <small>Instant Payment Verification (charges apply)</small>
             </button>
             
-            <button type="button" id="srChooseBankTransfer" class="sr-payment-option">
+            <button type="button" id="srChooseBankTransfer" class="sr-payment-option" disabled>
               <span>🏦</span>
               <strong>Bank Transfer</strong>
               <small>Upload your payment receipt</small>
@@ -2957,50 +2970,36 @@
   </section>
   
   <div id="matchThumbnailModal" class="match-thumbnail-modal" hidden>
-  <div class="match-thumbnail-overlay"></div>
-
-  <div class="match-thumbnail-container">
-    <div class="match-thumbnail-header">
-      <h3>Match Thumbnail</h3>
-
-      <button
-        type="button"
-        id="closeMatchThumbnail"
-        class="match-thumbnail-close"
-      >
-        &times;
-      </button>
-    </div>
-
-    <div class="match-thumbnail-content">
-      <div id="matchThumbnailPreview" class="match-thumbnail-preview">
-        <div class="match-thumbnail-loader"></div>
+    <div class="match-thumbnail-overlay"></div>
+    
+    <div class="match-thumbnail-container">
+      <div class="match-thumbnail-header">
+       <h3 id="matchThumbnailTitle">Match Thumbnail</h3>
+        
+        <button type="button" id="closeMatchThumbnail" class="match-thumbnail-close">
+          &times;
+        </button>
+      </div>
+      
+      <div class="match-thumbnail-content">
+        <div id="matchThumbnailPreview" class="match-thumbnail-preview">
+          <div class="match-thumbnail-loader"></div>
+        </div>
+      </div>
+      
+      <div class="match-thumbnail-actions">
+        <button type="button" id="downloadMatchThumbnail" class="match-thumbnail-download" disabled>
+          <i class="fas fa-download"></i>
+          Download
+        </button>
+        
+        <button type="button" id="shareMatchThumbnail" class="match-thumbnail-share" disabled>
+          <i class="fas fa-share-alt"></i>
+          Share
+        </button>
       </div>
     </div>
-
-    <div class="match-thumbnail-actions">
-      <button
-        type="button"
-        id="downloadMatchThumbnail"
-        class="match-thumbnail-download"
-        disabled
-      >
-        <i class="fas fa-download"></i>
-        Download
-      </button>
-
-      <button
-        type="button"
-        id="shareMatchThumbnail"
-        class="match-thumbnail-share"
-        disabled
-      >
-        <i class="fas fa-share-alt"></i>
-        Share
-      </button>
-    </div>
   </div>
-</div>
   
   <div id="friendlyTeamsModal" class="friendly-teams-modal">
     <div class="friendly-teams-modal-content">

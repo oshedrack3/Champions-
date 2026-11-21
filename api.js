@@ -2359,6 +2359,7 @@ async function getUserProfile() {
   
   return profile;
 }
+
 async function previewProfileImage(event) {
   const file = event.target.files?.[0];
   
@@ -2424,6 +2425,7 @@ async function previewProfileImage(event) {
     }
   }
 }
+
 async function openProfileModal() {
   goBackHome()
   leaveHome()
@@ -6309,6 +6311,13 @@ async function registerForSeason(tournamentId) {
     `Season ${season.season ?? "N/A"} · ` +
     `Total: ${formatMoney(season.total_amount)}`;
   
+  const consent = document.getElementById("srPaymentConsent");
+
+if (consent) {
+  consent.checked = false;
+}
+
+updatePaymentConsent();
   modal.hidden = false;
 }
 
@@ -6457,7 +6466,13 @@ function bindSeasonRegistrationEvents() {
     const backButton = document.getElementById("srBack");
     const refreshButton = document.getElementById("srRefresh");
     const list = document.getElementById("srList");
-    
+    const paymentConsent = document.getElementById(
+  "srPaymentConsent"
+);
+
+if (paymentConsent) {
+  paymentConsent.onchange = updatePaymentConsent;
+}
     const paymentMethodClose = document.getElementById(
       "srPaymentMethodClose"
     );
@@ -6697,7 +6712,16 @@ function bindSeasonRegistrationEvents() {
   };
 }
 
-
+function updatePaymentConsent() {
+  const checkbox = document.getElementById("srPaymentConsent");
+  const flutterwave = document.getElementById("srChooseFlutterwave");
+  const bankTransfer = document.getElementById("srChooseBankTransfer");
+  
+  const accepted = checkbox?.checked === true;
+  
+  if (flutterwave) flutterwave.disabled = !accepted;
+  if (bankTransfer) bankTransfer.disabled = !accepted;
+}
 function showMessage(message) {
   showAlert(message)
   return;
@@ -10700,17 +10724,80 @@ async function openCreateExpenseForm(isTournamentExpense = false) {
 }
 
 
-async function openMatchThumbnail(match) {
+let currentThumbnailMatch = null;
+let currentThumbnailType = "match";
+let currentThumbnailFilename = "";
+let currentThumbnailShareText = "";
+let thumbnailModalBound = false;
+
+function initMatchThumbnailModalEvents() {
+  if (thumbnailModalBound) return;
+  thumbnailModalBound = true;
+  
   const modal = document.getElementById("matchThumbnailModal");
+  
+  document.getElementById("closeMatchThumbnail")
+    ?.addEventListener("click", closeMatchThumbnailModal);
+  
+  modal?.querySelector(".match-thumbnail-overlay")
+    ?.addEventListener("click", closeMatchThumbnailModal);
+  
+  document.getElementById("downloadMatchThumbnail")
+    ?.addEventListener("click", handleDownloadMatchThumbnail);
+  
+  document.getElementById("shareMatchThumbnail")
+    ?.addEventListener("click", handleShareMatchThumbnail);
+  
+  document.addEventListener("keydown", event => {
+    if (event.key === "Escape" && modal && !modal.hidden) {
+      closeMatchThumbnailModal();
+    }
+  });
+}
+
+function openMatchThumbnailModal() {
+  initMatchThumbnailModalEvents();
+  
+  const modal = document.getElementById("matchThumbnailModal");
+  if (!modal) return;
+  
+  modal.hidden = false;
+  document.body.style.overflow = "hidden";
+}
+
+function closeMatchThumbnailModal() {
+  const modal = document.getElementById("matchThumbnailModal");
+  if (!modal) return;
+  
+  modal.hidden = true;
+  document.body.style.overflow = "";
+  
+  window.currentMatchThumbnail = null;
+  window.currentMatchThumbnailData = null;
+  currentThumbnailMatch = null;
+}
+
+function closeMatchThumbnail() {
+  closeMatchThumbnailModal();
+}
+
+function setThumbnailModalTitle(title) {
+  const heading = document.getElementById("matchThumbnailTitle");
+  if (heading) heading.textContent = title;
+}
+
+async function openMatchThumbnail(match) {
   const preview = document.getElementById("matchThumbnailPreview");
   const downloadBtn = document.getElementById("downloadMatchThumbnail");
   const shareBtn = document.getElementById("shareMatchThumbnail");
   
-  modal.hidden = false;
-  document.body.style.overflow = "hidden";
+  currentThumbnailType = "match";
+  currentThumbnailMatch = match || null;
+  
+  setThumbnailModalTitle("Match Thumbnail");
+  openMatchThumbnailModal();
   
   preview.innerHTML = `<div class="match-thumbnail-loader"></div>`;
-  
   downloadBtn.disabled = true;
   shareBtn.disabled = true;
   
@@ -10742,13 +10829,11 @@ async function openMatchThumbnail(match) {
     
     const matchData = result.match || result.data || result;
     
-    if (!matchData || !matchData.id) {
+    if (!matchData?.id) {
       throw new Error("Match information is incomplete.");
     }
     
     window.currentMatchThumbnailData = matchData;
-    
-    preview.innerHTML = "";
     
     await renderMatchThumbnail(matchData);
     
@@ -10768,81 +10853,29 @@ async function openMatchThumbnail(match) {
   }
 }
 
-
-function closeMatchThumbnail() {
-  document.getElementById("matchThumbnailModal").hidden = true;
-  document.body.style.overflow = "";
-  window.currentMatchThumbnailData = null;
-}
-
-document.getElementById("closeMatchThumbnail").onclick =
-  closeMatchThumbnail;
-
-document.querySelector(".match-thumbnail-overlay").onclick =
-  closeMatchThumbnail;
-
-
-let currentThumbnailMatch = null;
-let thumbnailModalBound = false;
-
-function initMatchThumbnailModalEvents() {
-  if (thumbnailModalBound) return;
-  thumbnailModalBound = true;
-
-  const modal = document.getElementById("matchThumbnailModal");
-  const closeBtn = document.getElementById("closeMatchThumbnail");
-  const overlay = modal?.querySelector(".match-thumbnail-overlay");
-  const downloadBtn = document.getElementById("downloadMatchThumbnail");
-  const shareBtn = document.getElementById("shareMatchThumbnail");
-
-  if (closeBtn) {
-    closeBtn.addEventListener("click", closeMatchThumbnailModal);
-  }
-
-  if (overlay) {
-    overlay.addEventListener("click", closeMatchThumbnailModal);
-  }
-
-  if (downloadBtn) {
-    downloadBtn.addEventListener("click", handleDownloadMatchThumbnail);
-  }
-
-  if (shareBtn) {
-    shareBtn.addEventListener("click", handleShareMatchThumbnail);
-  }
-
-  document.addEventListener("keydown", (event) => {
-    if (event.key === "Escape" && modal && !modal.hidden) {
-      closeMatchThumbnailModal();
-    }
-  });
-}
-
-function openMatchThumbnailModal() {
-  initMatchThumbnailModalEvents();
-  const modal = document.getElementById("matchThumbnailModal");
-  if (!modal) return;
-  modal.hidden = false;
-}
-
-function closeMatchThumbnailModal() {
-  const modal = document.getElementById("matchThumbnailModal");
-  if (!modal) return;
-  modal.hidden = true;
-}
-
 function getThumbnailFilename(match) {
-  const home = String(match?.home_team?.owner?.username || match?.home_team?.name || "home")
+  const home = String(
+      match?.home_team?.owner?.username ||
+      match?.home_team?.name ||
+      "home"
+    )
     .trim()
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-|-$/g, "");
-  const away = String(match?.away_team?.owner?.username || match?.away_team?.name || "away")
+  
+  const away = String(
+      match?.away_team?.owner?.username ||
+      match?.away_team?.name ||
+      "away"
+    )
     .trim()
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-|-$/g, "");
+  
   const idPart = match?.id ? `-${match.id}` : "";
+  
   return `${home || "home"}-vs-${away || "away"}${idPart}.png`;
 }
 
@@ -10851,24 +10884,23 @@ function dataUrlToBlob(dataUrl) {
   const mimeMatch = parts[0].match(/:(.*?);/);
   const mime = mimeMatch ? mimeMatch[1] : "image/png";
   const binary = atob(parts[1]);
-  const len = binary.length;
-  const bytes = new Uint8Array(len);
-
-  for (let i = 0; i < len; i++) {
+  const bytes = new Uint8Array(binary.length);
+  
+  for (let i = 0; i < binary.length; i++) {
     bytes[i] = binary.charCodeAt(i);
   }
-
+  
   return new Blob([bytes], { type: mime });
 }
 
 function handleDownloadMatchThumbnail() {
   const imageUrl = window.currentMatchThumbnail;
   if (!imageUrl) return;
-
-  const filename = getThumbnailFilename(currentThumbnailMatch);
+  
   const link = document.createElement("a");
   link.href = imageUrl;
-  link.download = filename;
+  link.download = currentThumbnailFilename || "galatico-esport.png";
+  
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
@@ -10877,61 +10909,477 @@ function handleDownloadMatchThumbnail() {
 async function handleShareMatchThumbnail() {
   const imageUrl = window.currentMatchThumbnail;
   if (!imageUrl) return;
-
+  
   const shareBtn = document.getElementById("shareMatchThumbnail");
-  const filename = getThumbnailFilename(currentThumbnailMatch);
+  const filename = currentThumbnailFilename || "galatico-esport.png";
   const blob = dataUrlToBlob(imageUrl);
   const file = new File([blob], filename, { type: "image/png" });
-
-  const homeLabel =
-    currentThumbnailMatch?.home_team?.owner?.username ||
-    currentThumbnailMatch?.home_team?.name ||
-    "Home";
-  const awayLabel =
-    currentThumbnailMatch?.away_team?.owner?.username ||
-    currentThumbnailMatch?.away_team?.name ||
-    "Away";
-  const shareText = `${homeLabel} vs ${awayLabel} — GALATICO eSPORT`;
-
+  
   try {
     if (navigator.canShare && navigator.canShare({ files: [file] })) {
       await navigator.share({
-        title: "Match Thumbnail",
-        text: shareText,
-        files: [file],
+        title: currentThumbnailType === "tournament" ?
+          "Tournament Flyer" :
+          "Match Thumbnail",
+        text: currentThumbnailShareText,
+        files: [file]
       });
       return;
     }
-
+    
     if (navigator.share) {
       await navigator.share({
-        title: "Match Thumbnail",
-        text: shareText,
-        url: window.location.href,
+        title: currentThumbnailType === "champions" ?
+  "Champions Thumbnail" :
+  currentThumbnailType === "tournament" ?
+  "Tournament Flyer" :
+  "Match Thumbnail",
+        text: currentThumbnailShareText,
+        url: window.location.href
       });
       return;
     }
-
+    
     if (navigator.clipboard && window.ClipboardItem) {
       await navigator.clipboard.write([
-        new ClipboardItem({ "image/png": blob }),
+        new ClipboardItem({ "image/png": blob })
       ]);
+      
       if (shareBtn) {
         const originalHtml = shareBtn.innerHTML;
         shareBtn.innerHTML = `<i class="fas fa-check"></i> Copied`;
+        
         setTimeout(() => {
           shareBtn.innerHTML = originalHtml;
         }, 1800);
       }
+      
       return;
     }
-
+    
     handleDownloadMatchThumbnail();
-  } catch (err) {
-    if (err?.name !== "AbortError") {
+    
+  } catch (error) {
+    if (error?.name !== "AbortError") {
       handleDownloadMatchThumbnail();
     }
   }
+}
+
+
+async function openTournamentFlyer(tournament) {
+  const selectedTournament =
+    tournament ||
+    (typeof getCurrentTournament === "function"
+      ? getCurrentTournament()
+      : null);
+
+  if (!selectedTournament) {
+    showAlert("No tournament is currently selected.");
+    return;
+  }
+
+  currentThumbnailType = "tournament";
+  currentThumbnailMatch = null;
+
+  setThumbnailModalTitle("Tournament Flyer");
+  openMatchThumbnailModal();
+
+  const preview = document.getElementById("matchThumbnailPreview");
+  const downloadBtn = document.getElementById("downloadMatchThumbnail");
+  const shareBtn = document.getElementById("shareMatchThumbnail");
+
+  preview.innerHTML = `<div class="match-thumbnail-loader"></div>`;
+  downloadBtn.disabled = true;
+  shareBtn.disabled = true;
+
+  try {
+    await renderTournamentFlyer(selectedTournament);
+  } catch (error) {
+    console.error("Tournament flyer error:", error);
+
+    preview.innerHTML = `
+      <div class="match-thumbnail-error">
+        Unable to generate tournament flyer.
+      </div>
+    `;
+
+    downloadBtn.disabled = true;
+    shareBtn.disabled = true;
+
+    showAlert(error.message || "Failed to generate tournament flyer.");
+  }
+}
+
+
+async function renderTournamentFlyer(tournament) {
+  initMatchThumbnailModalEvents();
+
+  const competition =
+    (Array.isArray(myCompetitions)
+      ? myCompetitions.find(
+          item => String(item.id) === String(tournament.competition_id)
+        )
+      : null) ||
+    (
+      currentCompetition &&
+      String(currentCompetition.id) === String(tournament.competition_id)
+        ? currentCompetition
+        : null
+    );
+
+  const tournamentName = String(
+    competition?.name ||
+    tournament.name ||
+    "GALATICO eSPORT"
+  ).toUpperCase();
+
+  const season = String(tournament.season || "").toUpperCase();
+
+  const registrationFee = Number(competition?.registration_fee);
+  const adminFee = Number(competition?.admin_fee);
+
+  const hasFee =
+    Number.isFinite(registrationFee) &&
+    Number.isFinite(adminFee);
+
+  const totalFee = hasFee
+    ? registrationFee + adminFee
+    : null;
+
+  const feeText = totalFee === null
+    ? "CONTACT FOR FEE"
+    : totalFee === 0
+      ? "FREE ENTRY"
+      : `₦${totalFee.toLocaleString("en-NG")}`;
+
+  const isRegistrationOpen =
+    String(tournament.registration_status || "")
+      .trim()
+      .toLowerCase() === "open";
+
+  const registrationText = isRegistrationOpen
+    ? "REGISTRATION NOW OPEN"
+    : "REGISTRATION CLOSED";
+
+  const capacity = Number(tournament.registration_capacity);
+
+  const registered = Array.isArray(tournament.tournament_players)
+    ? tournament.tournament_players.length
+    : null;
+
+  const capacityText =
+    Number.isFinite(capacity) && capacity > 0 && registered !== null
+      ? `${registered}/${capacity} REGISTERED`
+      : Number.isFinite(capacity) && capacity > 0
+        ? `${capacity} PLAYER SLOTS`
+        : "OPEN TO PLAYERS";
+
+  const formatDate = value => {
+    if (!value) return "";
+
+    const date = new Date(value);
+
+    if (Number.isNaN(date.getTime())) return "";
+
+    return date.toLocaleDateString("en-NG", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+      timeZone: "Africa/Lagos"
+    }).toUpperCase();
+  };
+
+  const startDate = formatDate(tournament.start_date);
+  const endDate = formatDate(tournament.end_date);
+
+  const dateText = startDate && endDate
+    ? `${startDate} - ${endDate}`
+    : startDate || endDate || "";
+
+  const [emblem, brandLogo] = await Promise.all([
+    loadThumbnailImage(tournament.tournament_image),
+    loadThumbnailImage("galaticoLogo1.png")
+  ]);
+
+  const canvas = document.createElement("canvas");
+  canvas.width = 1280;
+  canvas.height = 720;
+
+  const ctx = canvas.getContext("2d");
+
+  const fitText = (
+    text,
+    maxWidth,
+    startSize,
+    minSize,
+    weight = "900"
+  ) => {
+    let size = startSize;
+
+    ctx.font = `${weight} ${size}px 'Arial Black', Arial, sans-serif`;
+
+    while (
+      ctx.measureText(String(text)).width > maxWidth &&
+      size > minSize
+    ) {
+      size--;
+      ctx.font = `${weight} ${size}px 'Arial Black', Arial, sans-serif`;
+    }
+
+    return ctx.font;
+  };
+
+  const drawPitchBackground = () => {
+    const gradient = ctx.createLinearGradient(0, 0, 0, 720);
+    gradient.addColorStop(0, "#176b38");
+    gradient.addColorStop(0.5, "#0b542c");
+    gradient.addColorStop(1, "#063c20");
+
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, 1280, 720);
+
+    for (let i = 0; i < 8; i++) {
+      ctx.fillStyle = i % 2 === 0
+        ? "rgba(255,255,255,0.035)"
+        : "rgba(0,0,0,0.035)";
+
+      ctx.fillRect(i * 160, 0, 160, 720);
+    }
+
+    ctx.save();
+
+    ctx.strokeStyle = "rgba(255,255,255,0.55)";
+    ctx.lineWidth = 3;
+
+    ctx.strokeRect(45, 25, 1190, 670);
+
+    ctx.beginPath();
+    ctx.moveTo(640, 25);
+    ctx.lineTo(640, 695);
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.arc(640, 360, 105, 0, Math.PI * 2);
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.arc(640, 360, 5, 0, Math.PI * 2);
+    ctx.fillStyle = "rgba(255,255,255,0.65)";
+    ctx.fill();
+
+    ctx.strokeRect(45, 210, 175, 300);
+    ctx.strokeRect(45, 275, 65, 170);
+
+    ctx.strokeRect(1060, 210, 175, 300);
+    ctx.strokeRect(1170, 275, 65, 170);
+
+    ctx.restore();
+
+    const overlay = ctx.createLinearGradient(0, 0, 0, 720);
+    overlay.addColorStop(0, "rgba(2,8,5,0.68)");
+    overlay.addColorStop(0.5, "rgba(2,8,5,0.52)");
+    overlay.addColorStop(1, "rgba(2,8,5,0.82)");
+
+    ctx.fillStyle = overlay;
+    ctx.fillRect(0, 0, 1280, 720);
+  };
+
+  const drawCard = (x, y, width, height) => {
+    ctx.fillStyle = "rgba(3,15,10,0.92)";
+    ctx.strokeStyle = "rgba(255,255,255,0.65)";
+    ctx.lineWidth = 2;
+
+    roundRect(ctx, x, y, width, height, 12);
+    ctx.fill();
+    ctx.stroke();
+  };
+
+  drawPitchBackground();
+
+  ctx.fillStyle = "#eab308";
+  ctx.fillRect(0, 0, 1280, 9);
+
+  if (brandLogo) {
+    const size = 55;
+    const ratio = brandLogo.width / brandLogo.height;
+    const width = ratio >= 1 ? size * ratio : size;
+    const height = ratio >= 1 ? size : size / ratio;
+
+    ctx.drawImage(brandLogo, 42, 30, width, height);
+  }
+
+  ctx.save();
+
+  ctx.textAlign = "center";
+
+  ctx.fillStyle = "#facc15";
+  ctx.font = "bold 20px Arial";
+  ctx.fillText("OFFICIAL TOURNAMENT", 640, 60);
+
+  ctx.fillStyle = "#ffffff";
+  ctx.shadowColor = "rgba(0,0,0,0.8)";
+  ctx.shadowBlur = 12;
+  ctx.font = fitText(tournamentName, 1080, 48, 25);
+  ctx.fillText(tournamentName, 640, 125);
+
+  if (season) {
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = "#facc15";
+    ctx.font = "bold 27px Arial";
+    ctx.fillText(season, 640, 165);
+  }
+
+  ctx.restore();
+
+  if (emblem) {
+    ctx.save();
+
+    ctx.shadowColor = "rgba(0,0,0,0.8)";
+    ctx.shadowBlur = 25;
+
+    ctx.beginPath();
+    ctx.arc(640, 290, 94, 0, Math.PI * 2);
+    ctx.fillStyle = "rgba(0,0,0,0.8)";
+    ctx.fill();
+
+    ctx.lineWidth = 5;
+    ctx.strokeStyle = "#facc15";
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.arc(640, 290, 83, 0, Math.PI * 2);
+    ctx.clip();
+
+    const ratio = Math.min(
+      160 / emblem.width,
+      160 / emblem.height
+    );
+
+    const width = emblem.width * ratio;
+    const height = emblem.height * ratio;
+
+    ctx.drawImage(
+      emblem,
+      640 - width / 2,
+      290 - height / 2,
+      width,
+      height
+    );
+
+    ctx.restore();
+  } else {
+    ctx.save();
+    ctx.textAlign = "center";
+    ctx.fillStyle = "#facc15";
+    ctx.font = "900 100px Arial";
+    ctx.fillText("G", 640, 325);
+    ctx.restore();
+  }
+
+  ctx.save();
+  ctx.textAlign = "center";
+
+  ctx.shadowColor = "rgba(0,0,0,0.8)";
+  ctx.shadowBlur = 10;
+
+  ctx.fillStyle = "#ffffff";
+  ctx.font = "900 36px 'Arial Black', Arial, sans-serif";
+  ctx.fillText("COMPETE FOR GLORY", 640, 420);
+
+  ctx.shadowBlur = 0;
+  ctx.fillStyle = "#facc15";
+  ctx.font = "bold 27px Arial";
+  ctx.fillText("TOP 4 CASH PRIZES", 640, 463);
+
+  ctx.restore();
+
+  drawCard(55, 490, 365, 105);
+  drawCard(457, 490, 365, 105);
+  drawCard(859, 490, 365, 105);
+
+  ctx.save();
+  ctx.textAlign = "center";
+
+  ctx.fillStyle = "#facc15";
+  ctx.font = "bold 19px Arial";
+  ctx.fillText("REGISTRATION FEE", 237, 523);
+
+  ctx.fillStyle = "#ffffff";
+  ctx.font = fitText(feeText, 325, 35, 21);
+  ctx.fillText(feeText, 237, 568);
+
+  ctx.fillStyle = "#facc15";
+  ctx.font = "bold 17px Arial";
+  ctx.fillText("REGISTRATION STATUS", 640, 523);
+
+  ctx.fillStyle = isRegistrationOpen ? "#4ade80" : "#fb7185";
+  ctx.font = fitText(registrationText, 335, 27, 19);
+  ctx.fillText(registrationText, 640, 568);
+
+  ctx.fillStyle = "#facc15";
+  ctx.font = "bold 17px Arial";
+  ctx.fillText("TOURNAMENT CAPACITY", 1042, 523);
+
+  ctx.fillStyle = "#ffffff";
+  ctx.font = fitText(capacityText, 330, 29, 19);
+  ctx.fillText(capacityText, 1042, 568);
+
+  ctx.restore();
+
+  ctx.save();
+  ctx.textAlign = "center";
+
+  ctx.fillStyle = "#ffffff";
+  ctx.font = "bold 17px Arial";
+
+  ctx.fillText(
+    dateText || "GALATICO eSPORT",
+    640,
+    625
+  );
+
+  ctx.fillStyle = "#facc15";
+  ctx.font = "bold 17px Arial";
+  ctx.fillText(
+    "TIKTOK  @GALATICOESPORT     |     YOUTUBE  @GALATICOESPORT",
+    640,
+    660
+  );
+
+  ctx.fillStyle = "#ffffff";
+  ctx.font = "bold 17px Arial";
+  ctx.fillText(
+    "galaticoesport.pages.dev     |     WHATSAPP  09073166527",
+    640,
+    690
+  );
+
+  ctx.restore();
+
+  const imageUrl = canvas.toDataURL("image/png");
+
+  const preview = document.getElementById("matchThumbnailPreview");
+  const image = document.createElement("img");
+
+  image.src = imageUrl;
+  image.alt = "Galatico eSport tournament flyer";
+
+  preview.innerHTML = "";
+  preview.appendChild(image);
+
+  window.currentMatchThumbnail = imageUrl;
+
+  currentThumbnailType = "tournament";
+
+  currentThumbnailFilename =
+    `${tournamentName.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-${season.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-flyer.png`;
+
+  currentThumbnailShareText =
+    `${tournamentName}${season ? ` — ${season}` : ""} | GALATICO eSPORT`;
+
+  document.getElementById("downloadMatchThumbnail").disabled = false;
+  document.getElementById("shareMatchThumbnail").disabled = false;
 }
 
 
@@ -10939,7 +11387,11 @@ async function handleShareMatchThumbnail() {
 
 async function renderMatchThumbnail(match) {
   initMatchThumbnailModalEvents();
+
+  currentThumbnailType = "match";
   currentThumbnailMatch = match || null;
+
+  setThumbnailModalTitle("Match Thumbnail");
 
   const canvas = document.createElement("canvas");
   canvas.width = 1280;
@@ -11221,10 +11673,34 @@ async function renderMatchThumbnail(match) {
 
   window.currentMatchThumbnail = imageUrl;
 
+  currentThumbnailFilename = getThumbnailFilename(match);
+
+  const homeLabel =
+    match?.home_team?.owner?.username ||
+    match?.home_team?.name ||
+    "Home";
+
+  const awayLabel =
+    match?.away_team?.owner?.username ||
+    match?.away_team?.name ||
+    "Away";
+
+  currentThumbnailShareText =
+    `${homeLabel} vs ${awayLabel} — GALATICO eSPORT`;
+
   document.getElementById("downloadMatchThumbnail").disabled = false;
   document.getElementById("shareMatchThumbnail").disabled = false;
 }
-
+function showCurrentTournamentFlyer() {
+  const tournament = getCurrentTournament();
+  
+  if (!tournament) {
+    showAlert("No active tournament found.");
+    return;
+  }
+  
+  openTournamentFlyer(tournament);
+}
 
 function formatRoundLabel(rawRound) {
   const value = String(rawRound || "").trim();
@@ -11430,6 +11906,486 @@ function loadThumbnailImage(url) {
     image.src = url;
   });
 }
+
+
+
+async function openChampionsThumbnail(tournament) {
+  const selectedTournament =
+    tournament ||
+    (typeof getCurrentTournament === "function"
+      ? getCurrentTournament()
+      : null);
+
+  if (!selectedTournament) {
+    showAlert("No tournament is currently selected.");
+    return;
+  }
+
+  currentThumbnailType = "champions";
+  currentThumbnailMatch = null;
+
+  setThumbnailModalTitle("Champions Thumbnail");
+  openMatchThumbnailModal();
+
+  const preview = document.getElementById("matchThumbnailPreview");
+  const downloadBtn = document.getElementById("downloadMatchThumbnail");
+  const shareBtn = document.getElementById("shareMatchThumbnail");
+
+  preview.innerHTML = `<div class="match-thumbnail-loader"></div>`;
+  downloadBtn.disabled = true;
+  shareBtn.disabled = true;
+
+  try {
+    await renderChampionsThumbnail(selectedTournament);
+  } catch (error) {
+    console.error("Champions thumbnail error:", error);
+
+    preview.innerHTML = `
+      <div class="match-thumbnail-error">
+        Unable to generate champions thumbnail.
+      </div>
+    `;
+
+    downloadBtn.disabled = true;
+    shareBtn.disabled = true;
+
+    showAlert(error.message || "Failed to generate champions thumbnail.");
+  }
+}
+
+
+
+
+function showCurrentTournamentChampionsThumbnail() {
+  const tournament = getCurrentTournament();
+  
+  if (!tournament) {
+    showAlert("No active tournament found.");
+    return;
+  }
+  
+  openChampionsThumbnail(tournament);
+}
+
+
+function drawCoverImage(ctx, img, x, y, width, height, focusY = 0.25) {
+  if (!img || !img.width || !img.height) return;
+
+  const imgRatio = img.width / img.height;
+  const boxRatio = width / height;
+
+  let drawWidth;
+  let drawHeight;
+  let offsetX;
+  let offsetY;
+
+  if (imgRatio > boxRatio) {
+    drawHeight = height;
+    drawWidth = height * imgRatio;
+    offsetX = x + (width - drawWidth) / 2;
+    offsetY = y;
+  } else {
+    drawWidth = width;
+    drawHeight = width / imgRatio;
+    offsetX = x;
+    offsetY = y + (height - drawHeight) * focusY;
+  }
+
+  ctx.drawImage(img, offsetX, offsetY, drawWidth, drawHeight);
+}
+
+function drawCoverImage(ctx, img, x, y, width, height, focusY = 0.25) {
+  if (!img || !img.width || !img.height) return;
+
+  const imgRatio = img.width / img.height;
+  const boxRatio = width / height;
+
+  let drawWidth;
+  let drawHeight;
+  let offsetX;
+  let offsetY;
+
+  if (imgRatio > boxRatio) {
+    drawHeight = height;
+    drawWidth = height * imgRatio;
+    offsetX = x + (width - drawWidth) / 2;
+    offsetY = y;
+  } else {
+    drawWidth = width;
+    drawHeight = width / imgRatio;
+    offsetX = x;
+    offsetY = y + (height - drawHeight) * focusY;
+  }
+
+  ctx.drawImage(img, offsetX, offsetY, drawWidth, drawHeight);
+}
+
+function drawCoverImage(ctx, img, x, y, width, height, focusY = 0.25) {
+  if (!img || !img.width || !img.height) return;
+
+  const imgRatio = img.width / img.height;
+  const boxRatio = width / height;
+
+  let drawWidth;
+  let drawHeight;
+  let offsetX;
+  let offsetY;
+
+  if (imgRatio > boxRatio) {
+    drawHeight = height;
+    drawWidth = height * imgRatio;
+    offsetX = x + (width - drawWidth) / 2;
+    offsetY = y;
+  } else {
+    drawWidth = width;
+    drawHeight = width / imgRatio;
+    offsetX = x;
+    offsetY = y + (height - drawHeight) * focusY;
+  }
+
+  ctx.drawImage(img, offsetX, offsetY, drawWidth, drawHeight);
+}
+
+function drawCoverImage(ctx, img, x, y, width, height, focusY = 0.25) {
+  if (!img || !img.width || !img.height) return;
+
+  const imgRatio = img.width / img.height;
+  const boxRatio = width / height;
+
+  let drawWidth;
+  let drawHeight;
+  let offsetX;
+  let offsetY;
+
+  if (imgRatio > boxRatio) {
+    drawHeight = height;
+    drawWidth = height * imgRatio;
+    offsetX = x + (width - drawWidth) / 2;
+    offsetY = y;
+  } else {
+    drawWidth = width;
+    drawHeight = width / imgRatio;
+    offsetX = x;
+    offsetY = y + (height - drawHeight) * focusY;
+  }
+
+  ctx.drawImage(img, offsetX, offsetY, drawWidth, drawHeight);
+}
+
+
+
+async function renderChampionsThumbnail(tournament) {
+  initMatchThumbnailModalEvents();
+
+  if (!tournament?.champion) {
+    throw new Error("This tournament has no confirmed champion yet.");
+  }
+
+  const players = Array.isArray(tournament.tournament_players)
+    ? tournament.tournament_players
+    : [];
+
+  const championPlayer = players.find(player =>
+    String(player.team_id) === String(tournament.champion) ||
+    String(player.user_id) === String(tournament.champion)
+  );
+
+  const username = String(championPlayer?.username || "").trim();
+
+  if (!username) {
+    throw new Error("Champion username could not be found.");
+  }
+
+  const displayName = username.toUpperCase();
+
+  const tournamentName = String(
+    tournament.name || "GALATICO eSPORT"
+  ).toUpperCase();
+
+  const season = String(tournament.season || "").toUpperCase();
+
+  const [championImage, brandLogo] = await Promise.all([
+    loadThumbnailImage(tournament.champion_profile_pic),
+    loadThumbnailImage("galaticoLogo1.png")
+  ]);
+
+  const width = 1280;
+  const height = 720;
+
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+
+  const ctx = canvas.getContext("2d");
+
+  const background = ctx.createRadialGradient(
+    860, 320, 60,
+    640, 360, 880
+  );
+  background.addColorStop(0, "#3b2609");
+  background.addColorStop(0.45, "#16110b");
+  background.addColorStop(1, "#050609");
+
+  ctx.fillStyle = background;
+  ctx.fillRect(0, 0, width, height);
+
+  ctx.save();
+  ctx.strokeStyle = "rgba(234, 179, 8, 0.11)";
+  ctx.lineWidth = 2;
+
+  for (let i = -2; i < 11; i++) {
+    ctx.beginPath();
+    ctx.moveTo(i * 155, 0);
+    ctx.lineTo(i * 155 + 340, height);
+    ctx.stroke();
+  }
+
+  const rightGlow = ctx.createRadialGradient(930, 330, 20, 930, 330, 360);
+  rightGlow.addColorStop(0, "rgba(250, 204, 21, 0.22)");
+  rightGlow.addColorStop(1, "rgba(250, 204, 21, 0)");
+  ctx.fillStyle = rightGlow;
+  ctx.fillRect(520, 0, 760, height);
+  ctx.restore();
+
+  ctx.fillStyle = "#eab308";
+  ctx.fillRect(0, 0, width, 8);
+  ctx.fillRect(0, height - 8, width, 8);
+
+  const artX = 520;
+  const artY = 8;
+  const artW = 752;
+  const artH = 704;
+
+  if (championImage) {
+    const artCanvas = document.createElement("canvas");
+    artCanvas.width = artW;
+    artCanvas.height = artH;
+
+    const artCtx = artCanvas.getContext("2d");
+
+    drawCoverImage(artCtx, championImage, 0, 0, artW, artH, 0.12);
+
+    artCtx.globalCompositeOperation = "destination-in";
+
+    const hMask = artCtx.createLinearGradient(0, 0, artW, 0);
+    hMask.addColorStop(0.0, "rgba(0, 0, 0, 0.0)");
+    hMask.addColorStop(0.26, "rgba(0, 0, 0, 0.35)");
+    hMask.addColorStop(0.55, "rgba(0, 0, 0, 0.85)");
+    hMask.addColorStop(0.88, "rgba(0, 0, 0, 0.72)");
+    hMask.addColorStop(1.0, "rgba(0, 0, 0, 0.12)");
+
+    artCtx.fillStyle = hMask;
+    artCtx.fillRect(0, 0, artW, artH);
+
+    const vMask = artCtx.createLinearGradient(0, 0, 0, artH);
+    vMask.addColorStop(0.0, "rgba(0, 0, 0, 0.25)");
+    vMask.addColorStop(0.16, "rgba(0, 0, 0, 1.0)");
+    vMask.addColorStop(0.82, "rgba(0, 0, 0, 0.95)");
+    vMask.addColorStop(1.0, "rgba(0, 0, 0, 0.08)");
+
+    artCtx.fillStyle = vMask;
+    artCtx.fillRect(0, 0, artW, artH);
+
+    ctx.drawImage(artCanvas, artX, artY);
+  } else {
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(920, 320, 175, 0, Math.PI * 2);
+    ctx.fillStyle = "rgba(234, 179, 8, 0.14)";
+    ctx.fill();
+    ctx.strokeStyle = "rgba(234, 179, 8, 0.65)";
+    ctx.lineWidth = 4;
+    ctx.stroke();
+
+    ctx.fillStyle = "rgba(250, 204, 21, 0.75)";
+    ctx.font = "900 140px 'Arial Black', Arial, sans-serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(displayName.charAt(0), 920, 320);
+    ctx.restore();
+  }
+
+  if (brandLogo) {
+    const logoSize = 58;
+    const ratio = brandLogo.width / brandLogo.height;
+    const logoW = ratio >= 1 ? logoSize * ratio : logoSize;
+    const logoH = ratio >= 1 ? logoSize : logoSize / ratio;
+
+    ctx.drawImage(brandLogo, 55, 34, logoW, logoH);
+  }
+
+  ctx.save();
+
+  ctx.textAlign = "center";
+  ctx.shadowColor = "rgba(255, 255, 255, 0.35)";
+  ctx.shadowBlur = 12;
+
+  ctx.fillStyle = "#ffffff";
+  ctx.font = "900 27px 'Arial Black', Arial, sans-serif";
+  ctx.fillText("GALATICO eSPORT", 640, 60);
+
+  ctx.shadowColor = "rgba(0, 0, 0, 0.85)";
+  ctx.shadowBlur = 14;
+  ctx.textAlign = "left";
+
+  let tournamentFontSize = 25;
+  ctx.font = `900 ${tournamentFontSize}px Arial, sans-serif`;
+
+  while (
+    ctx.measureText(tournamentName).width > 540 &&
+    tournamentFontSize > 16
+  ) {
+    tournamentFontSize--;
+    ctx.font = `900 ${tournamentFontSize}px Arial, sans-serif`;
+  }
+
+  ctx.fillStyle = "#dce8f5";
+  ctx.fillText(tournamentName, 55, 162);
+
+  let nextY = 192;
+
+  if (season) {
+    ctx.fillStyle = "#facc15";
+    ctx.font = "900 20px Arial, sans-serif";
+    ctx.fillText(season, 55, nextY);
+    nextY += 66;
+  } else {
+    nextY += 54;
+  }
+
+  ctx.textAlign = "left";
+  ctx.font = "900 74px 'Arial Black', Arial, sans-serif";
+
+  ctx.shadowColor = "#facc15";
+  ctx.shadowBlur = 35;
+  ctx.fillStyle = "#fff0a6";
+  ctx.fillText("CHAMPIONS", 55, nextY);
+
+  ctx.shadowColor = "rgba(234, 179, 8, 0.95)";
+  ctx.shadowBlur = 18;
+  ctx.fillStyle = "#facc15";
+  ctx.fillText("CHAMPIONS", 55, nextY);
+
+  ctx.shadowBlur = 0;
+
+  const barY = nextY + 22;
+  const barGradient = ctx.createLinearGradient(58, 0, 300, 0);
+  barGradient.addColorStop(0, "#fff0a6");
+  barGradient.addColorStop(0.5, "#eab308");
+  barGradient.addColorStop(1, "rgba(234, 179, 8, 0)");
+
+  ctx.fillStyle = barGradient;
+  ctx.fillRect(58, barY, 240, 5);
+
+  ctx.restore();
+
+  ctx.save();
+
+  const namePlateX = 58;
+  const namePlateY = 382;
+  const namePlateW = 540;
+  const namePlateH = 128;
+
+  const nameBacking = ctx.createLinearGradient(
+    namePlateX, 0,
+    namePlateX + namePlateW, 0
+  );
+
+  nameBacking.addColorStop(0, "rgba(234, 179, 8, 0.16)");
+  nameBacking.addColorStop(0.65, "rgba(15, 12, 8, 0.78)");
+  nameBacking.addColorStop(1, "rgba(5, 6, 9, 0.0)");
+
+  ctx.fillStyle = nameBacking;
+  ctx.beginPath();
+  ctx.roundRect(namePlateX, namePlateY, namePlateW, namePlateH, 12);
+  ctx.fill();
+
+  ctx.fillStyle = "#facc15";
+  ctx.fillRect(namePlateX, namePlateY + 12, 6, namePlateH - 24);
+
+  ctx.textAlign = "left";
+  ctx.fillStyle = "#ffffff";
+  ctx.font = "900 16px Arial, sans-serif";
+  ctx.fillText("TOURNAMENT WINNER", namePlateX + 22, namePlateY + 32);
+
+  let championFontSize = 60;
+  ctx.font = `900 ${championFontSize}px 'Arial Black', Arial, sans-serif`;
+
+  const maxNameWidth = namePlateW - 44;
+
+  while (
+    ctx.measureText(displayName).width > maxNameWidth &&
+    championFontSize > 28
+  ) {
+    championFontSize -= 2;
+    ctx.font = `900 ${championFontSize}px 'Arial Black', Arial, sans-serif`;
+  }
+
+  ctx.shadowColor = "rgba(0, 0, 0, 0.9)";
+  ctx.shadowBlur = 14;
+  ctx.shadowOffsetX = 0;
+  ctx.shadowOffsetY = 3;
+
+  ctx.fillStyle = "#ffffff";
+  ctx.fillText(displayName, namePlateX + 22, namePlateY + 96);
+
+  const textWidth = Math.min(ctx.measureText(displayName).width, maxNameWidth);
+
+  ctx.shadowBlur = 0;
+  ctx.shadowOffsetY = 0;
+  ctx.fillStyle = "#facc15";
+  ctx.fillRect(
+    namePlateX + 22,
+    namePlateY + 109,
+    Math.min(textWidth, 240),
+    4
+  );
+
+  ctx.restore();
+
+  ctx.save();
+
+  ctx.textAlign = "left";
+  ctx.fillStyle = "#ffffff";
+  ctx.font = "bold 16px Arial, sans-serif";
+  ctx.fillText("OFFICIAL CHAMPION", 55, 688);
+
+  ctx.textAlign = "right";
+  ctx.fillStyle = "#eab308";
+  ctx.fillText("GALATICOESPORT.PAGES.DEV", 1225, 688);
+
+  ctx.restore();
+
+  const imageUrl = canvas.toDataURL("image/png");
+
+  const preview = document.getElementById("matchThumbnailPreview");
+  const image = document.createElement("img");
+
+  image.src = imageUrl;
+  image.alt = `${username} - Tournament Champions`;
+
+  preview.innerHTML = "";
+  preview.appendChild(image);
+
+  window.currentMatchThumbnail = imageUrl;
+
+  currentThumbnailType = "champions";
+
+  const safeUsername = username
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+
+  currentThumbnailFilename =
+    `${safeUsername || "champion"}-champions.png`;
+
+  currentThumbnailShareText =
+    `${username} - CHAMPIONS | ${tournamentName} ${season} | GALATICO eSPORT`;
+
+  document.getElementById("downloadMatchThumbnail").disabled = false;
+  document.getElementById("shareMatchThumbnail").disabled = false;
+}
+
 
 
 function comparisonSearchEscapeHtml(value) {

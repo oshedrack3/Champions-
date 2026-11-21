@@ -1691,9 +1691,7 @@ async function renderCompetitionList() {
   const container = document.getElementById("competitionList");
   if (!container) return;
   
-  const currentUser = getCurrentUser();
-  
-  if (typeof myCompetitions === "undefined" || myCompetitions === null) {
+  if (isLoadingCompetitions) {
     container.innerHTML = `
       <p class="emptyText">
         Loading competitions, please wait…
@@ -1702,6 +1700,7 @@ async function renderCompetitionList() {
     return;
   }
   
+  const currentUser = getCurrentUser();
   const competitions = getSortedCompetitions(myCompetitions || []);
   
   container.innerHTML = "";
@@ -1722,8 +1721,7 @@ async function renderCompetitionList() {
   }
   
   competitions.forEach(competition => {
-    const card = createCompetitionCard(competition);
-    container.appendChild(card);
+    container.appendChild(createCompetitionCard(competition));
   });
 }
 function getCompetitionTournamentCount(competition) {
@@ -2829,213 +2827,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 
 
-function renderNotices(notices) {
-  const container = document.getElementById("noticeBoard");
-  const noticeSection = document.getElementById("noticeSection");
-  const galaticoGlow = document.getElementById("galaticoGlow");
-
-  if (!container || !noticeSection || !galaticoGlow) return;
-
-  const hasNotices = Array.isArray(notices) && notices.length > 0;
-
-  noticeSection.style.display = hasNotices ? "" : "none";
-  galaticoGlow.style.display = hasNotices ? "none" : "flex";
-
-  if (!hasNotices) {
-    container.innerHTML = "";
-    return;
-  }
-
-  container.innerHTML = notices.map(notice => {
-    const images = Array.isArray(notice.images) ? notice.images : [];
-
-    const imagesHTML = images.length
-      ? `
-        <div class="notice-images">
-          ${images.map(image => `
-            <img
-              src="${escapeHtml(image.url)}"
-              alt="${escapeHtml(notice.title)}"
-              loading="lazy"
-              class="notice-image"
-            >
-          `).join("")}
-        </div>
-      `
-      : "";
-
-    return `
-      <article
-        class="notice-card"
-        data-notice-id="${notice.id}"
-      >
-        <div class="notice-card-header">
-          <span class="notice-category">
-            ${escapeHtml(notice.category || "General")}
-          </span>
-          <span class="notice-date">
-            ${formatNoticeDate(notice.createdAt)}
-          </span>
-        </div>
-        <h3 class="notice-title">
-          ${escapeHtml(notice.title)}
-        </h3>
-        <div class="notice-content">${escapeHtml(
-          notice.content
-            .split("\n")
-            .map(line => line.trim())
-            .join("\n")
-        )}</div>
-        ${imagesHTML}
-        <button
-          type="button"
-          class="notice-delete-btn data-admin"
-          onclick="deleteNotice('${notice.id}')"
-        >
-          Delete
-        </button>
-      </article>
-    `;
-  }).join("");
-
-  setupNoticeInteraction();
-  setupNoticeScrollTracking();
-  startNoticeAutoScroll();
-}
-
-function formatNoticeDate(timestamp) {
-  if (!timestamp) return "";
-  
-  return new Date(timestamp).toLocaleString(
-    "en-NG",
-    {
-      day: "numeric",
-      month: "short",
-      year: "numeric",
-      hour: "numeric",
-      minute: "2-digit",
-      hour12: true
-    }
-  );
-}
-
-function startNoticeAutoScroll() {
-  const slider =
-    document.querySelector(".notice-slider");
-  
-  if (!slider) return;
-  
-  const cards =
-    slider.querySelectorAll(".notice-card");
-  
-  if (cards.length <= 1) return;
-  
-  if (noticeScrollTimer) {
-    clearInterval(noticeScrollTimer);
-  }
-  
-  noticeScrollIndex = 0;
-  
-  noticeScrollTimer = setInterval(() => {
-    if (slider.dataset.interacting === "true") {
-      return;
-    }
-    
-    noticeScrollIndex++;
-    
-    if (noticeScrollIndex >= cards.length) {
-      noticeScrollIndex = 0;
-    }
-    
-    slider.scrollTo({
-      left: slider.clientWidth * noticeScrollIndex,
-      behavior: "smooth"
-    });
-    
-  }, 5000);
-}
-
-function setupNoticeInteraction() {
-  const slider =
-    document.querySelector(".notice-slider");
-  
-  if (!slider) return;
-  
-  slider.addEventListener(
-    "touchstart",
-    () => {
-      slider.dataset.interacting = "true";
-      
-      if (noticeInteractionTimeout) {
-        clearTimeout(noticeInteractionTimeout);
-      }
-    }, { passive: true }
-  );
-  
-  slider.addEventListener(
-    "touchend",
-    () => {
-      resumeNoticeAutoScroll(slider);
-    }, { passive: true }
-  );
-  
-  slider.addEventListener(
-    "touchcancel",
-    () => {
-      resumeNoticeAutoScroll(slider);
-    }, { passive: true }
-  );
-  
-  slider.addEventListener(
-    "mousedown",
-    () => {
-      slider.dataset.interacting = "true";
-      
-      if (noticeInteractionTimeout) {
-        clearTimeout(noticeInteractionTimeout);
-      }
-    }
-  );
-  
-  slider.addEventListener(
-    "mouseup",
-    () => {
-      resumeNoticeAutoScroll(slider);
-    }
-  );
-}
-
-function resumeNoticeAutoScroll(slider) {
-  if (!slider) return;
-  
-  if (noticeInteractionTimeout) {
-    clearTimeout(noticeInteractionTimeout);
-  }
-  
-  noticeInteractionTimeout = setTimeout(() => {
-    slider.dataset.interacting = "false";
-  }, 2000);
-}
-
-function setupNoticeScrollTracking() {
-  const slider =
-    document.querySelector(".notice-slider");
-  
-  if (!slider) return;
-  
-  slider.addEventListener("scroll", () => {
-    const width = slider.clientWidth;
-    
-    if (!width) return;
-    
-    const index =
-      Math.round(slider.scrollLeft / width);
-    
-    if (index >= 0) {
-      noticeScrollIndex = index;
-    }
-  }, { passive: true });
-}
 
 
 
