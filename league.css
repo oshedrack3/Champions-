@@ -1851,3 +1851,394 @@
 
 
 
+
+
+
+#cupBox {
+  width: 100%;
+  max-width: 500px;
+  margin: 0 auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  background: #f8fafc;
+  color: #1e293b;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  box-sizing: border-box;
+}
+
+#cupBox * {
+  box-sizing: border-box;
+}
+
+#cupBox button,
+#cupBox select,
+#cupBox input {
+  font: inherit;
+}
+
+#setUpTop {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.cupSetup {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 16px;
+  background: #eaf0f8;
+  border: 1px solid #cbd5e1;
+  border-radius: 12px;
+}
+
+.cupSetup h2 {
+  margin: 0;
+  padding: 0;
+  text-align: center;
+  font-size: 19px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.cupBoxBtn {
+  align-self: flex-start;
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 1px solid #cbd5e1;
+  border-radius: 50%;
+  background: #ffffff;
+  color: #1e293b;
+  font-size: 19px;
+  cursor: pointer;
+}
+
+.btn-cupPage {
+  display: flex;
+  align-items: stretch;
+  gap: 10px;
+  width: 100%;
+}
+
+.btn-cupPage button {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 12px 8px;
+  border: 1px solid #bfdbfe;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #1e40af;
+  cursor: pointer;
+}
+
+.btn-cupPage button:first-child {
+  background: #2563eb;
+  border-color: #2563eb;
+  color: #ffffff;
+}
+
+.btn-icon {
+  font-size: 18px;
+}
+
+.btn-text {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.badge-info {
+  background: #ffffff;
+  color: #1e40af;
+}
+
+#cupTeamView {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+#cupTeamsContainer,
+.CupTeamsContainer {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+#setUpCard {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 14px;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 12px;
+}
+
+.stageCard {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px;
+  background: #f1f5f9;
+  border: 1px solid #dbe2ea;
+  border-radius: 12px;
+  color: #1f2937;
+}
+
+.stageCard h3 {
+  margin: 0 0 4px;
+  font-size: 15px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.stageCard label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #374151;
+}
+
+.stageHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 14px;
+}
+
+.stageHeader label,
+.stageCard > label:has(input[type="checkbox"]) {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  cursor: pointer;
+}
+
+#cupBox input[type="checkbox"] {
+  width: 17px;
+  height: 17px;
+  margin: 0;
+  accent-color: #2563eb;
+  cursor: pointer;
+}
+
+#groupOptions,
+#multipleGroupOptions,
+#championsLeagueOptions,
+#limitedScheduleOptions,
+#manualGroupOptions,
+#manualKnockoutOptions {
+  width: 100%;
+}
+
+#groupOptions {
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+  margin-top: 8px;
+}
+
+#multipleGroupOptions,
+#championsLeagueOptions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+#championsLeagueOptions h3 {
+  margin: 8px 0 2px;
+  font-size: 15px;
+}
+
+#limitedScheduleOptions,
+#manualGroupOptions,
+#manualKnockoutOptions {
+  margin-top: 4px;
+}
+
+#cupBox select,
+#cupBox input[type="number"] {
+  width: 100%;
+  min-height: 42px;
+  padding: 10px 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  outline: none;
+  background: #ffffff;
+  color: #1e293b;
+  font-size: 14px;
+}
+
+#cupBox select:focus,
+#cupBox input[type="number"]:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.12);
+}
+
+#cupBox small {
+  font-size: 12px;
+  line-height: 1.5;
+  color: #64748b;
+}
+
+#cupBox .btn-secondary {
+  width: 100%;
+  padding: 11px 14px;
+  border: 1px solid #2563eb;
+  border-radius: 8px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.cupActions {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  margin-top: 2px;
+}
+
+.cupActions .btn-create {
+  width: 100%;
+  min-height: 46px;
+  padding: 12px;
+  border: none;
+  border-radius: 9px;
+  background: #2563eb;
+  color: #ffffff;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+#cupBox button:active {
+  transform: scale(0.98);
+}
+
+#cupBox button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+@media (max-width: 480px) {
+  #cupBox {
+    padding: 12px;
+    gap: 12px;
+  }
+
+  .cupSetup {
+    padding: 13px;
+  }
+
+  .cupSetup h2 {
+    font-size: 17px;
+  }
+
+  #setUpCard {
+    padding: 11px;
+  }
+
+  .stageCard {
+    padding: 12px;
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  #cupBox {
+    background: #111827;
+    color: #f1f5f9;
+    border-color: #374151;
+  }
+
+  #cupBox .btn-back {
+    background: #1f2937;
+    color: #f9fafb;
+    border-color: #475569;
+  }
+
+  .cupSetup {
+    background: #1e293b;
+    border-color: #475569;
+  }
+
+  .cupSetup h2,
+  .stageCard h3 {
+    color: #f8fafc;
+  }
+
+  .btn-cupPage button {
+    background: #1f2937;
+    color: #bfdbfe;
+    border-color: #475569;
+  }
+
+  .btn-cupPage button:first-child {
+    background: #2563eb;
+    color: #ffffff;
+    border-color: #2563eb;
+  }
+
+  #setUpCard {
+    background: #1f2937;
+    border-color: #475569;
+  }
+
+  .stageCard {
+    background: #273449;
+    border-color: #475569;
+    color: #f1f5f9;
+  }
+
+  .stageCard label,
+  .stageHeader label {
+    color: #e2e8f0;
+  }
+
+  #cupBox select,
+  #cupBox input[type="number"] {
+    background: #1f2937;
+    color: #f9fafb;
+    border-color: #475569;
+  }
+
+  #cupBox small {
+    color: #94a3b8;
+  }
+
+  #cupBox .btn-secondary {
+    background: #1e3a5f;
+    color: #bfdbfe;
+    border-color: #3b82f6;
+  }
+}
+.cupSetupHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.cupSetupHeader h2 {
+  text-align: left;
+}

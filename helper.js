@@ -10,6 +10,7 @@ const PAGES = [
   "fixturePageHead",
   "nav",
   "cupHome",
+  "cupBox",
   "cupTab",
   "teamView",
   "authPage",
@@ -592,7 +593,7 @@ const menuConfig = {
 
   cup: [
     {
-      label: "Start New Tournament",
+      label: "SetUp Cup Tournament",
       action: "newCup",
       roles: ["admin"]
     }
@@ -818,6 +819,8 @@ function openTournamentInfo() {
 function openCupBox() {
   
   closeMenu();
+  const fixture = document.getElementById("fixturePage");
+if (fixture) fixture.style.display = "none";
   toggleCupView('cupBox');
   
 }
@@ -1884,29 +1887,6 @@ function toggleCupSetUpView() {
 
 
 
-
-function shouldOpenKnockoutDirectly() {
-  const tournament =
-    getCurrentTournament();
-  const currentUser =
-    getCurrentUser();
-  if (
-    !tournament ||
-    !currentUser
-  ) {
-    return false;
-  }
-  if (
-    currentUser.role !==
-    "player"
-  ) {
-    return false;
-  }
-  return (
-    tournament.settings?.enableGroups !==
-    true
-  );
-}
 
 
 

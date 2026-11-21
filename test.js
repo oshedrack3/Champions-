@@ -1743,28 +1743,35 @@ function getActiveSeasonText(competition) {
 
 
 
+
 function loadTournamentImage(tournament, imgId, container) {
-  const placeholder = container.querySelector(
-    `#${CSS.escape(imgId)}`
+  if (!container) return;
+
+  const existing = container.querySelector(
+    `#${CSS.escape(imgId)}, .tournament-image-img`
   );
-  
-  if (
-    !placeholder ||
-    !tournament.tournament_image
-  ) {
-    return;
+
+  const placeholder = document.createElement("div");
+  placeholder.id = imgId;
+
+  if (existing) {
+    existing.replaceWith(placeholder);
+  } else {
+    container.appendChild(placeholder);
   }
-  
+
+  if (!tournament?.tournament_image) return;
+
   const img = document.createElement("img");
-  
+
   img.src = tournament.tournament_image;
   img.alt = tournament.name || "Tournament";
   img.className = "tournament-image-img";
-  
+
   img.onerror = () => {
     img.replaceWith(placeholder);
   };
-  
+
   placeholder.replaceWith(img);
 }
 

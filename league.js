@@ -251,50 +251,57 @@ function goToStatPage() {
 
 
 
+function shouldOpenKnockoutDirectly() {
+  const tournament = getCurrentTournament();
+
+  if (!tournament) return false;
+
+  return tournament.settings?.enableGroups !== true;
+}
+
 function goToTournamentPage() {
   document.getElementById("listOfTournamentPage").style.display = "none";
-  
+
   hideAllPages();
-  
+
   const page = document.getElementById("tournamentPage");
   if (page) page.style.display = "block";
-  
+
   const header = document.getElementById("tournamentHeader");
   if (header) header.style.display = "block";
-  
+
   const tableButton = document.querySelector(
     '.competition-nav-btn[data-view="standings"]'
   );
-  
+
   const searchInput = document.getElementById(
     "fixtureSearchInput"
   );
-  
+
   if (
     getCurrentTournament()?.format === "cup" &&
     shouldOpenKnockoutDirectly()
   ) {
-    goToFixturePage();
-    
     if (tableButton) {
       tableButton.style.display = "none";
     }
-    
+
     if (searchInput) {
       searchInput.style.display = "none";
     }
-    
+
+    goToFixturePage();
     return;
   }
-  
+
   if (tableButton) {
     tableButton.style.display = "";
   }
-  
+
   if (searchInput) {
     searchInput.style.display = "";
   }
-  
+
   goToTablePage();
 }
 
@@ -2353,7 +2360,9 @@ function setupCompetitionNavigation() {
   document.querySelectorAll(".competition-nav-btn").forEach(btn => {
     btn.addEventListener("click", () => {
       const view = btn.dataset.view;
-      
+     const cupBox = document.getElementById("cupBox");
+
+if (cupBox) cupBox.style.display = "none";
       if (view === "standings") {
         goToTablePage();
       } else if (view === "fixtures") {

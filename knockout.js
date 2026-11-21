@@ -2657,45 +2657,30 @@ function handleKnockoutPairingModeChange() {
 
 
 function toggleGroupSettings() {
-  const startFrom =
-    document.getElementById("tournamentStartFrom")?.value;
-  
   const enableGroups =
     document.getElementById("enableGroups")?.checked;
   
   const groupOptions =
     document.getElementById("groupOptions");
   
-  const groupStageCard =
-    document.getElementById("groupStageCard");
-  
-  const showGroupSettings =
-    startFrom === "group" && enableGroups;
-  
-  if (groupStageCard) {
-    groupStageCard.style.display =
-      startFrom === "group" ? "block" : "none";
-  }
+  const manualGroupOptions =
+    document.getElementById("manualGroupOptions");
   
   if (groupOptions) {
     groupOptions.style.display =
-      showGroupSettings ? "block" : "none";
+      enableGroups ? "block" : "none";
   }
   
-  if (showGroupSettings) {
+  if (!enableGroups && manualGroupOptions) {
+    manualGroupOptions.style.display = "none";
+  }
+  
+  if (enableGroups) {
     handleGroupFormatChange();
-  } else {
-    const manualGroupOptions =
-      document.getElementById("manualGroupOptions");
-    
-    if (manualGroupOptions) {
-      manualGroupOptions.style.display = "none";
-    }
   }
   
   handleKnockoutPairingModeChange();
 }
-
 function handleGroupFormatChange() {
   const groupFormat =
     document.getElementById("groupFormat")?.value || "multiple";

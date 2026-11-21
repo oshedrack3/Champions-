@@ -660,215 +660,7 @@
       <!-- Cup Page -->
       <section id="cupPage" style="display:none">
         <!-- SETUP BOX -->
-        <div id="cupBox" style="display:none">
-          
-          <div id="cupTeamView" style="display:none">
-            <div id="cupTeamsContainer"></div>
-          </div>
-          
-          <div id="setUpCard">
-            
-            <div class="stageCard">
-              
-              <h3>Tournament Stage</h3>
-              
-              <label for="tournamentStartFrom">
-                Start From
-              </label>
-              
-              <select id="tournamentStartFrom" onchange="toggleGroupSettings()">
-                <option value="group" selected>
-                  Group Stage
-                </option>
-                
-                <option value="32">
-                  Round of 32
-                </option>
-                
-                <option value="16">
-                  Round of 16
-                </option>
-                
-                <option value="8">
-                  Quarter Final
-                </option>
-                
-                <option value="4">
-                  Semi Final
-                </option>
-                
-                <option value="2">
-                  Final
-                </option>
-              </select>
-              
-            </div>
-            
-            
-            <div class="stageCard" id="groupStageCard">
-              
-              <div class="stageHeader">
-                
-                <label>
-                  <input type="checkbox" id="enableGroups" onchange="toggleGroupSettings()">
-                  
-                  Enable Group Stage
-                </label>
-                
-              </div>
-              
-              
-              <div id="groupOptions" style="display:none;">
-                
-                <select id="groupFormat" onchange="handleGroupFormatChange()">
-                  <option value="multiple" selected>Multiple Groups</option>
-                  <option value="single">Single Group</option>
-                </select>
-                
-                
-                <div id="multipleGroupOptions">
-                  <label for="groupingMode">Group Assignment</label>
-                  <select id="groupingMode" onchange="handleGroupingModeChange()">
-                    <option value="auto" selected>Automatic</option>
-                    <option value="manual">Manual</option>
-                  </select>
-                  <label for="teamsPerGroup">Teams Per Group</label>
-                  <select id="teamsPerGroup">
-                    <option value="2">2 Teams</option>
-                    <option value="3">3 Teams</option>
-                    <option value="4" selected>4 Teams</option>
-                    <option value="5">5 Teams</option>
-                    <option value="6">6 Teams</option>
-                    <option value="7">7 Teams</option>
-                    <option value="8">8 Teams</option>
-                    <option value="9">9 Teams</option>
-                    <option value="10">10 Teams</option>
-                    <option value="11">11 Teams</option>
-                    <option value="12">12 Teams</option>
-                  </select>
-                  <label for="teamsQualify">Teams Qualifying Per Group</label>
-                  <select id="teamsQualify">
-                    <option value="1">Top 1</option>
-                    <option value="2" selected>Top 2</option>
-                    <option value="3">Top 3</option>
-                    <option value="4">Top 4</option>
-                  </select>
-                  <label for="groupRoundMode">Group Matches</label>
-                  <select id="groupRoundMode">
-                    <option value="single" selected>Single Round</option>
-                    <option value="double">Double Round</option>
-                  </select>
-                  <div id="manualGroupOptions" style="display:none;">
-                    <button type="button" class="btn-secondary" onclick="openManualGroupSetup()">
-                      Assign Teams to Groups
-                    </button>
-                  </div>
-                </div>
-                <div id="championsLeagueOptions" style="display:none;">
-                  <h3>League Phase Settings</h3>
-                  <label for="groupScheduleMode">League Stage Schedule</label>
-                  <select id="groupScheduleMode" onchange="toggleLimitedScheduleOptions()">
-                    <option value="full" selected>Full League Stage</option>
-                    <option value="limited">Limited League Stage</option>
-                  </select>
-                  <div id="limitedScheduleOptions" style="display:none;">
-                    <label for="opponentsPerTeam">Rounds per Team</label>
-                    <select id="opponentsPerTeam"></select>
-                    <small>Each team faces a different opponent in each round.</small>
-                  </div>
-                  <label for="directQualifiers">Direct Knockout Qualifiers</label>
-                  <select id="directQualifiers" onchange="updateChampionsLeaguePlayoffPositions()">
-                    <option value="">Select direct qualifiers</option>
-                  </select>
-                  <label for="playoffStartPosition">Playoff Starting Position</label>
-                  <input type="number" id="playoffStartPosition" min="2" max="30" readonly>
-                  <label for="playoffEndPosition">Playoff Ending Position</label>
-                  <select id="playoffEndPosition" onchange="updateChampionsLeaguePlayoffPositions()">
-                    <option value="">Select playoff ending position</option>
-                  </select>
-                  <label for="playoffRoundMode">Playoff Matches</label>
-                  <select id="playoffRoundMode">
-                    <option value="single" selected>Single Match</option>
-                    <option value="double">Two Legs</option>
-                  </select>
-                  <small>
-                    Playoff teams are paired by league position, with the highest-ranked team facing the lowest-ranked team.
-                  </small>
-                </div>
-              </div>
-            </div>
-            
-            
-            <div class="stageCard">
-              
-              <h3>Knockout Stage</h3>
-              
-              
-              <label for="knockoutPairingMode">
-                First Round Pairing
-              </label>
-              
-              <select id="knockoutPairingMode" onchange="handleKnockoutPairingModeChange()">
-              
-                <option value="auto" selected>
-                  Automatic
-                </option>
-                
-                <option value="manual">
-                  Manual
-                </option>
-                
-              </select>
-              
-              
-              <div id="manualKnockoutOptions" style="display:none;">
-                
-                <button type="button" class="btn-secondary" onclick="openManualKnockoutSetup()">
-                  Set First Round Pairings
-                </button>
-                
-              </div>
-              
-              
-              <label for="knockoutRoundMode">
-                Knockout Matches
-              </label>
-              
-              <select id="knockoutRoundMode">
-              
-                <option value="single" selected>
-                  Single Match
-                </option>
-                
-                <option value="double">
-                  Two Legs
-                </option>
-                
-              </select>
-              
-              
-              <label>
-              
-                <input type="checkbox" id="thirdPlaceMatch">
-                
-                Third-Place Match
-                
-              </label>
-              
-            </div>
-            
-            
-            <div class="cupActions">
-              
-              <button type="button" class="btn-create" onclick="generateTournament()">
-                Create
-              </button>
-              
-            </div>
-            
-          </div>
-          
-        </div>
+        
         
         
         
@@ -1130,7 +922,240 @@
       </div>
       
       
-      
+      <div id="cupBox" style="display:none">
+        <div id="setUpTop" style="display:none">
+        
+          
+          <div class="cupSetup">
+          
+  <div class="cupSetupHeader">
+    <h2>Set Up Cup Tournament</h2>
+    <button class="cupBoxBtn" onclick="goToFixturePage()">✕</button>
+  </div>
+            
+            
+            
+            <div class="btn-cupPage">
+              <button onclick="toggleCupSetUpView()">
+                <span class="btn-icon">👥</span>
+                <span id="cupToggleText" class="btn-text">See Teams</span>
+              </button>
+              
+              <button class="badge-info">
+                <span class="btn-icon" id="teamsadded">Teams added: 0</span>
+                <span class="btn-text">Teams added</span>
+              </button>
+              
+            </div>
+            
+          </div>
+        </div>
+        
+        <div id="cupTeamView" style="display:none">
+          <div id="cupTeamsContainer"></div>
+        </div>
+        
+        <div id="setUpCard">
+          
+          <div class="stageCard">
+            
+            <h3>Knockout Stage </h3>
+            
+            <label for="tournamentStartFrom">
+              Knockout Start From
+            </label>
+            
+            <select id="tournamentStartFrom" onchange="toggleGroupSettings()">
+         
+              
+              <option value="32" selected>
+                Round of 32
+              </option>
+              
+              <option value="16">
+                Round of 16
+              </option>
+              
+              <option value="8">
+                Quarter Final
+              </option>
+              
+              <option value="4">
+                Semi Final
+              </option>
+              
+              <option value="2">
+                Final
+              </option>
+            </select>
+            
+          </div>
+          
+          
+          <div class="stageCard" id="groupStageCard">
+            
+            <div class="stageHeader">
+              
+              <label>
+                <input type="checkbox" id="enableGroups" onchange="toggleGroupSettings()">
+                
+                Enable Group Stage
+              </label>
+              
+            </div>
+            
+            
+            <div id="groupOptions" style="display:none;">
+              
+              <select id="groupFormat" onchange="handleGroupFormatChange()">
+                <option value="multiple" selected>Multiple Groups</option>
+                <option value="single">Single Group</option>
+              </select>
+              
+              
+              <div id="multipleGroupOptions">
+                <label for="groupingMode">Group Assignment</label>
+                <select id="groupingMode" onchange="handleGroupingModeChange()">
+                  <option value="auto" selected>Automatic</option>
+                  <option value="manual">Manual</option>
+                </select>
+                <label for="teamsPerGroup">Teams Per Group</label>
+                <select id="teamsPerGroup">
+                  <option value="2">2 Teams</option>
+                  <option value="3">3 Teams</option>
+                  <option value="4" selected>4 Teams</option>
+                  <option value="5">5 Teams</option>
+                  <option value="6">6 Teams</option>
+                  <option value="7">7 Teams</option>
+                  <option value="8">8 Teams</option>
+                  <option value="9">9 Teams</option>
+                  <option value="10">10 Teams</option>
+                  <option value="11">11 Teams</option>
+                  <option value="12">12 Teams</option>
+                </select>
+                <label for="teamsQualify">Teams Qualifying Per Group</label>
+                <select id="teamsQualify">
+                  <option value="1">Top 1</option>
+                  <option value="2" selected>Top 2</option>
+                  <option value="3">Top 3</option>
+                  <option value="4">Top 4</option>
+                </select>
+                <label for="groupRoundMode">Group Matches</label>
+                <select id="groupRoundMode">
+                  <option value="single" selected>Single Round</option>
+                  <option value="double">Double Round</option>
+                </select>
+                <div id="manualGroupOptions" style="display:none;">
+                  <button type="button" class="btn-secondary" onclick="openManualGroupSetup()">
+                    Assign Teams to Groups
+                  </button>
+                </div>
+              </div>
+              <div id="championsLeagueOptions" style="display:none;">
+                <h3>League Phase Settings</h3>
+                <label for="groupScheduleMode">League Stage Schedule</label>
+                <select id="groupScheduleMode" onchange="toggleLimitedScheduleOptions()">
+                  <option value="full" selected>Full League Stage</option>
+                  <option value="limited">Limited League Stage</option>
+                </select>
+                <div id="limitedScheduleOptions" style="display:none;">
+                  <label for="opponentsPerTeam">Rounds per Team</label>
+                  <select id="opponentsPerTeam"></select>
+                  <small>Each team faces a different opponent in each round.</small>
+                </div>
+                <label for="directQualifiers">Direct Knockout Qualifiers</label>
+                <select id="directQualifiers" onchange="updateChampionsLeaguePlayoffPositions()">
+                  <option value="">Select direct qualifiers</option>
+                </select>
+                <label for="playoffStartPosition">Playoff Starting Position</label>
+                <input type="number" id="playoffStartPosition" min="2" max="30" readonly>
+                <label for="playoffEndPosition">Playoff Ending Position</label>
+                <select id="playoffEndPosition" onchange="updateChampionsLeaguePlayoffPositions()">
+                  <option value="">Select playoff ending position</option>
+                </select>
+                <label for="playoffRoundMode">Playoff Matches</label>
+                <select id="playoffRoundMode">
+                  <option value="single" selected>Single Match</option>
+                  <option value="double">Two Legs</option>
+                </select>
+                <small>
+                  Playoff teams are paired by league position, with the highest-ranked team facing the lowest-ranked team.
+                </small>
+              </div>
+            </div>
+          </div>
+          
+          
+          <div class="stageCard">
+            
+            <h3>Knockout Stage</h3>
+            
+            
+            <label for="knockoutPairingMode">
+              First Round Pairing
+            </label>
+            
+            <select id="knockoutPairingMode" onchange="handleKnockoutPairingModeChange()">
+            
+              <option value="auto" selected>
+                Automatic
+              </option>
+              
+              <option value="manual">
+                Manual
+              </option>
+              
+            </select>
+            
+            
+            <div id="manualKnockoutOptions" style="display:none;">
+              
+              <button type="button" class="btn-secondary" onclick="openManualKnockoutSetup()">
+                Set First Round Pairings
+              </button>
+              
+            </div>
+            
+            
+            <label for="knockoutRoundMode">
+              Knockout Matches
+            </label>
+            
+            <select id="knockoutRoundMode">
+            
+              <option value="single" selected>
+                Single Match
+              </option>
+              
+              <option value="double">
+                Two Legs
+              </option>
+              
+            </select>
+            
+            
+            <label>
+            
+              <input type="checkbox" id="thirdPlaceMatch">
+              
+              Third-Place Match
+              
+            </label>
+            
+          </div>
+          
+          
+          <div class="cupActions">
+            
+            <button type="button" class="btn-create" onclick="generateTournament()">
+              Create
+            </button>
+            
+          </div>
+          
+        </div>
+        
+      </div>
       
       
       <!-- FIXTURES -->
@@ -1372,31 +1397,6 @@
   
   
   
-  <div id="setUpTop" style="display:none">
-    <button class="btn-back" onclick="toggleCupView('tables')">
-      ✕
-    </button>
-    
-    <div class="cupSetup">
-      <h2>Create Cup Tournament</h2>
-      
-      
-      
-      <div class="btn-cupPage">
-        <button onclick="toggleCupSetUpView()">
-          <span class="btn-icon">👥</span>
-          <span id="cupToggleText" class="btn-text">See Teams</span>
-        </button>
-        
-        <button class="badge-info">
-          <span class="btn-icon" id="teamsadded">Teams added: 0</span>
-          <span class="btn-text">Teams added</span>
-        </button>
-        
-      </div>
-      
-    </div>
-  </div>
   
   
   
