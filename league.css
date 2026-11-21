@@ -743,11 +743,6 @@
 
 
 
-.table-responsive.standings-horizontal-scroll {
-  width: fit-content;
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-}
 
 #leagueTable.basic-view {
   width: 100%;
@@ -755,11 +750,11 @@
 }
 
 #leagueTable.full-view {
-  min-width: fit-content;
+  min-width: 0;
 }
 
 #leagueTable.form-view {
-  min-width: fi;
+  min-width: fit-content;
 }
 
 #leagueTable.basic-view th:nth-child(4),

@@ -2428,6 +2428,7 @@ function renderStandingsRows(data, filter = "basic") {
   const table = document.getElementById("leagueTable");
   
   if (!tbody || !table) return;
+  const teamShortNames = getUniqueTeamShortNames(data);
   
   table.classList.remove("full-view", "basic-view", "form-view");
   table.classList.add(`${filter}-view`);
@@ -2586,10 +2587,13 @@ function renderStandingsRows(data, filter = "basic") {
     `;
     
     const teamName = tr.querySelector(".team-name");
-    
-    if (teamName) {
-      teamName.textContent = team.name || "";
-    }
+
+if (teamName) {
+  teamName.textContent =
+    filter === "full" ?
+    teamShortNames.get(String(team.id)) || "" :
+    team.name || "";
+}
     
     if (team.logo) {
       const teamCell = tr.querySelector(".table-team-cell");
@@ -2693,6 +2697,67 @@ function getTeamForm(teamId, matches) {
   });
 }
 
+function getUniqueTeamShortNames(teams) {
+  const used = new Set();
+  const result = new Map();
+  
+  const entries = teams.map(team => ({
+    id: String(team.id),
+    name: String(team.name || "").trim()
+  }));
+  
+  entries.forEach(team => {
+    const words = team.name
+      .toUpperCase()
+      .replace(/[^A-Z0-9\s]/g, "")
+      .split(/\s+/)
+      .filter(Boolean);
+    
+    let abbreviation = "";
+    
+    if (words.length >= 3) {
+      abbreviation = words.slice(0, 3).map(word => word[0]).join("");
+    } else if (words.length === 2) {
+      abbreviation = words[0].slice(0, 2) + words[1][0];
+    } else {
+      abbreviation = (words[0] || "TEAM").slice(0, 3);
+    }
+    
+    if (abbreviation.length < 3) {
+      abbreviation = abbreviation.padEnd(3, "X");
+    }
+    
+    if (used.has(abbreviation)) {
+      const letters = words.join("").split("");
+      
+      for (const letter of letters) {
+        const candidate = abbreviation.slice(0, 2) + letter;
+        
+        if (!used.has(candidate)) {
+          abbreviation = candidate;
+          break;
+        }
+      }
+    }
+    
+    if (used.has(abbreviation)) {
+      for (let i = 1; i <= 999; i++) {
+        const candidate = abbreviation.slice(0, 2) +
+          String(i).slice(-1);
+        
+        if (!used.has(candidate)) {
+          abbreviation = candidate;
+          break;
+        }
+      }
+    }
+    
+    used.add(abbreviation);
+    result.set(team.id, abbreviation);
+  });
+  
+  return result;
+}
 
 
 
