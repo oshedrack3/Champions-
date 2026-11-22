@@ -1057,9 +1057,9 @@ function closeListModal() {
 }
 
 async function goToCompetitionPage() {
-  
   hideAllPages();
   
+  const user = await getCurrentUser();
   
   closeTournamentEvents();
   
@@ -1068,10 +1068,12 @@ async function goToCompetitionPage() {
   document.getElementById("compageToggle").style.display = "flex";
   document.getElementById("homepageNav").style.display = "flex";
   
+  document.getElementById("profileNavBtn").style.display =
+    user.role === "guest" ? "none" : "";
   
   document.getElementById("compPageHead").style.display = "block";
-  const currentUser = getCurrentUser();
-  document.getElementById("usernameText").textContent = currentUser.username;
+  document.getElementById("usernameText").textContent = user.username;
+  
   pageOrigin = "MyComp";
   currentSwapView = 0;
   loadNotices();
@@ -1837,65 +1839,6 @@ function setupCompetitionToggle() {
   btnMy.classList.add(
     "active"
   );
-}
-async function openHallOfFame() {
-  goBackHome();
-  leaveHome()
-  const mySection =
-    document.getElementById(
-      "mySection"
-    );
-  const noticeBoard =
-    document.getElementById(
-      "noticeSection"
-    );
-  const hallOfFameSection =
-    document.getElementById(
-      "hallOfFameSection"
-    );
-  if (
-    !hallOfFameSection
-  ) {
-    return;
-  }
-  if (mySection) {
-    mySection.style.display =
-      "none";
-  }
-  if (noticeBoard) {
-    noticeBoard.style.display =
-      "none";
-  }
-  hallOfFameSection.style.display =
-    "block";
-  await loadHallOfFame();
-}
-
-function closeHallOfFame() {
-  const hallOfFameSection =
-    document.getElementById(
-      "hallOfFameSection"
-    );
-  const mySection =
-    document.getElementById(
-      "mySection"
-    );
-  const noticeBoard =
-    document.getElementById(
-      "noticeSection"
-    );
-  if (hallOfFameSection) {
-    hallOfFameSection.style.display =
-      "none";
-  }
-  if (mySection) {
-    mySection.style.display =
-      "block";
-  }
-  if (noticeBoard) {
-    noticeBoard.style.display =
-      "block";
-  }
 }
 
 function toggleCupSetUpView() {

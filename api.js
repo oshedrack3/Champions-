@@ -12602,9 +12602,21 @@ async function showLiveInvitation(broadcast) {
 
 
 async function initializePublicTournamentRoute() {
-  const parts = window.location.pathname
-    .split("/")
-    .filter(Boolean);
+  const path = window.location.pathname;
+
+  if (path === "/hall-of-fame") {
+    document.getElementById("homepageNav").style.display = "none";
+    await openHallOfFame();
+    return true;
+  }
+
+  if (path === "/global-rankings") {
+    document.getElementById("homepageNav").style.display = "none";
+    await showGlobalRankings();
+    return true;
+  }
+
+  const parts = path.split("/").filter(Boolean);
 
   if (parts.length < 2 || parts.length > 3) return false;
 
@@ -12622,24 +12634,28 @@ async function initializePublicTournamentRoute() {
 
     if (!result) return true;
 
+    document.getElementById("homepageNav").style.display = "none";
+
     currentCompetition = result.competition;
     window.publicTournamentSection = section || null;
 
     await openTournament(
-  result.tournament.id,
-  result.tournament,
-  { publicView: true }
-);
+      result.tournament.id,
+      result.tournament,
+      { publicView: true }
+    );
 
-document.querySelector(".competition-page-header .back")?.style.setProperty("display", "none");
+    document.querySelector(".competition-page-header .back")?.style.setProperty("display", "none");
+    document.querySelector("competition-season-selector")?.style.setProperty("display", "none");
 
-if (section === "table") {
-  goToTablePage();
-} else if (section === "fixtures") {
-  goToFixturePage();
-} else if (section === "stats") {
-  goToStatPage();
-}
+    if (section === "table") {
+      goToTablePage();
+    } else if (section === "fixtures") {
+      goToFixturePage();
+    } else if (section === "stats") {
+      goToStatPage();
+    }
+
     return true;
   } catch (error) {
     console.error("Public tournament route error:", error);
@@ -12647,7 +12663,6 @@ if (section === "table") {
     return true;
   }
 }
-
 
 window.addEventListener("load", async () => {
   const currentYear = new Date().getFullYear();

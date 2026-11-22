@@ -3223,6 +3223,66 @@ function closeHallofFameEditor() {
   document.getElementById("hallOfFameAdminPanel").style.display = "none"
 }
 
+async function openHallOfFame() {
+  goBackHome();
+  leaveHome()
+  const mySection =
+    document.getElementById(
+      "mySection"
+    );
+  const noticeBoard =
+    document.getElementById(
+      "noticeSection"
+    );
+  const hallOfFameSection =
+    document.getElementById(
+      "hallOfFameSection"
+    );
+  if (
+    !hallOfFameSection
+  ) {
+    return;
+  }
+  if (mySection) {
+    mySection.style.display =
+      "none";
+  }
+  if (noticeBoard) {
+    noticeBoard.style.display =
+      "none";
+  }
+  hallOfFameSection.style.display =
+    "block";
+  await loadHallOfFame();
+}
+
+function closeHallOfFame() {
+  const hallOfFameSection =
+    document.getElementById(
+      "hallOfFameSection"
+    );
+  const mySection =
+    document.getElementById(
+      "mySection"
+    );
+  const noticeBoard =
+    document.getElementById(
+      "noticeSection"
+    );
+  if (hallOfFameSection) {
+    hallOfFameSection.style.display =
+      "none";
+  }
+  if (mySection) {
+    mySection.style.display =
+      "block";
+  }
+  if (noticeBoard) {
+    noticeBoard.style.display =
+      "block";
+  }
+}
+
 function openHallOfFameEditor(hallOfFame) {
   const panel =
     document.getElementById("hallOfFameAdminPanel");
