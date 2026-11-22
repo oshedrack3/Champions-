@@ -2461,13 +2461,33 @@ function renderStandingsRows(data, filter = "basic") {
   tbody.innerHTML = "";
   
   if (!Array.isArray(data) || !data.length) {
-    tbody.innerHTML = `
-      <tr>
-        <td colspan="9" style="text-align:center;">
-          No table data
-        </td>
-      </tr>
-    `;
+tbody.innerHTML = `
+  <tr>
+    <td colspan="9" style="text-align:center; padding:45px 15px;">
+      <div style="display:flex; flex-direction:column; align-items:center; gap:8px;">
+        <div style="
+          width:46px;
+          height:46px;
+          border-radius:50%;
+          background:#f1f5f9;
+          display:flex;
+          align-items:center;
+          justify-content:center;
+          color:#64748b;
+          font-size:20px;
+        ">
+          <i class="fas fa-trophy"></i>
+        </div>
+        <strong style="font-size:14px; color:#334155;">
+          No participants yet
+        </strong>
+        <span style="font-size:12px; color:#94a3b8;">
+          Be among the first to join this Tournament.
+        </span>
+      </div>
+    </td>
+  </tr>
+`;
     return;
   }
   
