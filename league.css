@@ -94,9 +94,13 @@
 }
 
 #competitionTournamentSeason {
-  color: #64748b;
-  font-size: 12px;
-  font-weight: 500;
+  color: #2365eb;
+  font-size: 9px;
+  font-weight: 400;
+  border: 1px solid #2365eb;
+  padding: 2px;
+  border-radius: 4px;
+  background: #fff;
 }
 .competition-season-info {
   display: flex;
@@ -111,27 +115,30 @@
   padding: 2px;
   border-radius: 4px;
   font-size: 9px;
-  text-transform: uppercase;
+  font-weight: 400;
+  text-transform: capitalize;
   white-space: nowrap;
-  background: #dbeafe;
-  color: #1d4ed8;
-  border: 1px solid #CBD5E1;
+  background: #fff;
 }
 
 #competitionSeasonStatus.active {
-  background: #16A34A;
-  color: #fff;
+  color: #16A34A;
+  border: 1px solid #16A34A;
 }
 
-#competitionSeasonStatus.upcoming,
+#competitionSeasonStatus.upcoming
+{
+  color: #BE185D;
+  border: 1px solid #BE185D;
+}
 #competitionSeasonStatus.scheduled {
-  background: #2365eb;
-  color: #fff;
+  color: #2365eb;
+  border: 1px solid #2365eb;
 }
 
 #competitionSeasonStatus.completed {
-  background: #f1f5f9;
   color: #475569;
+  border: 1px solid #475569;
 }
 .competition-page-navigation {
   width: 100%;
