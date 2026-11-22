@@ -68,38 +68,43 @@
   </div>
   
   
-  <div class="competition-page-header" id="tournamentHeader" style="display: none;">
+<div class="competition-page-header" id="tournamentHeader" style="display: none;">
+  
+  <div class="competition-header-main">
     
-    <div class="competition-header-main">
+    <button class="back" onclick="goToCompetitionPage()">❮</button>
+    
+    <div class="competition-identity">
+      <img id="competitionLogo" src="galaticoLogo1.png" alt="Galatico" class="competition-logo">
       
-      <button class="back" onclick="goToCompetitionPage()">❮</button>
-      
-      <div class="competition-identity">
-        <img id="competitionLogo" src="galaticoLogo1.png" alt="Galatico" class="competition-logo">
+      <div class="competition-heading">
+        <span id="competitionTournamentTitle" class="competition-organizer">
+          GALATICO ESPORT
+        </span>
         
-        <div class="competition-heading">
-          <span id="competitionTournamentTitle" class="competition-organizer">
-            GALATICO ESPORT
-          </span>
+        <div class="competition-season-info">
           <span id="competitionTournamentSeason">Volume</span>
+          
+          <span id="competitionSeasonStatus" class="season-status-badge">
+            Upcoming
+          </span>
         </div>
       </div>
-      
-      <button class="menu-btn competition-menu-btn" onclick="setPageAndToggleMenu('tournament')">
-        ☰
-      </button>
-      
     </div>
     
-    <div class="competition-page-navigation">
-      <button class="competition-nav-btn active" data-view="standings">Table</button>
-      <button class="competition-nav-btn" data-view="fixtures">Fixtures</button>
-      <button class="competition-nav-btn" data-view="stats">Stats/Records</button>
-    </div>
+    <button class="menu-btn competition-menu-btn" onclick="setPageAndToggleMenu('tournament')">
+      ☰
+    </button>
     
   </div>
   
+  <div class="competition-page-navigation">
+    <button class="competition-nav-btn active" data-view="standings">Table</button>
+    <button class="competition-nav-btn" data-view="fixtures">Fixtures</button>
+    <button class="competition-nav-btn" data-view="stats">Stats/Records</button>
+  </div>
   
+</div>  
   <!--  Page Head -->
   <div id="tablePageHead" style="display:none">
     <button class="menu-btn" onclick="setPageAndToggleMenu('league')">
@@ -924,14 +929,14 @@
       
       <div id="cupBox" style="display:none">
         <div id="setUpTop" style="display:none">
-        
+          
           
           <div class="cupSetup">
-          
-  <div class="cupSetupHeader">
-    <h2>Set Up Cup Tournament</h2>
-    <button class="cupBoxBtn" onclick="goToFixturePage()">✕</button>
-  </div>
+            
+            <div class="cupSetupHeader">
+              <h2>Set Up Cup Tournament</h2>
+              <button class="cupBoxBtn" onclick="goToFixturePage()">✕</button>
+            </div>
             
             
             
@@ -966,8 +971,8 @@
             </label>
             
             <select id="tournamentStartFrom" onchange="toggleGroupSettings()">
-         
-              
+            
+            
               <option value="32" selected>
                 Round of 32
               </option>

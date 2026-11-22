@@ -79,7 +79,7 @@
 }
 
 .competition-organizer {
-  font-size: 15px;
+  font-size: 18px;
   font-weight: 700;
   color: #111827;
   letter-spacing: 0.4px;
@@ -98,7 +98,41 @@
   font-size: 12px;
   font-weight: 500;
 }
+.competition-season-info {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+}
 
+#competitionSeasonStatus {
+  align-items: center;
+  justify-content: center;
+  padding: 2px;
+  border-radius: 4px;
+  font-size: 9px;
+  text-transform: uppercase;
+  white-space: nowrap;
+  background: #dbeafe;
+  color: #1d4ed8;
+  border: 1px solid #CBD5E1;
+}
+
+#competitionSeasonStatus.active {
+  background: #16A34A;
+  color: #fff;
+}
+
+#competitionSeasonStatus.upcoming,
+#competitionSeasonStatus.scheduled {
+  background: #2365eb;
+  color: #fff;
+}
+
+#competitionSeasonStatus.completed {
+  background: #f1f5f9;
+  color: #475569;
+}
 .competition-page-navigation {
   width: 100%;
   display: flex;

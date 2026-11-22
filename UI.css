@@ -13963,3 +13963,65 @@ td.cup-eliminated {
 }
 
 
+
+.sr-prize-section {
+  margin-top: 14px;
+  padding: 13px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+}
+
+.sr-prize-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.sr-prize-header span {
+  color: #475569;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.sr-prize-header strong {
+  color: #15803d;
+  font-size: 17px;
+}
+
+.sr-prize-distribution {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 9px;
+}
+
+.sr-prize-distribution>div {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 6px;
+  padding: 9px;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 7px;
+}
+
+.sr-prize-distribution span {
+  color: #64748b;
+  font-size: 12px;
+}
+
+.sr-prize-distribution strong {
+  color: #0f172a;
+  font-size: 13px;
+}
+
+.sr-prize-section small {
+  display: block;
+  margin-top: 11px;
+  color: #64748b;
+  font-size: 11px;
+  line-height: 1.5;
+}

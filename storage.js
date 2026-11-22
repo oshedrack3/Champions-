@@ -344,6 +344,7 @@ function getTournamentFromMemory(id) {
 }
 
 
+
 async function openTournament(id) {
   showLoader();
 
@@ -384,12 +385,21 @@ async function openTournament(id) {
 
     const titleElement = document.getElementById("competitionTournamentTitle");
     const seasonElement = document.getElementById("competitionTournamentSeason");
+    const statusElement = document.getElementById("competitionSeasonStatus");
     const leagueName = document.getElementById("leagueName");
     const tableTournamentName = document.getElementById("tableTournamentName");
     const tournamentSeason = document.getElementById("tournamentSeason");
 
     if (titleElement) titleElement.textContent = name;
     if (seasonElement) seasonElement.textContent = season;
+
+    if (statusElement) {
+      const status = (tournament.season_status || "upcoming").toLowerCase();
+
+      statusElement.textContent = status;
+      statusElement.className = `season-status-badge ${status}`;
+    }
+
     if (leagueName) leagueName.textContent = name;
     if (tableTournamentName) tableTournamentName.textContent = name;
     if (tournamentSeason) tournamentSeason.textContent = season;

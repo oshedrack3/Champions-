@@ -7565,16 +7565,26 @@ function renderAvailableSeasons(list) {
     `;
     return;
   }
+  
   list.innerHTML = seasons.map(season => {
     const registered = registrations.some(registration =>
       String(registration.tournament_id) === String(season.tournament_id) &&
       registration.payment_status === "paid"
     );
+    
     const deadline = season.registration_deadline ?
       new Date(Number(season.registration_deadline)).toLocaleDateString(
         "en-NG", { day: "numeric", month: "short", year: "numeric" }
       ) :
       "No deadline";
+    
+    const prizes = season.prize_distribution || {
+      first: 0,
+      second: 0,
+      third: 0,
+      fourth: 0
+    };
+    
     return `
       <article class="sr-season-card">
         <div class="sr-season-info">
@@ -7583,6 +7593,7 @@ function renderAvailableSeasons(list) {
           <p>${escapeHtml(String(season.available_spaces ?? 0))} spaces remaining</p>
           <p>Registration deadline: ${escapeHtml(deadline)}</p>
         </div>
+
         <div class="sr-fees">
           <div>
             <span>Registration fee</span>
@@ -7597,6 +7608,35 @@ function renderAvailableSeasons(list) {
             <strong>${formatMoney(season.total_amount)}</strong>
           </div>
         </div>
+
+        <div class="sr-prize-section">
+          <div class="sr-prize-header">
+            <span>Expected Prize Pool</span>
+            <strong>${formatMoney(season.prize_pool || 0)}</strong>
+          </div>
+
+          <div class="sr-prize-distribution">
+            <div>
+              <span>🥇 1st</span>
+              <strong>${formatMoney(prizes.first)}</strong>
+            </div>
+            <div>
+              <span>🥈 2nd</span>
+              <strong>${formatMoney(prizes.second)}</strong>
+            </div>
+            <div>
+              <span>🥉 3rd</span>
+              <strong>${formatMoney(prizes.third)}</strong>
+            </div>
+            <div>
+              <span>4th</span>
+              <strong>${formatMoney(prizes.fourth)}</strong>
+            </div>
+          </div>
+
+          <small>Based on ${escapeHtml(String(season.paid_registration_count ?? 0))} paid registrations. Prize pool may increase as more players register.</small>
+        </div>
+
         ${registered ? `
           <div class="sr-registered-badge">
             <span>✓</span>
@@ -7616,7 +7656,6 @@ function renderAvailableSeasons(list) {
     `;
   }).join("");
 }
-
 function renderMySeasonRegistrations(list) {
   if (!registrations.length) {
     list.innerHTML = `
