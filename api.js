@@ -12604,13 +12604,20 @@ async function showLiveInvitation(broadcast) {
 async function initializePublicTournamentRoute() {
   const path = window.location.pathname;
 
+  const notFound = () => {
+    showAlert("The page you're looking for could not be found. Please check the link or try again later.");
+    return true;
+  };
+
   if (path === "/hall-of-fame") {
+    document.getElementById("competitionPage").style.display = "block";
     document.getElementById("homepageNav").style.display = "none";
     await openHallOfFame();
     return true;
   }
 
   if (path === "/global-rankings") {
+    document.getElementById("competitionPage").style.display = "block";
     document.getElementById("homepageNav").style.display = "none";
     await showGlobalRankings();
     return true;
@@ -12618,12 +12625,14 @@ async function initializePublicTournamentRoute() {
 
   const parts = path.split("/").filter(Boolean);
 
-  if (parts.length < 2 || parts.length > 3) return false;
+  if (parts.length < 2 || parts.length > 3) {
+    return notFound();
+  }
 
   const [competitionSlug, tournamentSlug, section] = parts;
 
   if (section && !["table", "fixtures", "stats"].includes(section)) {
-    return false;
+    return notFound();
   }
 
   try {
@@ -12632,7 +12641,7 @@ async function initializePublicTournamentRoute() {
       decodeURIComponent(tournamentSlug)
     );
 
-    if (!result) return true;
+    if (!result) return notFound();
 
     document.getElementById("homepageNav").style.display = "none";
 
@@ -12657,9 +12666,10 @@ async function initializePublicTournamentRoute() {
     }
 
     return true;
+
   } catch (error) {
     console.error("Public tournament route error:", error);
-    showAlert(error.message || "Failed to open shared tournament.");
+    showAlert("The page you're looking for could not be found. Please check the link or try again later.");
     return true;
   }
 }
