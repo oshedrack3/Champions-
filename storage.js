@@ -2263,24 +2263,12 @@ async function tournamentCreator() {
     
     
     if (imageInput.files.length > 0) {
-      
-      const file = imageInput.files[0];
-      
-      
-      tournamentImage = await new Promise((resolve, reject) => {
-        
-        const reader = new FileReader();
-        
-        reader.onload = () => resolve(reader.result);
-        
-        reader.onerror = reject;
-        
-        reader.readAsDataURL(file);
-        
-      });
-      
-    }
-    
+  tournamentImage = await fileToBase64(
+    imageInput.files[0],
+    1200,
+    false
+  );
+}    
     
     
     const result = await createTournament({
