@@ -4599,159 +4599,443 @@ body.admin-mode .data-admin {
 
 
 .rankings-header {
-  margin-bottom: 20px;
-  padding: 18px;
-  background: #ffffff;
-  border-radius: 14px;
-  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.06);
+  position: relative;
+  margin-bottom: 24px;
+  padding: 24px 22px;
+  background: linear-gradient(145deg, #ffffff 0%, #f8faff 100%);
+  border: 1px solid #e5eaf3;
+  border-radius: 18px;
+  box-shadow: 0 5px 18px rgba(15, 23, 42, 0.06);
+  overflow: hidden;
+}
+
+.rankings-header::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 4px;
+  height: 100%;
+  background: linear-gradient(180deg, #2563eb, #60a5fa);
 }
 
 .rankings-header h2 {
-  margin: 0 0 12px;
+  margin: 0 0 14px;
   color: #111827;
+  font-size: 21px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
 }
 
 .rankings-header p {
-  margin: 10px 0;
-  line-height: 1.5;
-  color: #111827;
+  margin: 10px 0 0;
+  color: #4b5563;
+  font-size: 13px;
+  line-height: 1.75;
+  font-weight: 400;
 }
+
+.rankings-header p:last-child {
+  margin-top: 14px;
+  padding-top: 13px;
+  border-top: 1px solid #e8edf5;
+  color: #374151;
+  font-weight: 500;
+}
+
 
 .global-ranking-row {
+  position: relative;
   display: grid;
-  grid-template-columns: 42px minmax(0, 1fr) auto;
-  align-items: start;
-  gap: 12px;
-  padding: 16px 14px;
-  margin-bottom: 12px;
-  background: #ffffff;
-  border: 1px solid #e5e7eb;
-  border-radius: 14px;
-  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.04);
-  transition:
-    transform 0.2s ease,
-    box-shadow 0.2s ease,
-    border-color 0.2s ease;
+  grid-template-columns: 1fr 56%;
+  grid-template-rows: 176px auto auto auto;
+  grid-template-areas:
+    "meta photo"
+    "name name"
+    "trophies trophies"
+    "stats stats";
+  gap: 8px 10px;
+  width: 100%;
+  min-height: 325px;
+  padding: 14px;
+  margin-bottom: 18px;
+  box-sizing: border-box;
+  overflow: hidden;
+  isolation: isolate;
+  background:
+    radial-gradient(circle at 76% 24%, rgba(212, 175, 55, 0.16) 0%, transparent 55%),
+    linear-gradient(170deg, #161b22 0%, #0d1117 58%, #07090d 100%);
+  border: 2px solid rgba(212, 175, 55, 0.52);
+  border-radius: 18px;
+  box-shadow:
+    0 14px 32px rgba(0, 0, 0, 0.6),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.08),
+    inset 0 0 24px rgba(212, 175, 55, 0.1);
 }
 
-.ranking-position {
-  display: flex;
+.global-ranking-row::before {
+  content: "";
+  position: absolute;
+  inset: 6px;
+  z-index: 0;
+  pointer-events: none;
+  border: 1px solid rgba(212, 175, 55, 0.24);
+  border-radius: 13px;
+  background-image:
+    repeating-linear-gradient(
+      -50deg,
+      rgba(212, 175, 55, 0.03) 0px,
+      rgba(212, 175, 55, 0.03) 2px,
+      transparent 2px,
+      transparent 16px
+    );
+}
+
+.global-ranking-row::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background:
+    linear-gradient(
+      180deg,
+      rgba(13, 17, 23, 0.22) 0%,
+      rgba(13, 17, 23, 0.05) 36%,
+      rgba(13, 17, 23, 0.82) 56%,
+      #0d1117 68%
+    ),
+    linear-gradient(
+      90deg,
+      rgba(13, 17, 23, 0.82) 0%,
+      rgba(13, 17, 23, 0.12) 48%,
+      rgba(13, 17, 23, 0.28) 100%
+    );
+}
+
+.ranking-card-image {
+  grid-area: photo;
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+  object-position: center 18%;
+  transform: scale(0.94);
+  transform-origin: center top;
+  border-radius: 12px;
+  border: 1px solid rgba(212, 175, 55, 0.35);
+  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.55);
+  -webkit-mask-image:
+    linear-gradient(to bottom, #000 68%, rgba(0, 0, 0, 0.35) 88%, transparent 100%);
+  mask-image:
+    linear-gradient(to bottom, #000 68%, rgba(0, 0, 0, 0.35) 88%, transparent 100%);
+}
+
+.ranking-brand-tag {
+  position: relative;
+  grid-area: meta;
+  align-self: start;
+  justify-self: start;
+  z-index: 2;
+  display: inline-flex;
   align-items: center;
-  justify-content: center;
-  min-height: 36px;
-  font-size: 16px;
-  font-weight: 800;
-  text-align: center;
-  color: #374151;
-  background: #f3f4f6;
-  border-radius: 10px;
+  gap: 5px;
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 1.4px;
+  text-transform: uppercase;
+  color: #fbbf24;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.85);
 }
 
-.ranking-player {
-  min-width: 0;
-  font-weight: 700;
-  font-size: 15px;
-  line-height: 1.4;
-  color: #111827;
-  overflow-wrap: anywhere;
-}
-
-.ranking-player-name {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 6px;
-  color: #111827;
+.ranking-brand-tag::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #fbbf24;
+  box-shadow: 0 0 8px rgba(251, 191, 36, 0.85);
 }
 
 .ranking-rating {
-  padding: 7px 10px;
-  font-size: 16px;
+  grid-area: meta;
+  align-self: start;
+  justify-self: start;
+  margin-top: 22px;
+  z-index: 2;
+  color: #facc15;
+  font-size: 36px;
+  font-weight: 900;
+  line-height: 1;
+  letter-spacing: -1px;
+  text-shadow: 0 3px 14px rgba(0, 0, 0, 0.9);
+}
+
+.ranking-rating::before {
+  content: "OVR";
+  display: block;
+  margin-bottom: 2px;
+  color: #e2e8f0;
+  font-size: 10px;
   font-weight: 800;
+  letter-spacing: 1.5px;
+}
+
+.ranking-position {
+  grid-area: meta;
+  align-self: start;
+  justify-self: start;
+  margin-top: 86px;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 42px;
+  height: 28px;
+  padding: 0 10px;
+  color: #ffffff;
+  background: rgba(22, 27, 34, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: 7px;
+  font-size: 13px;
+  font-weight: 900;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+}
+
+.ranking-player {
+  display: contents;
+}
+
+.ranking-profile-pic {
+  display: none;
+}
+
+.ranking-player-name {
+  grid-area: name;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 6px 10px 8px;
+  background: linear-gradient(90deg, transparent 0%, rgba(212, 175, 55, 0.14) 50%, transparent 100%);
+  border-top: 1px solid rgba(212, 175, 55, 0.35);
+  border-bottom: 1px solid rgba(212, 175, 55, 0.35);
+  color: #ffffff;
+  font-size: 18px;
+  font-weight: 900;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
   text-align: center;
-  color: #111827;
-  background: #f3f4f6;
-  border-radius: 9px;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.9);
+}
+
+.ranking-trophies {
+  grid-area: trophies;
+  align-self: center;
+  justify-self: center;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 12px;
+  color: #fde68a;
+  background: linear-gradient(90deg, rgba(180, 130, 20, 0.28), rgba(251, 191, 36, 0.16), rgba(180, 130, 20, 0.28));
+  border: 1px solid rgba(251, 191, 36, 0.5);
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.4px;
   white-space: nowrap;
 }
 
 .ranking-stats {
+  grid-area: stats;
+  z-index: 2;
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 7px;
-  margin-top: 12px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+  margin: 0;
 }
 
 .ranking-stats span {
   display: block;
-  padding: 7px 8px;
-  color: #4b5563;
-  background: #f9fafb;
-  border: 1px solid #f1f5f9;
-  border-radius: 8px;
-  font-size: 12px;
-  font-weight: 500;
+  padding: 6px 4px;
+  color: #f1f5f9;
+  background: rgba(22, 27, 34, 0.92);
+  border: 1px solid rgba(212, 175, 55, 0.22);
+  border-radius: 7px;
+  font-size: 10px;
+  font-weight: 700;
+  text-align: center;
   white-space: nowrap;
-}
-
-/* Current user's ranking card */
-.current-ranking-user {
-  position: relative;
   overflow: hidden;
-  border: 1.5px solid #d4a72c;
-  background: linear-gradient(135deg,
-      #fffbeb 0%,
-      #ffffff 60%,
-      #fef3c7 100%);
-  box-shadow:
-    0 4px 14px rgba(180, 130, 20, 0.12),
-    inset 3px 0 0 #d4a72c;
+  text-overflow: ellipsis;
 }
 
-.current-ranking-user .ranking-position {
-  color: #92400e;
-  background: #fef3c7;
+.ranking-stats span:nth-child(9),
+.ranking-stats span:nth-child(10) {
+  grid-column: span 2;
+  color: #fde68a;
+  background: rgba(30, 35, 44, 0.95);
+  border-color: rgba(251, 191, 36, 0.32);
+}
+
+.current-ranking-user {
+  background:
+    radial-gradient(circle at 76% 24%, rgba(250, 204, 21, 0.22) 0%, transparent 58%),
+    linear-gradient(170deg, #1f1a10 0%, #0d1117 60%, #07090d 100%);
+  border: 2px solid #facc15;
+  box-shadow:
+    0 14px 34px rgba(250, 204, 21, 0.2),
+    inset 0 0 0 1px rgba(254, 240, 138, 0.22);
+}
+
+.current-ranking-user .ranking-brand-tag {
+  color: #fef08a;
 }
 
 .current-ranking-user .ranking-rating {
-  color: #92400e;
-  background: #fef3c7;
+  color: #fef08a;
+  text-shadow: 0 3px 16px rgba(250, 204, 21, 0.5);
 }
 
-.current-ranking-user .ranking-player-name {
-  color: #78350f;
+.current-ranking-user .ranking-position {
+  color: #ffffff;
+  background: rgba(250, 204, 21, 0.18);
+  border-color: rgba(250, 204, 21, 0.55);
+}
+
+.current-ranking-user .ranking-card-image {
+  border-color: rgba(250, 204, 21, 0.5);
 }
 
 .current-ranking-user .ranking-stats span {
-  color: #78350f;
-  background: #fff7d6;
-  border-color: #f3d47a;
+  background: rgba(24, 22, 17, 0.94);
+  border-color: rgba(250, 204, 21, 0.28);
 }
-
 
 .you-badge {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 3px 8px;
-  color: #92400e;
-  background: #fef3c7;
-  border: 1px solid #e8c45c;
-  border-radius: 20px;
+  padding: 2px 8px;
+  color: #0d1117;
+  background: linear-gradient(135deg, #fef08a, #eab308);
+  border-radius: 5px;
   font-size: 9px;
-  font-weight: 800;
-  letter-spacing: 0.6px;
-  line-height: 1.4;
-  white-space: nowrap;
-  vertical-align: middle;
+  font-weight: 900;
+  letter-spacing: 0.8px;
 }
 
-@media (min-width: 500px) {
+@media (max-width: 380px) {
+  .global-ranking-row {
+    grid-template-columns: 1fr 52%;
+    grid-template-rows: 162px auto auto auto;
+    padding: 12px;
+  }
+
+  .ranking-rating {
+    font-size: 31px;
+    margin-top: 20px;
+  }
+
+  .ranking-position {
+    margin-top: 78px;
+  }
+
+  .ranking-player-name {
+    font-size: 16px;
+  }
+
   .ranking-stats {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 4px;
+  }
+
+  .ranking-stats span {
+    padding: 5px 2px;
+    font-size: 9px;
   }
 }
 
+
+.ranking-card-avatar {
+  grid-area: photo;
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  transform: scale(0.94);
+  transform-origin: center top;
+  background:
+    radial-gradient(circle at 50% 35%, rgba(212, 175, 55, 0.22) 0%, rgba(22, 27, 34, 0.9) 72%);
+  border: 1px solid rgba(212, 175, 55, 0.35);
+  border-radius: 12px;
+  box-shadow:
+    0 10px 22px rgba(0, 0, 0, 0.55),
+    inset 0 0 20px rgba(212, 175, 55, 0.12);
+  -webkit-mask-image:
+    linear-gradient(to bottom, #000 68%, rgba(0, 0, 0, 0.35) 88%, transparent 100%);
+  mask-image:
+    linear-gradient(to bottom, #000 68%, rgba(0, 0, 0, 0.35) 88%, transparent 100%);
+}
+
+.ranking-avatar-silhouette {
+  width: 82%;
+  height: 88%;
+  fill: rgba(212, 175, 55, 0.16);
+  stroke: rgba(212, 175, 55, 0.38);
+  stroke-width: 1.5;
+}
+
+.ranking-avatar-initial {
+  position: absolute;
+  top: 28%;
+  font-size: 28px;
+  font-weight: 900;
+  color: rgba(254, 240, 138, 0.85);
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.8);
+}
+
+.current-ranking-user .ranking-card-avatar {
+  border-color: rgba(250, 204, 21, 0.5);
+  background:
+    radial-gradient(circle at 50% 35%, rgba(250, 204, 21, 0.28) 0%, rgba(24, 22, 17, 0.92) 72%);
+}
+
+#globalRankingsSeeMore {
+  display: block;
+  margin: 20px auto;
+  padding: 11px 30px;
+  background: #2563eb;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+
+#globalRankingsSeeMore:hover {
+  background: #1d4ed8;
+}
+
+#globalRankingsSeeMore:active {
+  transform: scale(0.97);
+}
+
+#globalRankingsSeeMore:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
 .player-comparison-section {
   margin-bottom: 24px;
   padding: 18px;
@@ -6419,7 +6703,12 @@ body.admin-mode .data-admin {
   line-height: 1;
   filter: drop-shadow(0 3px 8px rgba(232, 180, 50, 0.3));
 }
-
+.hallOfFameHeaderBadge span img {
+  width: 42px;
+  height: 42px;
+  object-fit: contain;
+  display: block;
+}
 .hallOfFameHeaderLabel {
   margin-bottom: 10px;
   color: #d5b66a;
@@ -8086,36 +8375,59 @@ body.admin-mode .data-admin {
   box-sizing: border-box;
 }
 
-
 .rankings-actions {
   display: flex;
-  justify-content: center;
-  margin: 0 0 20px;
-}
-
-.open-player-comparison-button {
-  display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 10px;
-  width: 100%;
-  padding: 14px 18px;
-  color: #78350f;
-  background: linear-gradient(135deg,
-      #fffbeb,
-      #fef3c7);
-  border: 1px solid #d4a72c;
-  border-radius: 12px;
-  box-shadow: 0 3px 10px rgba(180, 130, 20, 0.1);
-  font-size: 15px;
-  font-weight: 800;
-  cursor: pointer;
-  transition:
-    transform 0.2s ease,
-    box-shadow 0.2s ease,
-    background 0.2s ease;
+  margin: 0 0 20px;
+  gap: 12px;
 }
 
+.comparison-description {
+  margin: 0;
+  max-width: 420px;
+  color: #64748b;
+  font-size: 13px;
+  line-height: 1.6;
+  text-align: center;
+}
+
+
+.open-player-comparison-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  width: max-content;
+  padding: 14px 20px;
+  color: #ffffff;
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  border: 1px solid #1d4ed8;
+  border-radius: 12px;
+  box-shadow: 0 4px 0 #173ea5, 0 7px 16px rgba(37, 99, 235, 0.22);
+  font-size: 14px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.open-player-comparison-button:hover {
+  background: linear-gradient(135deg, #1d4ed8, #1e40af);
+  box-shadow: 0 5px 0 #173580, 0 9px 20px rgba(37, 99, 235, 0.3);
+  transform: translateY(-2px);
+}
+
+.open-player-comparison-button:active {
+  transform: translateY(3px);
+  box-shadow: 0 1px 0 #173ea5, 0 3px 8px rgba(37, 99, 235, 0.2);
+}
+
+.open-player-comparison-button:focus-visible {
+  outline: 3px solid rgba(37, 99, 235, 0.3);
+  outline-offset: 4px;
+}
 .open-player-comparison-button:hover {
   background: #fef3c7;
   box-shadow: 0 5px 14px rgba(180, 130, 20, 0.18);

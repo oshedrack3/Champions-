@@ -5,16 +5,16 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, interactive-widget=overlay-content , viewport-fit=cover">
   <title> Galatico eSports | eFootball Tournament Hub </title>
-<link rel="stylesheet" href="/styles.css" />
-<link rel="stylesheet" href="/UI.css" />
-<link rel="stylesheet" href="/league.css" />
-
+  <link rel="stylesheet" href="/styles.css" />
+  <link rel="stylesheet" href="/UI.css" />
+  <link rel="stylesheet" href="/league.css" />
+  
   
   
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
   
-<link rel="manifest" href="/manifest.json">
-<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <link rel="manifest" href="/manifest.json">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
   <meta name="theme-color" content="#ffffff">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Galatico">
@@ -25,7 +25,7 @@
 
 <body>
   
-  <div id="galaticoSplash">
+  <div id="galaticoSplash" style="display: none;">
     <div class="splash-content">
       <div class="splash-logo-wrap">
         <div class="splash-gold-ring"></div>
@@ -52,7 +52,7 @@
   
   <!-- Page Heads and Nav btn -->
   
-  <div id="compPageHead" class="header">
+  <div id="compPageHead" class="header" style="display: none;">
     <div class="header-brand">
       <img src="/galaticoLogo1.png" alt="Galatico Esports" class="header-logo">
       
@@ -68,43 +68,43 @@
   </div>
   
   
-<div class="competition-page-header" id="tournamentHeader" style="display: none;">
-  
-  <div class="competition-header-main">
+  <div class="competition-page-header" id="tournamentHeader" style="display: none;">
     
-    <button class="back" onclick="goToCompetitionPage()">❮</button>
-    
-    <div class="competition-identity">
-      <img id="competitionLogo" src="/galaticoLogo1.png" alt="Galatico" class="competition-logo">
+    <div class="competition-header-main">
       
-      <div class="competition-heading">
-        <span id="competitionTournamentTitle" class="competition-organizer">
-          GALATICO ESPORT
-        </span>
+      <button class="back" onclick="goToCompetitionPage()">❮</button>
+      
+      <div class="competition-identity">
+        <img id="competitionLogo" src="/galaticoLogo1.png" alt="Galatico" class="competition-logo">
         
-        <div class="competition-season-info">
-          <span id="competitionTournamentSeason">Volume</span>
-          
-          <span id="competitionSeasonStatus" class="season-status-badge">
-            Upcoming
+        <div class="competition-heading">
+          <span id="competitionTournamentTitle" class="competition-organizer">
+            GALATICO ESPORT
           </span>
+          
+          <div class="competition-season-info">
+            <span id="competitionTournamentSeason">Volume</span>
+            
+            <span id="competitionSeasonStatus" class="season-status-badge">
+              Upcoming
+            </span>
+          </div>
         </div>
       </div>
+      
+      <button class="menu-btn competition-menu-btn" onclick="setPageAndToggleMenu('tournament')">
+        ☰
+      </button>
+      
     </div>
     
-    <button class="menu-btn competition-menu-btn" onclick="setPageAndToggleMenu('tournament')">
-      ☰
-    </button>
+    <div class="competition-page-navigation">
+      <button class="competition-nav-btn active" data-view="standings">Table</button>
+      <button class="competition-nav-btn" data-view="fixtures">Fixtures</button>
+      <button class="competition-nav-btn" data-view="stats">Stats/Records</button>
+    </div>
     
   </div>
-  
-  <div class="competition-page-navigation">
-    <button class="competition-nav-btn active" data-view="standings">Table</button>
-    <button class="competition-nav-btn" data-view="fixtures">Fixtures</button>
-    <button class="competition-nav-btn" data-view="stats">Stats/Records</button>
-  </div>
-  
-</div>  
   <!--  Page Head -->
   <div id="tablePageHead" style="display:none">
     <button class="menu-btn" onclick="setPageAndToggleMenu('league')">
@@ -460,28 +460,37 @@
       
       <div id="globalRankingsSection" style="display:none;">
         <div class="rankings-header">
-          <h2>Global Rankings</h2>
+          <h2>Best In the League Rankings</h2>
           <p>
-            Global Rankings measure your performance across official
-            Galatico Tournament matches. Every player starts with a rating of 1500.
+            Best in the League Rankings showcase the best-performing Player across all official tournament matches, highlighting their consistency throughout the season. The stats display are all times stats not just the current season stats.
           </p>
           <p>
-            Winning increases your rating, while losing decreases it.
-            Beating a higher-rated player earns more points, while
-            losing to a lower-rated player can cost more.
+            Rankings are determined by an Elo-based rating system. Every player starts at 1500 points at the begining of the season, with ratings rising or falling based on match results and opponent strength.
           </p>
           <p>
-            Your rating belongs to your user account, so it remains with
-            you even if you change teams.
+            The number one Ranked Player Wins the Galatico best in League Award at the end of each Season
           </p>
         </div>
         <div class="rankings-actions">
+          <p class="comparison-description">
+            See how two players compare in ratings, career statistics, trophies and head-to-head performance.
+          </p>
           <button type="button" id="openPlayerComparisonButton" class="open-player-comparison-button">
             <span>⚔️</span>
             <span>Compare Players</span>
           </button>
         </div>
         <div id="globalRankingsList"></div>
+        <div id="globalRankingsList"></div>
+
+<button
+  type="button"
+  id="globalRankingsSeeMore"
+  onclick="loadMoreGlobalRankings()"
+  style="display: none;"
+>
+  See More
+</button>
       </div>
       <div id="playerComparisonSection" style="display:none;">
         <div class="player-comparison-page-header">
@@ -527,7 +536,9 @@
         <header class="hallOfFameHeader">
           
           <div class="hallOfFameHeaderBadge">
-            <span>🏆</span>
+            <span>
+              <img src="galaticoLogo1.png" alt="Galatico">
+            </span>
           </div>
           
           <div class="hallOfFameHeaderLabel">
@@ -535,11 +546,11 @@
           </div>
           
           <h1 class="hallOfFameMainTitle">
-            Hall of <span>Fame</span>
+            Galatico eSport <span>Hall of Fame</span>
           </h1>
           
           <p class="hallOfFameDescription">
-            Celebrating the champions who made history.
+            Celebrating the champions who made history at Galatico eSport.
             Every trophy tells a story, every victory builds a legacy.
           </p>
           
@@ -1282,17 +1293,17 @@
   <div id="authPage" style="display:none">
     
     <div class="auth-card">
-       <div class="auth-header">
-    
-    <img src="/galaticoLogo1.png" alt="Galatico Esports" class="auth-logo">
-    
-    <button type="button" class="auth-close" onclick="goToCompetitionPage()">
-    
-      ✕
-      
-    </button>
-    
-  </div>
+      <div class="auth-header">
+        
+        <img src="/galaticoLogo1.png" alt="Galatico Esports" class="auth-logo">
+        
+        <button type="button" class="auth-close" onclick="goToCompetitionPage()">
+        
+          ✕
+          
+        </button>
+        
+      </div>
       
       <!-- Login -->
       <div id="loginSection">
@@ -1746,49 +1757,49 @@
   </div>
   
   
-<div id="shareTournamentModal" class="share-modal" hidden>
-  <div class="share-dialog">
-    <button type="button" class="share-close" onclick="closeShareModal()">×</button>
-
-    <h3>Share Tournament</h3>
-    <p>Choose what you want to share</p>
-
-    <div class="share-options">
-      <button type="button" onclick="shareTournament('')">
-        <span>🏆</span>
-        <span>
-          <strong>Entire Tournament</strong>
-          <small>Share the tournament homepage</small>
-        </span>
-      </button>
-
-      <button type="button" onclick="shareTournament('table')">
-        <span>📊</span>
-        <span>
-          <strong>League Table</strong>
-          <small>Share the standings</small>
-        </span>
-      </button>
-
-      <button type="button" onclick="shareTournament('fixtures')">
-        <span>⚽</span>
-        <span>
-          <strong>Fixtures</strong>
-          <small>Share matches and fixtures</small>
-        </span>
-      </button>
-
-      <button type="button" onclick="shareTournament('stats')">
-        <span>📈</span>
-        <span>
-          <strong>Statistics</strong>
-          <small>Share tournament statistics</small>
-        </span>
-      </button>
+  <div id="shareTournamentModal" class="share-modal" hidden>
+    <div class="share-dialog">
+      <button type="button" class="share-close" onclick="closeShareModal()">×</button>
+      
+      <h3>Share Tournament</h3>
+      <p>Choose what you want to share</p>
+      
+      <div class="share-options">
+        <button type="button" onclick="shareTournament('')">
+          <span>🏆</span>
+          <span>
+            <strong>Entire Tournament</strong>
+            <small>Share the tournament homepage</small>
+          </span>
+        </button>
+        
+        <button type="button" onclick="shareTournament('table')">
+          <span>📊</span>
+          <span>
+            <strong>League Table</strong>
+            <small>Share the standings</small>
+          </span>
+        </button>
+        
+        <button type="button" onclick="shareTournament('fixtures')">
+          <span>⚽</span>
+          <span>
+            <strong>Fixtures</strong>
+            <small>Share matches and fixtures</small>
+          </span>
+        </button>
+        
+        <button type="button" onclick="shareTournament('stats')">
+          <span>📈</span>
+          <span>
+            <strong>Statistics</strong>
+            <small>Share tournament statistics</small>
+          </span>
+        </button>
+      </div>
     </div>
   </div>
-</div>
-
+  
   
   
   <!-- Overlay -->
@@ -3064,16 +3075,16 @@
   
   
   
-<script src="https://docs.opencv.org/4.x/opencv.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
-
-<script src="/storage.js"></script>
-<script src="/league.js"></script>
-<script src="/helper.js"></script>
-<script src="/knockout.js"></script>
-<script src="/test.js"></script>
-<script src="/api.js"></script>
-<script src="/auth.js"></script>
+  <script src="https://docs.opencv.org/4.x/opencv.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+  
+  <script src="/storage.js"></script>
+  <script src="/league.js"></script>
+  <script src="/helper.js"></script>
+  <script src="/knockout.js"></script>
+  <script src="/test.js"></script>
+  <script src="/api.js"></script>
+  <script src="/auth.js"></script>
 </body>
 
 </html>

@@ -3839,54 +3839,214 @@ async function extractMatchStats(file) {
 }
 
 
-async function loadGlobalRankings() {
-  if (globalRankings !== null) {
-    return globalRankings;
+
+let globalRankingsOffset = 0;
+let globalRankingsHasMore = false;
+let globalRankingsLoading = false;
+
+
+
+function renderGlobalRankings(rankings, append = false) {
+  const list = document.getElementById("globalRankingsList");
+  if (!list) return;
+
+  if (!rankings.length && !append) {
+    list.innerHTML = "<p>No rankings available yet.</p>";
+    return;
   }
-  
+
+  const currentUser = getCurrentUser();
+  const currentUserId = String(
+    currentUser?.id || currentUser?.user_id || ""
+  );
+
+  const html = rankings.map((player, index) => {
+    const position = globalRankingsOffset - rankings.length + index + 1;
+
+    const isCurrentUser =
+      currentUserId !== "" &&
+      String(player.id) === currentUserId;
+
+    let positionDisplay;
+
+ if (position === 1) {
+  positionDisplay = "🥇 Best";
+} else if (position === 2) {
+  positionDisplay = "🥈 2nd";
+} else if (position === 3) {
+  positionDisplay = "🥉 3rd";
+} else {
+  positionDisplay = "Rank " + position;
+}
+    const played = Number(player.played) || 0;
+    const wins = Number(player.wins) || 0;
+    const draws = Number(player.draws) || 0;
+    const losses = Number(player.losses) || 0;
+    const goalsFor = Number(player.goals_for) || 0;
+    const goalsAgainst = Number(player.goals_against) || 0;
+    const goalDifference = Number(player.goal_difference) || 0;
+    const winPercentage = Number(player.win_percentage) || 0;
+    const trophiesWon = Number(player.trophies_won) || 0;
+    const currentRating = Number(player.rating ?? 1500);
+    const highestRating = Number(player.highest_rating) || 0;
+    const highestRank = Number(player.highest_rank) || 0;
+
+    const profilePic = player.profile_pic
+      ? escapeHtml(player.profile_pic)
+      : "";
+
+    return `
+      <div class="global-ranking-row ${
+        isCurrentUser ? "current-ranking-user" : ""
+      }">
+        <div class="ranking-brand-tag">GALATICO ESPORT</div>
+
+          ${
+          profilePic
+            ?
+            `
+              <img
+                src="${profilePic}"
+                alt=""
+                class="ranking-card-image"
+                loading="lazy"
+                decoding="async"
+              >
+            ` :
+            `
+              <div class="ranking-card-avatar" aria-hidden="true">
+                <svg viewBox="0 0 120 140" class="ranking-avatar-silhouette">
+                  <circle cx="60" cy="44" r="24" />
+                  <path d="M18 134c0-25 19-42 42-42s42 17 42 42" />
+                </svg>
+                <span class="ranking-avatar-initial">
+                  ${escapeHtml((player.username || "P").charAt(0).toUpperCase())}
+                </span>
+              </div>
+            `
+        }
+        <div class="ranking-position">
+          ${positionDisplay}
+        </div>
+
+        <div class="ranking-player">
+          <div class="ranking-player-name">
+            ${escapeHtml(player.username || "Unknown Player")}
+            ${
+              isCurrentUser
+                ? '<span class="you-badge">YOU</span>'
+                : ""
+            }
+          </div>
+
+          <div class="ranking-stats ${
+            isCurrentUser ? "current-ranking-stats" : ""
+          }">
+            <span>Played: ${played}</span>
+            <span>W: ${wins}</span>
+            <span>D: ${draws}</span>
+            <span>L: ${losses}</span>
+            <span>GF: ${goalsFor}</span>
+            <span>GA: ${goalsAgainst}</span>
+            <span>GD: ${
+              goalDifference > 0 ? "+" + goalDifference : goalDifference
+            }</span>
+            <span>Win: ${winPercentage}%</span>
+            <span>Best Rating: ${highestRating || "N/A"}</span>
+            <span>Best Rank: ${
+              highestRank > 0 ? "#" + highestRank : "N/A"
+            }</span>
+          </div>
+        </div>
+
+        <div class="ranking-rating">
+          ${currentRating}
+        </div>
+
+        ${
+          trophiesWon > 0
+            ? `
+              <div class="ranking-trophies">
+                🏆 ${trophiesWon} ${
+                  trophiesWon === 1 ? "Trophy" : "Trophies"
+                }
+              </div>
+            `
+            : ""
+        }
+      </div>
+    `;
+  }).join("");
+
+  if (append) {
+    list.insertAdjacentHTML("beforeend", html);
+  } else {
+    list.innerHTML = html;
+  }
+}
+
+async function loadGlobalRankings(reset = false) {
+  if (globalRankingsLoading) return [];
+
+  if (reset) {
+    globalRankings = [];
+    globalRankingsOffset = 0;
+    globalRankingsHasMore = true;
+  }
+
+  if (!globalRankingsHasMore && !reset) {
+    return [];
+  }
+
   const token = getToken();
-  
+
   if (!token) {
     throw new Error("Authentication required.");
   }
-  
-  showLoader();
-  
+
+  globalRankingsLoading = true;
+
+  const limit = globalRankingsOffset === 0 ? 15 : 10;
+
   try {
+    showLoader();
     const res = await apiRequest(
-      `${API}/rankings/global`,
+      `${API}/rankings/global?limit=${limit}&offset=${globalRankingsOffset}`,
       {
         headers: {
           Authorization: `Bearer ${token}`
         }
       },
-      () => loadGlobalRankings()
+      () => loadGlobalRankings(reset)
     );
-    
-    if (!res) {
-      return [];
-    }
-    
+
+    if (!res) return [];
+
     const result = await res.json();
-    
+
     if (!res.ok || !result.success) {
       throw new Error(
-        result.message ||
-        "Failed to load global rankings."
+        result.message || "Failed to load global rankings."
       );
     }
-    
-    globalRankings = result.rankings || [];
-    
-    return globalRankings;
+
+    const newRankings = result.rankings || [];
+
+    globalRankings.push(...newRankings);
+    globalRankingsOffset += newRankings.length;
+    globalRankingsHasMore = Boolean(result.hasMore);
+
+    return newRankings;
   } finally {
     hideLoader();
+    globalRankingsLoading = false;
   }
 }
 
 async function showGlobalRankings() {
   goBackHome();
   leaveHome();
+
   document
     .querySelectorAll(
       "#mySection, #noticeSection, #publicSection, #hallOfFameSection"
@@ -3894,46 +4054,66 @@ async function showGlobalRankings() {
     .forEach(section => {
       section.style.display = "none";
     });
-  
-  const rankingsSection =
-    document.getElementById(
-      "globalRankingsSection"
-    );
-  
-  if (!rankingsSection) {
-    return;
-  }
-  
+
+  const rankingsSection = document.getElementById("globalRankingsSection");
+
+  if (!rankingsSection) return;
+
   rankingsSection.style.display = "block";
-  
-  const list =
-    document.getElementById(
-      "globalRankingsList"
-    );
-  
-  if (list) {
-    list.innerHTML =
-      "<p>Loading rankings...</p>";
-  }
-  
+
+  const list = document.getElementById("globalRankingsList");
+
+  if (!list) return;
+
+  list.innerHTML = "<p>Loading rankings...</p>";
+
   try {
-    const rankings =
-      await loadGlobalRankings();
-    
+    const rankings = await loadGlobalRankings(true);
+
     renderGlobalRankings(rankings);
-    
+
+    const button = document.getElementById("globalRankingsSeeMore");
+
+    if (button) {
+      button.style.display = globalRankingsHasMore ? "block" : "none";
+      button.textContent = "See More";
+    }
   } catch (error) {
-    console.error(
-      "Failed to load global rankings:",
-      error
-    );
-    
-    if (list) {
-      list.innerHTML =
-        "<p>Failed to load rankings.</p>";
+    console.error("Failed to load global rankings:", error);
+    list.innerHTML = "<p>Failed to load rankings.</p>";
+  }
+}
+
+async function loadMoreGlobalRankings() {
+  if (globalRankingsLoading || !globalRankingsHasMore) return;
+
+  const button = document.getElementById("globalRankingsSeeMore");
+
+  if (button) {
+    button.disabled = true;
+    button.textContent = "Loading...";
+  }
+
+  try {
+    const rankings = await loadGlobalRankings();
+
+    renderGlobalRankings(rankings, true);
+
+    if (button) {
+      button.style.display = globalRankingsHasMore ? "block" : "none";
+      button.disabled = false;
+      button.textContent = "See More";
+    }
+  } catch (error) {
+    console.error("Failed to load more rankings:", error);
+
+    if (button) {
+      button.disabled = false;
+      button.textContent = "Try Again";
     }
   }
 }
+
 
 function closeGlobalRankings() {
   const rankingsSection =
@@ -3961,135 +4141,7 @@ function closeGlobalRankings() {
 }
 
 
-function renderGlobalRankings(rankings) {
-  const list =
-    document.getElementById(
-      "globalRankingsList"
-    );
-  if (!list) return;
-  if (!rankings.length) {
-    list.innerHTML =
-      "<p>No rankings available yet.</p>";
-    return;
-  }
-  const currentUser =
-    getCurrentUser();
-  const currentUserId =
-    String(
-      currentUser?.id ||
-      currentUser?.user_id ||
-      ""
-    );
-  list.innerHTML =
-    rankings
-    .map((player, index) => {
-      const position = index + 1;
-      const isCurrentUser =
-        currentUserId !== "" &&
-        String(player.id) === currentUserId;
-      let positionDisplay;
-      if (position === 1) {
-        positionDisplay = "🥇";
-      } else if (position === 2) {
-        positionDisplay = "🥈";
-      } else if (position === 3) {
-        positionDisplay = "🥉";
-      } else {
-        positionDisplay = position;
-      }
-      const played =
-        Number(player.played) || 0;
-      const wins =
-        Number(player.wins) || 0;
-      const draws =
-        Number(player.draws) || 0;
-      const losses =
-        Number(player.losses) || 0;
-      const goalsFor =
-        Number(player.goals_for) || 0;
-      const goalsAgainst =
-        Number(player.goals_against) || 0;
-      const goalDifference =
-        Number(player.goal_difference) || 0;
-      const winPercentage =
-        Number(player.win_percentage) || 0;
-      const trophiesWon =
-        Number(player.trophies_won) || 0;
-      const currentRating =
-        Number(player.rating ?? 1500);
-      const highestRating =
-        Number(player.highest_rating) || 0;
-      const highestRank =
-        Number(player.highest_rank) || 0;
-      return `
-        <div class="global-ranking-row ${
-          isCurrentUser
-            ? "current-ranking-user"
-            : ""
-        }">
-          <div class="ranking-position">
-            ${positionDisplay}
-          </div>
-          <div class="ranking-player">
-            <div class="ranking-player-name">
-              ${escapeHtml(
-                player.username ||
-                "Unknown Player"
-              )}
-              ${
-                isCurrentUser
-                  ? '<span class="you-badge">YOU</span>'
-                  : ""
-              }
-            </div>
-            <div class="ranking-stats ${
-              isCurrentUser
-                ? "current-ranking-stats"
-                : ""
-            }">
-              <span>Played: ${played}</span>
-              <span>W: ${wins}</span>
-              <span>D: ${draws}</span>
-              <span>L: ${losses}</span>
-              <span>GF: ${goalsFor}</span>
-              <span>GA: ${goalsAgainst}</span>
-              <span>GD: ${
-                goalDifference > 0
-                  ? "+" + goalDifference
-                  : goalDifference
-              }</span>
-              <span>Win: ${winPercentage}%</span>
-              <span>Best Rating: ${
-                highestRating || "N/A"
-              }</span>
-              <span>Best Rank: ${
-                highestRank > 0
-                  ? "#" + highestRank
-                  : "N/A"
-              }</span>
-            </div>
-          </div>
-          <div class="ranking-rating">
-            ${currentRating}
-          </div>
-          ${
-            trophiesWon > 0
-              ? `
-                <div class="ranking-trophies" title="Championship trophies won">
-                  🏆 ${trophiesWon} ${
-                    trophiesWon === 1
-                      ? "Trophy Won"
-                      : "Trophies Won"
-                  }
-                </div>
-              `
-              : ""
-          }
-        </div>
-      `;
-    })
-    .join("");
-}
+
 async function getMySquad() {
   const token = getToken();
   const res = await apiRequest(
@@ -12602,8 +12654,11 @@ async function showLiveInvitation(broadcast) {
 
 
 async function initializePublicTournamentRoute() {
-  const path = window.location.pathname;
 
+  const path = window.location.pathname;
+if (path === "/" || path === "/index.html") {
+  return false;
+}
   const notFound = () => {
     showAlert("The page you're looking for could not be found. Please check the link or try again later.");
     return true;
@@ -12625,10 +12680,11 @@ async function initializePublicTournamentRoute() {
 
   const parts = path.split("/").filter(Boolean);
 
-  if (parts.length < 2 || parts.length > 3) {
-    return notFound();
-  }
+if (parts.length === 0) return false;
 
+if (parts.length < 2 || parts.length > 3) {
+  return notFound();
+}
   const [competitionSlug, tournamentSlug, section] = parts;
 
   if (section && !["table", "fixtures", "stats"].includes(section)) {

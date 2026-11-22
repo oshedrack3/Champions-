@@ -67,6 +67,14 @@ function startGalaticoSplash() {
   
   if (!splash) return;
   
+  if (sessionStorage.getItem("galaticoSplashShown")) {
+    splash.remove();
+    return;
+  }
+  
+  splash.style.display = "flex";
+  sessionStorage.setItem("galaticoSplashShown", "true");
+  
   const minimumDuration = 2600;
   const startTime = performance.now();
   
