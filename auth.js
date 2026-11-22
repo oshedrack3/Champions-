@@ -1,3 +1,5 @@
+const LOGOUT_RELOAD_KEY = "galaticoLogoutReload";
+
 async function handleLogin() {
   const loginValue =
     document.getElementById("loginInput").value.trim();
@@ -70,7 +72,12 @@ async function handlePasswordReset(email, phone, password) {
 }
 async function handleLogout() {
   closeMenu();
-  const confirmed = await showConfirmModal("Are you sure you want to log out?", "Logout", "Cancel");
+  
+  const confirmed = await showConfirmModal(
+    "Are you sure you want to log out?",
+    "Logout",
+    "Cancel"
+  );
   
   if (!confirmed) return;
   
@@ -79,9 +86,7 @@ async function handleLogout() {
   try {
     await logout();
   } finally {
-    goToLoginPage();
     hideLoader();
-    
   }
 }
 async function login(login, password) {
@@ -430,8 +435,6 @@ async function testPushNotification() {
     await showAlert(error.message);
   }
 }
-
-
 async function logout() {
   const token = getToken();
   
@@ -439,7 +442,9 @@ async function logout() {
     if (token) {
       await fetch(`${API}/auth/logout`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json"
+        },
         body: JSON.stringify({ token })
       });
     }
@@ -449,12 +454,10 @@ async function logout() {
   
   clearSession();
   
-  document.getElementById("tournamentList").innerHTML = "";
-  hideAllPages();
+  localStorage.setItem(LOGOUT_RELOAD_KEY, "true");
   
-  goToLoginPage();
+  window.location.reload();
 }
-
 function getCurrentUser() {
   return getSession()?.user || null;
 }

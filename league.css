@@ -2283,3 +2283,183 @@
 .cupSetupHeader h2 {
   text-align: left;
 }
+
+
+.menu-profile {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 15px;
+  margin-bottom: 10px;
+}
+
+.menu-profile-avatar {
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
+  border-radius: 50%;
+  background: #2563eb;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+.menu-profile-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: inherit;
+}
+
+.btn-login {
+  display: block;
+  width: calc(100% - 30px);
+  margin: 18px 15px 12px;
+  padding: 11px 14px;
+  border: none;
+  border-radius: 8px;
+  background: #2563eb;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+
+
+.auth-header {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+}
+
+
+.auth-card .auth-close {
+  position: absolute;
+  right: 0;
+  top: 6px;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: none;
+  background: #ddd;
+  color: #111;
+  font-size: 24px;
+  line-height: 1;
+  cursor: pointer;
+  box-shadow: none;
+  border-radius: 50%;
+}
+
+.auth-card .auth-close:hover {
+  background: #f1f5f9;
+  color: #111827;
+}
+
+
+.share-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(5px);
+}
+
+.share-modal[hidden] {
+  display: none;
+}
+
+.share-dialog {
+  position: relative;
+  width: 100%;
+  max-width: 400px;
+  padding: 24px 20px;
+  background: #fff;
+  border-radius: 16px;
+  color: #172033;
+}
+
+.share-dialog h3 {
+  margin: 0 35px 6px 0;
+  font-size: 19px;
+}
+
+.share-dialog > p {
+  margin: 0 0 20px;
+  color: #64748b;
+  font-size: 13px;
+}
+
+.share-close {
+  position: absolute;
+  top: 12px;
+  right: 14px;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 50%;
+  background: #f1f5f9;
+  color: #475569;
+  font-size: 23px;
+  cursor: pointer;
+}
+
+.share-options {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.share-options button {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  padding: 13px;
+  border: 1px solid #e2e8f0;
+  border-radius: 11px;
+  background: #fff;
+  color: #172033;
+  text-align: left;
+  cursor: pointer;
+}
+
+.share-options button > span:first-child {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  border-radius: 10px;
+  background: #eff6ff;
+  font-size: 20px;
+}
+
+.share-options button strong,
+.share-options button small {
+  display: block;
+}
+
+.share-options button strong {
+  font-size: 14px;
+}
+
+.share-options button small {
+  margin-top: 4px;
+  color: #64748b;
+  font-size: 12px;
+}
+
+.share-options button:active {
+  background: #f8fafc;
+}

@@ -1279,11 +1279,20 @@
   
   
   <!-- Authentication -->
-  <div id="authPage">
+  <div id="authPage" style="display:none">
     
     <div class="auth-card">
+       <div class="auth-header">
+    
+    <img src="galaticoLogo1.png" alt="Galatico Esports" class="auth-logo">
+    
+    <button type="button" class="auth-close" onclick="goToCompetitionPage()">
+    
+      ✕
       
-      <img src="galaticoLogo1.png" alt="Galatico Esports" class="auth-logo">
+    </button>
+    
+  </div>
       
       <!-- Login -->
       <div id="loginSection">
@@ -1700,7 +1709,7 @@
   
   
   
-  <div id="shareModal" class="share-modal">
+  <div id="shareModal" class="share-modal" style="display: none;">
     <div class="share-modal-content">
       
       <div class="share-header">
@@ -1735,6 +1744,51 @@
       
     </div>
   </div>
+  
+  
+<div id="shareTournamentModal" class="share-modal" hidden>
+  <div class="share-dialog">
+    <button type="button" class="share-close" onclick="closeShareModal()">×</button>
+
+    <h3>Share Tournament</h3>
+    <p>Choose what you want to share</p>
+
+    <div class="share-options">
+      <button type="button" onclick="shareTournament('')">
+        <span>🏆</span>
+        <span>
+          <strong>Entire Tournament</strong>
+          <small>Share the tournament homepage</small>
+        </span>
+      </button>
+
+      <button type="button" onclick="shareTournament('table')">
+        <span>📊</span>
+        <span>
+          <strong>League Table</strong>
+          <small>Share the standings</small>
+        </span>
+      </button>
+
+      <button type="button" onclick="shareTournament('fixtures')">
+        <span>⚽</span>
+        <span>
+          <strong>Fixtures</strong>
+          <small>Share matches and fixtures</small>
+        </span>
+      </button>
+
+      <button type="button" onclick="shareTournament('stats')">
+        <span>📈</span>
+        <span>
+          <strong>Statistics</strong>
+          <small>Share tournament statistics</small>
+        </span>
+      </button>
+    </div>
+  </div>
+</div>
+
   
   
   <!-- Overlay -->

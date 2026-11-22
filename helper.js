@@ -446,6 +446,7 @@ function handleMenuAction(action) {
   closeMenu();
   
   const actions = {
+    sharelink:openShareModal,
     champFlyer: showCurrentTournamentChampionsThumbnail,
     showFlyer: showCurrentTournamentFlyer,
     shareTable: shareTable,
@@ -533,7 +534,7 @@ const menuConfig = {
     {
       label: "View Rules and Regulations",
       action: "viewRules",
-      roles: ["admin", "player"]
+      roles: ["admin", "player", "guest"]
     },
     {
       label: "Import Teams",
@@ -572,7 +573,12 @@ const menuConfig = {
       label: "Share Standings",
       action: "shareTable",
       roles: ["admin"]
-    }
+    },
+      {
+    label: "Share Tournament",
+    action: "sharelink",
+    roles: ["admin", "player", "guest"]
+  }
   ],
 
   league: [
@@ -635,8 +641,28 @@ function renderMenu() {
 
   if (!menu) return;
 
-  const role = APP_MODE || "view";
+  const user = getCurrentUser();
+  const isGuest = user?.role === "guest" || !user;
+  const role = isGuest ? "guest" : (APP_MODE || "view");
   const isCompetition = currentPage === "competition";
+
+  const initials = getProfileInitials(user);
+  const username = user?.username || "Guest";
+
+  const profileHeader = `
+    <div class="menu-profile">
+      <div class="menu-profile-avatar">${initials}</div>
+      <span class="menu-profile-name">${username}</span>
+    </div>
+  `;
+
+  const accountButton = isGuest ?
+    `
+      <button class="btn-login" onclick="goToLoginPage()">
+        Login / Register
+      </button>
+    ` :
+    "";
 
   const filterItems = items => items.filter(item =>
     !item.roles ||
@@ -681,49 +707,66 @@ function renderMenu() {
   `;
 
   const renderGroup = group => {
-  const sourceItems = menuConfig[group.key] || [];
-  
-  const items = group.key === "tournamentManagement" ?
-    sourceItems :
-    filterItems(sourceItems);
-  
-  if (!items.length) return "";
-  
-  return `
-    <div class="menu-group">
-      <button
-        type="button"
-        class="menu-group-toggle"
-        onclick="this.parentElement.classList.toggle('expanded')">
-        <span>${group.label}</span>
-        <span class="menu-group-arrow">⌄</span>
-      </button>
+    const sourceItems = menuConfig[group.key] || [];
 
-      <div class="menu-group-content">
-        ${items.map(renderItem).join("")}
+    const items = group.key === "tournamentManagement" ?
+      sourceItems :
+      filterItems(sourceItems);
+
+    if (!items.length) return "";
+
+    return `
+      <div class="menu-group">
+        <button
+          type="button"
+          class="menu-group-toggle"
+          onclick="this.parentElement.classList.toggle('expanded')">
+          <span>${group.label}</span>
+          <span class="menu-group-arrow">⌄</span>
+        </button>
+
+        <div class="menu-group-content">
+          ${items.map(renderItem).join("")}
+        </div>
       </div>
-    </div>
-  `;
-};
+    `;
+  };
+
   if (isCompetition) {
     menu.innerHTML = `
+      ${profileHeader}
       <div class="menu-header">COMPETITION</div>
       ${standalone.map(renderItem).join("")}
-      <button class="btn-logout" style="display:block" onclick="handleLogout()">
-        Logout
-      </button>
+
+      ${isGuest ? accountButton : `
+        <button class="btn-logout" style="display:block" onclick="handleLogout()">
+          Logout
+        </button>
+      `}
     `;
     return;
   }
 
   menu.innerHTML = `
+    ${profileHeader}
     <div class="menu-header">TOURNAMENT</div>
     ${standalone.map(renderItem).join("")}
     ${sharingItems.map(renderItem).join("")}
     ${groups.map(renderGroup).join("")}
+    ${accountButton}
   `;
 }
-
+function getProfileInitials(user) {
+  const name = String(user?.username || user?.full_name || "Guest").trim();
+  
+  const parts = name.split(/\s+/).filter(Boolean);
+  
+  if (parts.length > 1) {
+    return (parts[0][0] + parts[1][0]).toUpperCase();
+  }
+  
+  return name.substring(0, 2).toUpperCase();
+}
 
 function openAddTeam() {
   closeProfileModal();
@@ -1214,6 +1257,7 @@ function setAppMode(mode) {
 }
 
 function goToLoginPage() {
+  closeMenu()
   document.getElementById("authPage").style.display = "flex";
   
   showLogin();

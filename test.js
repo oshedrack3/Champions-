@@ -1793,43 +1793,22 @@ function getGroupedAndSortedTournaments(tournaments) {
 }
 
 
+
+
 function createCompetitionCard(competition) {
   const div = document.createElement("div");
-  
+
   div.className = "competition-card";
   div.dataset.id = competition.id;
-  
+
   const imgId = `competition-img-${competition.id}`;
-  
-  const tournamentCount =
-    getCompetitionTournamentCount(competition);
-  
-  const isAdmin =
-    getCurrentUser()?.role !== "player";
-  
+  const tournamentCount = getCompetitionTournamentCount(competition);
+  const isAdmin = getCurrentUser()?.role !== "player";
+
   div.innerHTML = `
     <div class="competition-card-content">
       <div class="competition-info">
         <h3 class="competition-name"></h3>
-      </div>
-
-      <div class="competition-card-top">
-        ${
-          isAdmin
-            ? `
-              <button
-                type="button"
-                class="competition-menu-btn data-admin"
-                aria-label="Competition options"
-                aria-expanded="false"
-              >
-                <span></span>
-                <span></span>
-                <span></span>
-              </button>
-            `
-            : ""
-        }
       </div>
 
       <div class="competition-image">
@@ -1844,161 +1823,179 @@ function createCompetitionCard(competition) {
 
     <div class="competition-card-footer">
       <div class="competition-footer-info">
-        <span class="competition-footer-icon">
-          ◈
-        </span>
-
+        <span class="competition-footer-icon">◈</span>
         <span class="competition-footer-label"></span>
       </div>
-
-      <span class="competition-card-arrow">
-        &#8599;
-      </span>
     </div>
 
-    <div
-      class="menu-dropdown hidden"
-      id="menu-${competition.id}"
-    >
-      <button
-        type="button"
-        class="menu-itemList edit data-admin"
-      >
-        Edit Competition
-      </button>
+    ${
+      isAdmin
+        ? `
+          <div
+            class="menu-dropdown hidden"
+            id="menu-${competition.id}"
+          >
+            <button
+              type="button"
+              class="menu-itemList edit data-admin"
+            >
+              Edit Competition
+            </button>
 
-      <button
-        type="button"
-        class="menu-itemList delete data-admin"
-      >
-        Delete Competition
-      </button>
-    </div>
+            <button
+              type="button"
+              class="menu-itemList delete data-admin"
+            >
+              Delete Competition
+            </button>
+          </div>
+        `
+        : ""
+    }
   `;
-  
+
   div.querySelector(".competition-name").textContent =
     competition.name || "Unnamed Competition";
-  
+
   div.querySelector(".competition-footer-label").textContent =
     `${tournamentCount} ${
       tournamentCount === 1 ? "TOURNAMENT" : "TOURNAMENTS"
     }`;
-  
-  const menuBtn =
-    div.querySelector(".competition-menu-btn");
-  
-  const dropdown =
-    div.querySelector(".menu-dropdown");
-  
-  const editBtn =
-    div.querySelector(".menu-itemList.edit");
-  
-  const deleteBtn =
-    div.querySelector(".menu-itemList.delete");
-  
-  menuBtn?.addEventListener("click", e => {
-    e.stopPropagation();
-    
-    document
-      .querySelectorAll(".menu-dropdown")
-      .forEach(menu => {
-        if (menu !== dropdown) {
-          menu.classList.add("hidden");
-          
-          const otherBtn = menu
-            .closest(".competition-card")
-            ?.querySelector(".competition-menu-btn");
-          
-          otherBtn?.setAttribute(
-            "aria-expanded",
-            "false"
-          );
+
+  const dropdown = div.querySelector(".menu-dropdown");
+  const editBtn = div.querySelector(".menu-itemList.edit");
+  const deleteBtn = div.querySelector(".menu-itemList.delete");
+
+  let holdTimer;
+  let holdTriggered = false;
+  let menuOpen = false;
+
+  div.style.userSelect = "none";
+  div.style.webkitUserSelect = "none";
+  div.style.webkitTouchCallout = "none";
+
+  function closeOtherMenus() {
+    document.querySelectorAll(".menu-dropdown").forEach(menu => {
+      if (menu !== dropdown) {
+        menu.classList.add("hidden");
+
+        const otherCard = menu.closest(".competition-card");
+        if (otherCard) {
+          otherCard.dataset.menuOpen = "false";
         }
-      });
-    
-    const isOpening =
-      dropdown.classList.contains("hidden");
-    
-    dropdown.classList.toggle("hidden");
-    
-    menuBtn.setAttribute(
-      "aria-expanded",
-      String(isOpening)
-    );
+      }
+    });
+  }
+
+  function showMenu() {
+    if (!isAdmin) return;
+
+    holdTriggered = true;
+    menuOpen = true;
+
+    closeOtherMenus();
+    dropdown.classList.remove("hidden");
+    div.dataset.menuOpen = "true";
+  }
+
+  function closeMenu() {
+    if (!dropdown) return;
+
+    dropdown.classList.add("hidden");
+    menuOpen = false;
+    div.dataset.menuOpen = "false";
+  }
+
+  function startHold() {
+    if (!isAdmin || menuOpen) return;
+
+    holdTriggered = false;
+
+    holdTimer = setTimeout(() => {
+      showMenu();
+    }, 550);
+  }
+
+  function cancelHold() {
+    clearTimeout(holdTimer);
+  }
+
+  div.addEventListener("pointerdown", e => {
+    if (e.target.closest(".menu-dropdown")) return;
+    if (e.button !== 0) return;
+
+    startHold();
   });
-  
+
+  div.addEventListener("pointerup", cancelHold);
+  div.addEventListener("pointerleave", cancelHold);
+  div.addEventListener("pointercancel", cancelHold);
+
+  div.addEventListener("contextmenu", e => {
+    if (!isAdmin) return;
+
+    e.preventDefault();
+    cancelHold();
+    showMenu();
+  });
+
   editBtn?.addEventListener("click", e => {
     e.stopPropagation();
-    
-    dropdown.classList.add("hidden");
-    
-    menuBtn?.setAttribute(
-      "aria-expanded",
-      "false"
-    );
-    
+    closeMenu();
     editCompetition(competition.id);
   });
-  
+
   deleteBtn?.addEventListener("click", e => {
     e.stopPropagation();
-    
-    dropdown.classList.add("hidden");
-    
-    menuBtn?.setAttribute(
-      "aria-expanded",
-      "false"
-    );
-    
+    closeMenu();
     deleteCompetition(competition.id);
   });
-  
+
   div.addEventListener("click", e => {
-    if (
-      e.target.closest(".menu-dropdown") ||
-      e.target.closest(".competition-menu-btn")
-    ) {
+    if (e.target.closest(".menu-dropdown")) return;
+
+    if (holdTriggered || menuOpen) {
+      closeMenu();
+      holdTriggered = false;
+      e.stopPropagation();
       return;
     }
-    
+
     openCompetition(competition.id);
   });
-  
+
+  document.addEventListener("click", e => {
+    if (menuOpen && !div.contains(e.target)) {
+      closeMenu();
+      holdTriggered = false;
+    }
+  });
+
   const logoUrl = competition.logo_url || "";
-  
+
   if (logoUrl) {
-    const placeholder =
-      div.querySelector(`#${imgId}`);
-    
+    const placeholder = div.querySelector(`#${imgId}`);
+
     if (placeholder) {
       const img = document.createElement("img");
-      
+
       img.src = logoUrl;
-      
-      img.alt =
-        `${competition.name || "Competition"} logo`;
-      
-      img.className =
-        "competition-image-img";
-      
+      img.alt = `${competition.name || "Competition"} logo`;
+      img.className = "competition-image-img";
       img.loading = "lazy";
-      
+      img.draggable = false;
+
       img.onerror = () => {
-        const fallback =
-          document.createElement("span");
-        
-        fallback.className =
-          "competition-image-placeholder";
-        
+        const fallback = document.createElement("span");
+        fallback.className = "competition-image-placeholder";
         fallback.textContent = "🏆";
-        
         img.replaceWith(fallback);
       };
-      
+
       placeholder.replaceWith(img);
     }
   }
-  
+
   return div;
 }
 
@@ -2083,44 +2080,68 @@ function renderTournamentsByGroup(tournaments, currentUser, container) {
 }
 
 function setupTournamentMenu(div, tournament) {
-  const menuBtn = div.querySelector(".tournament-menu-btn");
+  const trigger = div.querySelector(".tournament-menu-trigger");
   const dropdown = div.querySelector(`#menu-${tournament.id}`);
   const editBtn = div.querySelector(".menu-itemList.edit");
   const deleteBtn = div.querySelector(".menu-itemList.delete");
   
-  menuBtn?.addEventListener("click", (e) => {
-    e.stopPropagation();
+  if (!trigger || !dropdown) return;
+  
+  let pressTimer = null;
+  let longPressed = false;
+  
+  const cancelPress = () => {
+    clearTimeout(pressTimer);
+    pressTimer = null;
+  };
+  
+  const startPress = (e) => {
+    if (e.target.closest("button, a")) return;
     
-    document.querySelectorAll(".menu-dropdown").forEach(el => {
-      if (el !== dropdown) {
-        el.classList.add("hidden");
-      }
-    });
+    cancelPress();
+    longPressed = false;
     
-    dropdown?.classList.toggle("hidden");
-  });
+    pressTimer = setTimeout(() => {
+      longPressed = true;
+      
+      document.querySelectorAll(".menu-dropdown").forEach(menu => {
+        if (menu !== dropdown) {
+          menu.classList.add("hidden");
+        }
+      });
+      
+      dropdown.classList.remove("hidden");
+    }, 600);
+  };
+  
+  trigger.addEventListener("touchstart", startPress, { passive: true });
+  trigger.addEventListener("touchend", cancelPress);
+  trigger.addEventListener("touchmove", cancelPress);
+  trigger.addEventListener("touchcancel", cancelPress);
+  
+  trigger.addEventListener("mousedown", startPress);
+  trigger.addEventListener("mouseup", cancelPress);
+  trigger.addEventListener("mouseleave", cancelPress);
+  
+  div.addEventListener("click", (e) => {
+    if (longPressed) {
+      e.stopPropagation();
+      longPressed = false;
+    }
+  }, true);
   
   editBtn?.addEventListener("click", (e) => {
     e.stopPropagation();
-    
-    if (typeof editTournament === "function") {
-      editTournament(tournament.id);
-    }
-    
-    dropdown?.classList.add("hidden");
+    editTournament(tournament.id);
+    dropdown.classList.add("hidden");
   });
   
   deleteBtn?.addEventListener("click", (e) => {
     e.stopPropagation();
-    
-    if (typeof deleteTournament === "function") {
-      deleteTournament(tournament.id);
-    }
-    
-    dropdown?.classList.add("hidden");
+    deleteTournament(tournament.id);
+    dropdown.classList.add("hidden");
   });
 }
-
 function setupPublicJoinAction(div, tournament) {
   const joinBtn = div.querySelector(".join-tournament-btn");
   
@@ -2130,38 +2151,7 @@ function setupPublicJoinAction(div, tournament) {
   });
 }
 
-function setupTournamentClick(div, tournament, disableCardClick = false) {
-  div.addEventListener("click", (e) => {
-    if (disableCardClick) return;
-    
-    if (e.target.closest(".menu-dropdown")) {
-      return;
-    }
-    
-    if (typeof exportMode !== "undefined" && exportMode) {
-      if (typeof toggleSelect === "function") {
-        toggleSelect(tournament.id);
-      }
-      return;
-    }
-    
-    openTournament(tournament.id);
-  });
-}
 
-function setupTournamentMenuListener() {
-  if (window._tournamentMenuListener) {
-    return;
-  }
-  
-  document.addEventListener("click", () => {
-    document.querySelectorAll(".menu-dropdown").forEach(el => {
-      el.classList.add("hidden");
-    });
-  });
-  
-  window._tournamentMenuListener = true;
-}
 
 function renderEmptyTournamentState(container) {
   
@@ -2196,164 +2186,6 @@ function canJoinTournament(tournament, currentUser) {
   return !isPrivate && !isJoined && !hasPendingInvite;
 }
 
-function createTournamentCard(tournament, currentUser) {
-  const div = document.createElement("div");
-  
-  div.className = "tournament-card";
-  
-  div.dataset.id = tournament.id;
-  
-  const imgId =
-    `tournament-img-${tournament.id}`;
-  
-  const playerInfo =
-    tournament.players?.[currentUser?.uid];
-  
-  const pendingInvitation =
-    currentUser?.role === "player" &&
-    playerInfo?.hasNewInvitation === true;
-  
-  const showPublicJoin =
-    canJoinTournament(
-      tournament,
-      currentUser
-    );
-  
-  const status =
-    (
-      tournament.season_status ||
-      tournament.seasonStatus ||
-      tournament.status ||
-      ""
-    ).toLowerCase();
-  
-  const statusClass =
-    status === "active" ?
-    "active" :
-    status === "upcoming" ?
-    "upcoming" :
-    status === "completed" ?
-    "completed" :
-    "";
-  
-  div.innerHTML = `
-    <div class="card-header">
-
-      <div class="tournament-meta">
-
-        <div class="tournament-format">
-          ${tournament.format || "League"}
-        </div>
-
-        <div class="tournament-season">
-          ${tournament.season || "Season 1"}
-        </div>
-
-        <div class="tournament-status ${statusClass}">
-          ${
-            tournament.season_status ||
-            tournament.seasonStatus ||
-            tournament.status ||
-            ""
-          }
-        </div>
-
-      </div>
-
-      ${
-        pendingInvitation || showPublicJoin
-          ? ""
-          : `
-            <div class="tournament-menu-btn data-admin">
-              ☰
-            </div>
-          `
-      }
-
-    </div>
-
-    <div class="tournament-image">
-      <span
-        id="${imgId}"
-        class="tournament-image-placeholder"
-      >
-        🏆
-      </span>
-    </div>
-
-    <h3 class="tournament-name">
-      ${tournament.name}
-    </h3>
-
-    ${
-      pendingInvitation
-        ? `
-          <div class="invitation-actions">
-            <button class="accept-btn">
-              Join
-            </button>
-
-            <button class="decline-btn">
-              Decline
-            </button>
-          </div>
-        `
-        : showPublicJoin
-          ? `
-            <div class="public-actions">
-              <button class="join-tournament-btn">
-                Join
-              </button>
-            </div>
-          `
-          : `
-            <div
-              class="menu-dropdown hidden"
-              id="menu-${tournament.id}"
-            >
-              <div class="menu-itemList edit data-admin">
-                Edit
-              </div>
-
-              <div class="menu-itemList delete data-admin">
-                Delete
-              </div>
-            </div>
-          `
-    }
-  `;
-  
-  if (pendingInvitation) {
-    setupInvitationActions(
-      div,
-      tournament
-    );
-  } else if (showPublicJoin) {
-    setupPublicJoinAction(
-      div,
-      tournament
-    );
-  } else {
-    setupTournamentMenu(
-      div,
-      tournament
-    );
-  }
-  
-  setupTournamentClick(
-    div,
-    tournament,
-    pendingInvitation || showPublicJoin
-  );
-  
-  loadTournamentImage(
-    tournament,
-    imgId,
-    div
-  );
-  
-  return div;
-}
 
 function setupPublicJoinAction(div, tournament) {
   const joinBtn = div.querySelector(".join-tournament-btn");
@@ -2439,45 +2271,6 @@ function setupInvitationActions(div, tournament) {
   
 }
 
-function setupTournamentClick(
-  div,
-  tournament,
-  pendingInvitation
-) {
-  
-  div.addEventListener("click", (e) => {
-    
-    
-    if (pendingInvitation) return;
-    
-    
-    if (e.target.closest(".menu-dropdown")) {
-      return;
-    }
-    
-    
-    if (
-      typeof exportMode !== "undefined" &&
-      exportMode
-    ) {
-      
-      if (typeof toggleSelect === "function") {
-        
-        toggleSelect(tournament.id);
-        
-      }
-      
-      
-      return;
-      
-    }
-    
-    
-    openTournament(tournament.id);
-    
-  });
-  
-}
 
 function setupTournamentMenuListener() {
   
@@ -2556,9 +2349,7 @@ function createTournamentCard(tournament, currentUser) {
 
       </div>
 
-      <div class="tournament-menu-btn data-admin">
-        ☰
-      </div>
+    <div class="tournament-menu-trigger data-admin"></div>
 
     </div>
 

@@ -345,72 +345,110 @@ function getTournamentFromMemory(id) {
 
 
 
-async function openTournament(id) {
+async function openTournament(
+  id,
+  suppliedTournament = null,
+  options = {}
+) {
   showLoader();
-
+  
   try {
-    const tournament = await getTournament(id);
-    const rules = await getTournamentRules(id);
-
-    if (rules && rules.rules && !rules.accepted) {
-      hideLoader();
-
-      const agreed = await showTournamentRulesModal(
-        rules.rules,
-        true
-      );
-
-      if (!agreed) return;
-
-      showLoader();
-      await acceptTournamentRules(id);
+    const tournament =
+      suppliedTournament || await getTournament(id);
+    
+    if (!tournament) {
+      throw new Error("Tournament not found.");
     }
-
+    
+    if (
+      !options.publicView &&
+      getCurrentUser()?.role !== "guest"
+    ) {
+      const rules = await getTournamentRules(id);
+      
+      if (rules && rules.rules && !rules.accepted) {
+        hideLoader();
+        
+        const agreed = await showTournamentRulesModal(
+          rules.rules,
+          true
+        );
+        
+        if (!agreed) return;
+        
+        showLoader();
+        await acceptTournamentRules(id);
+      }
+    }
+    
     currentTournament = tournament;
-
+    
     loadTournamentImage(
       tournament,
       "competitionLogo",
       document.querySelector(".competition-identity")
     );
-
-    const selector = document.getElementById("competitionTournamentSelector");
-    if (selector) selector.value = String(tournament.id);
-
+    
+    const selector = document.getElementById(
+      "competitionTournamentSelector"
+    );
+    
+    if (selector) {
+      selector.value = String(tournament.id);
+    }
+    
     loadSubmissionDeadlineCountdown(tournament);
     startTournamentEvents(id);
-
+    
     const name = tournament.name;
     const season = tournament.season || "";
-
-    const titleElement = document.getElementById("competitionTournamentTitle");
-    const seasonElement = document.getElementById("competitionTournamentSeason");
-    const statusElement = document.getElementById("competitionSeasonStatus");
+    
+    const titleElement = document.getElementById(
+      "competitionTournamentTitle"
+    );
+    
+    const seasonElement = document.getElementById(
+      "competitionTournamentSeason"
+    );
+    
+    const statusElement = document.getElementById(
+      "competitionSeasonStatus"
+    );
+    
     const leagueName = document.getElementById("leagueName");
-    const tableTournamentName = document.getElementById("tableTournamentName");
-    const tournamentSeason = document.getElementById("tournamentSeason");
-
+    
+    const tableTournamentName = document.getElementById(
+      "tableTournamentName"
+    );
+    
+    const tournamentSeason = document.getElementById(
+      "tournamentSeason"
+    );
+    
     if (titleElement) titleElement.textContent = name;
     if (seasonElement) seasonElement.textContent = season;
-
+    
     if (statusElement) {
-      const status = (tournament.season_status || "upcoming").toLowerCase();
-
+      const status = (
+        tournament.season_status || "upcoming"
+      ).toLowerCase();
+      
       statusElement.textContent = status;
       statusElement.className = `season-status-badge ${status}`;
     }
-
+    
     if (leagueName) leagueName.textContent = name;
     if (tableTournamentName) tableTournamentName.textContent = name;
     if (tournamentSeason) tournamentSeason.textContent = season;
-
+    
     goToTournamentPage();
+    
     await rebuildTableFromMatches();
-
+    
   } catch (err) {
     console.error("openTournament error:", err);
     showAlert(err.message || "Failed to open tournament.");
-
+    
   } finally {
     hideLoader();
   }
@@ -6392,4 +6430,56 @@ function setupNoticeHoldToDelete(element, notice) {
   element.addEventListener("contextmenu", e => {
     e.preventDefault();
   });
+}
+
+
+
+function openShareModal() {
+  document.getElementById("shareTournamentModal").hidden = false;
+}
+function closeShareModal() {
+  document.getElementById("shareTournamentModal").hidden = true;
+}
+async function shareTournament(section = "") {
+  if (!currentCompetition?.public_slug || !currentTournament?.public_slug) {
+    showAlert("Tournament sharing information is unavailable.");
+    return;
+  }
+
+  const path = [
+    currentCompetition.public_slug,
+    currentTournament.public_slug,
+    section
+  ].filter(Boolean).map(encodeURIComponent).join("/");
+
+  const shareUrl = `${window.location.origin}/${path}`;
+
+  const sectionNames = {
+    "": "Tournament",
+    table: "League Table",
+    fixtures: "Fixtures",
+    stats: "Statistics"
+  };
+
+  const shareTitle = `${currentTournament.name} - ${sectionNames[section]}`;
+
+  try {
+    closeShareModal();
+
+    if (navigator.share) {
+      await navigator.share({
+        title: shareTitle,
+        text: `View ${shareTitle} on Galatico eSport.`,
+        url: shareUrl
+      });
+    } else {
+      await navigator.clipboard.writeText(shareUrl);
+      showAlert("Share link copied successfully.");
+    }
+  } catch (error) {
+    if (error.name !== "AbortError") {
+      console.error("Tournament sharing error:", error);
+      showAlert("Unable to share tournament link.");
+    }
+  }
 }

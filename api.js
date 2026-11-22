@@ -103,13 +103,38 @@ function clearSession() {
   currentReviewSubmission = null;
 }
 
-
+async function createGuestSession() {
+  const res = await fetch(`${API}/auth/guest`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    }
+  });
+  
+  const result = await res.json();
+  
+  if (!res.ok || !result.success || !result.token) {
+    throw new Error(result.message || "Unable to create guest session.");
+  }
+  
+  saveSession(result.token, result.user);
+  
+  switchAppMode();
+  
+  return true;
+}
 async function verifySession() {
   const token = getToken();
   
   if (!token) {
     APP_MODE = "view";
-    return false;
+    
+    try {
+      return await createGuestSession();
+    } catch (err) {
+      console.error("Guest session creation failed:", err);
+      return false;
+    }
   }
   
   try {
@@ -124,9 +149,8 @@ async function verifySession() {
     const result = await res.json();
     
     if (!res.ok || !result.success) {
-      APP_MODE = "view";
       clearSession();
-      return false;
+      return await createGuestSession();
     }
     
     saveSession(token, result.user);
@@ -143,13 +167,10 @@ async function verifySession() {
     
   } catch (err) {
     console.error("Session verification failed:", err);
-    
-    APP_MODE = "view";
-    clearSession();
-    
     return false;
   }
 }
+
 async function handleRegister() {
   const username = document.getElementById("registerUsername").value.trim();
   const email = document.getElementById("registerEmail").value.trim();
@@ -511,6 +532,27 @@ async function getTournament(id) {
   
   return result.tournament;
 }
+
+async function getPublicTournament(competitionSlug, tournamentSlug) {
+  const res = await apiRequest(
+    `${API}/public/${encodeURIComponent(competitionSlug)}/${encodeURIComponent(tournamentSlug)}`,
+    {},
+    () => getPublicTournament(competitionSlug, tournamentSlug)
+  );
+
+  if (!res) return null;
+
+  const result = await res.json();
+
+  if (!res.ok || !result.success) {
+    throw new Error(
+      result.message || "Failed to load public tournament."
+    );
+  }
+
+  return result;
+}
+
 
 async function getTeams(tournamentId) {
   if (!tournamentId) {
@@ -12558,38 +12600,105 @@ async function showLiveInvitation(broadcast) {
   return confirmed ? "declined" : "later";
 }
 
-window.addEventListener("load", async () => {
-const currentYear = new Date().getFullYear();
 
-document.getElementById("galaticoFooterYear").textContent = currentYear;
-document.getElementById("galaticoFooterYear2").textContent = currentYear;
-  showLoader();
+async function initializePublicTournamentRoute() {
+  const parts = window.location.pathname
+    .split("/")
+    .filter(Boolean);
+
+  if (parts.length < 2 || parts.length > 3) return false;
+
+  const [competitionSlug, tournamentSlug, section] = parts;
+
+  if (section && !["table", "fixtures", "stats"].includes(section)) {
+    return false;
+  }
+
   try {
-    const loggedIn = await verifySession();
-    if (loggedIn) {
-      hideAllPages();
-      
-      await registerSW();
-      await checkNotificationSubscription();
-      bindSeasonRegistrationEvents();
-      const returnedFromPayment =
-        await goToCompetitionPage();
-      loadMyCompetitions();
-      await renderCompetitionList();
-      handlePaymentReturn();
-      offerBiometricLogin();
-      setupCompetitionNavigation();
-      setupStandingsFilters();
-    } else {
+    const result = await getPublicTournament(
+      decodeURIComponent(competitionSlug),
+      decodeURIComponent(tournamentSlug)
+    );
+
+    if (!result) return true;
+
+    currentCompetition = result.competition;
+    window.publicTournamentSection = section || null;
+
+    await openTournament(
+  result.tournament.id,
+  result.tournament,
+  { publicView: true }
+);
+
+document.querySelector(".competition-page-header .back")?.style.setProperty("display", "none");
+
+if (section === "table") {
+  goToTablePage();
+} else if (section === "fixtures") {
+  goToFixturePage();
+} else if (section === "stats") {
+  goToStatPage();
+}
+    return true;
+  } catch (error) {
+    console.error("Public tournament route error:", error);
+    showAlert(error.message || "Failed to open shared tournament.");
+    return true;
+  }
+}
+
+
+window.addEventListener("load", async () => {
+  const currentYear = new Date().getFullYear();
+
+  document.getElementById("galaticoFooterYear").textContent = currentYear;
+  document.getElementById("galaticoFooterYear2").textContent = currentYear;
+
+  showLoader();
+
+  try {
+    if (localStorage.getItem(LOGOUT_RELOAD_KEY) === "true") {
+      localStorage.removeItem(LOGOUT_RELOAD_KEY);
       goToLoginPage();
+      document.querySelector(".auth-close")?.style.setProperty("display", "none");
+
+      return;
     }
+
+    const loggedIn = await verifySession();
+
+    if (!loggedIn) {
+      goToLoginPage();
+      return;
+    }
+
+    hideAllPages();
+
+    const isPublicRoute = await initializePublicTournamentRoute();
+
+    if (!isPublicRoute) {
+      await goToCompetitionPage();
+    }
+
+    hideLoader();
+
+    registerSW();
+    checkNotificationSubscription();
+    bindSeasonRegistrationEvents();
+
+    loadMyCompetitions();
+    await renderCompetitionList();
+    handlePaymentReturn();
+    offerBiometricLogin();
+    setupCompetitionNavigation();
+    setupStandingsFilters();
+
   } catch (error) {
     console.error("Application initialization error:", error);
   } finally {
     hideLoader();
   }
 });
-
-
 
 
