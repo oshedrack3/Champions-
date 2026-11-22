@@ -9291,6 +9291,8 @@ td.cup-eliminated {
 
 .sr-payment-options {
   display: flex;
+  align-items: center;
+justify-content: center;
   flex-direction: column;
   gap: 12px;
   margin-top: 22px;
