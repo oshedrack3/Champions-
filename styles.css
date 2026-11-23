@@ -2673,7 +2673,7 @@ input[type="file"] {
   justify-content: center;
   padding: 20px;
   background: #f5f7fb;
-  z-index: 900;
+  z-index: 99999;
 }
 
 .auth-card {
